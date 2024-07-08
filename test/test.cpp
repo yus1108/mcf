@@ -43,6 +43,9 @@ constexpr const std::string_view gTokenTypeStringArray[] =
     // 연산자
     "assign",
     "plus",
+    "minus",
+    "asterisk",
+    "slash",
 
     // 구분자
     "semicolon",
@@ -73,11 +76,14 @@ bool test_next_token()
     } lTestCase[] =
     {
         {
-            // TODO: constexpr std::string_view lInput = "=+(){},;";
-            "=+;",
+            // TODO: constexpr std::string_view lInput = "=+-*/(){},;";
+            "=+-*/;",
             {
                 {mcf::token_type::assign, "="},
                 {mcf::token_type::plus, "+"},
+                {mcf::token_type::minus, "-"},
+                {mcf::token_type::asterisk, "*"},
+                {mcf::token_type::slash, "/"},
                 // TODO: {mcf::token_type::lparen, "("},
                 // TODO: {mcf::token_type::rparen, ")"},
                 // TODO: {mcf::token_type::lbrace, "{"},
@@ -93,6 +99,35 @@ bool test_next_token()
                 {mcf::token_type::identifier, "foo"},
                 {mcf::token_type::assign, "="},
                 {mcf::token_type::integer_32bit, "5"},
+                {mcf::token_type::semicolon, ";"},
+            },
+        },
+        {
+            "int32 foo = 5 + 5 - 8 * 4 / 2;",
+            {
+                {mcf::token_type::keyword, "int32"},
+                {mcf::token_type::identifier, "foo"},
+                {mcf::token_type::assign, "="},
+                {mcf::token_type::integer_32bit, "5"},
+                {mcf::token_type::plus, "+"},
+                {mcf::token_type::integer_32bit, "5"},
+                {mcf::token_type::minus, "-"},
+                {mcf::token_type::integer_32bit, "8"},
+                {mcf::token_type::asterisk, "*"},
+                {mcf::token_type::integer_32bit, "4"},
+                {mcf::token_type::slash, "/"},
+                {mcf::token_type::integer_32bit, "2"},
+                {mcf::token_type::semicolon, ";"},
+            },
+        },
+        {
+            "int32 foo = -1;",
+            {
+                {mcf::token_type::keyword, "int32"},
+                {mcf::token_type::identifier, "foo"},
+                {mcf::token_type::assign, "="},
+                {mcf::token_type::minus, "-"},
+                {mcf::token_type::integer_32bit, "1"},
                 {mcf::token_type::semicolon, ";"},
             },
         },
