@@ -77,6 +77,15 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 	case '+':
 		lToken = { token_type::plus, std::string(1, _currentByte) };
 		break;
+	case '-':
+		lToken = { token_type::minus, std::string(1, _currentByte) };
+		break;
+	case '*':
+		lToken = { token_type::asterisk, std::string(1, _currentByte) };
+		break;
+	case '/':
+		lToken = { token_type::slash, std::string(1, _currentByte) };
+		break;
 	case ';':
 		lToken = { token_type::semicolon, std::string(1, _currentByte) };
 		break;

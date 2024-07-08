@@ -16,6 +16,9 @@ namespace mcf
 		// 연산자
 		assign,
 		plus,
+		minus,
+		asterisk,
+		slash,
 
 		// 구분자
 		semicolon,
