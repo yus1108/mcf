@@ -1,6 +1,4 @@
-﻿#pragma execution_character_set("utf-8")
-
-#include "pch.h"
+﻿#include "pch.h"
 #include "lexer.h"
 
 namespace mcf
@@ -110,7 +108,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 		else
 		{
 			lToken = { token_type::illegal, std::string(1, _currentByte) };
-			default_break("예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
+			wdefault_break(L"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
 
@@ -121,7 +119,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 void mcf::lexer::read_next_byte(void) noexcept
 {
 	const size_t lLength = _input.length();
-	debug_assert(_nextPosition <= lLength, "nextPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", lLength, _nextPosition);
+	wdebug_assert(_nextPosition <= lLength, L"nextPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", lLength, _nextPosition);
 
 	_currentByte = (_nextPosition > lLength) ? 0 : _input[_nextPosition];
 	_currentPosition = _nextPosition;
@@ -130,7 +128,7 @@ void mcf::lexer::read_next_byte(void) noexcept
 
 std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
 {
-	debug_assert(internal::is_alphabet(_currentByte) || _currentByte == '_', "키워드 혹은 식별자의 시작은 알파벳이거나 '_' 이어야만 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	wdebug_assert(internal::is_alphabet(_currentByte) || _currentByte == '_', L"키워드 혹은 식별자의 시작은 알파벳이거나 '_' 이어야만 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t lFirstLetterPosition = _currentPosition;
 	read_next_byte();
@@ -145,7 +143,7 @@ std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
 
 std::string mcf::lexer::read_number(void) noexcept
 {
-	debug_assert(internal::is_digit(_currentByte), "숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	wdebug_assert(internal::is_digit(_currentByte), L"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t lFirstLetterPosition = _currentPosition;
 
