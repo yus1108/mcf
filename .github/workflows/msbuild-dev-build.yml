@@ -41,15 +41,11 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Check locale
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: chcp
-
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:platform=${{env.BUILD_PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
+      run: msbuild /Wv:13 /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:platform=${{env.BUILD_PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
       
     - name: Test
       working-directory: ${{env.GITHUB_WORKSPACE}}
