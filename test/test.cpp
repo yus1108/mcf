@@ -1,4 +1,6 @@
-﻿#include <iostream>
+﻿#pragma execution_character_set("utf-8")
+
+#include <iostream>
 #include <vector>
 
 #ifdef _DEBUG
