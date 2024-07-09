@@ -1,4 +1,6 @@
-﻿#include "pch.h"
+﻿#pragma execution_character_set("utf-8")
+
+#include "pch.h"
 #include "lexer.h"
 
 namespace mcf
