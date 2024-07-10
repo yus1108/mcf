@@ -31,44 +31,35 @@ inline void detect_memory_leak(long line = -1) { line; }
 
 #include <lexer.h>
 
-constexpr const std::wstring_view gTokenTypeWStringArray[] =
+constexpr const std::string_view gTokenTypeWStringArray[] =
 {
-    L"illegal",
-    L"eof",
+    "illegau8",
+    "eof",
 
     // 식별자 + 리터럴
-    L"identifier",
-    L"integer",
+    "identifier",
+    "integer",
 
     // 연산자
-    L"assign",
-    L"plus",
-    L"minus",
-    L"asterisk",
-    L"slash",
+    "assign",
+    "plus",
+    "minus",
+    "asterisk",
+    "slash",
 
     // 구분자
-    L"semicolon",
+    "semicolon",
 
     // 예약어
-    L"keyword",
+    "keyword",
 };
-static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeWStringArray) / sizeof(std::wstring_view)), L"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
+static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeWStringArray) / sizeof(std::string_view)), u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
 
 #if defined(_DEBUG)
-#define wfatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { wprintf(FORMAT, __VA_ARGS__); __debugbreak(); return false; } ((void)0)
+#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); __debugbreak(); return false; } ((void)0)
 #else
-#define wfatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { wprintf(FORMAT, __VA_ARGS__); return false; } ((void)0)
+#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); return false; } ((void)0)
 #endif
-
-std::wstring convert_to_wstring(const std::string& value)
-{
-    return std::wstring(value.begin(), value.end());
-}
-std::wstring convert_to_wstring(const std::string_view& value)
-{
-	return std::wstring(value.begin(), value.end());
-}
 
 bool test_next_token()
 {
@@ -150,14 +141,12 @@ bool test_next_token()
         for (size_t j = 0; j < lVectorSize; j++)
         {
             const mcf::token lToken = lLexer.read_next_token();
-			const mcf::token_type lTokenType = lToken.Type;
-			const mcf::token_type lExpectedTokenType = lTestCase[i].ExpectedResultVector[j].Type;
 
-            wfatal_assert(lTokenType == lExpectedTokenType, L"tests[%llu-%llu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-                i, j, gTokenTypeWStringArray[static_cast<size_t>(lExpectedTokenType)].data(), gTokenTypeWStringArray[static_cast<size_t>(lTokenType)].data());
+            fatal_assert( lToken.Type == lTestCase[i].ExpectedResultVector[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+                i, j, gTokenTypeWStringArray[static_cast<size_t>(lTestCase[i].ExpectedResultVector[j].Type)].data(), gTokenTypeWStringArray[static_cast<size_t>(lToken.Type)].data());
 
-            wfatal_assert(lToken.Literal == lTestCase[i].ExpectedResultVector[j].Literal, L"tests[%llu-%llu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-                i, j, convert_to_wstring(lTestCase[i].ExpectedResultVector[j].Literal).c_str(), convert_to_wstring(lToken.Literal).c_str());
+            fatal_assert(lToken.Literal == lTestCase[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+                i, j, lTestCase[i].ExpectedResultVector[j].Literal.data(), lToken.Literal.data());
         }
     }
 
@@ -166,7 +155,9 @@ bool test_next_token()
 
 int main()
 {
-    detect_memory_leak();
+    // chcp 65001 혹은 chcp 949cmd 에서 글자가 깨지는 경우가 있는 경우가 있어서 강제로 로케일을 utf8 로 설정합니다.
+	std::locale::global( std::locale( ".UTF8" ) );
+	detect_memory_leak();
 
     if (test_next_token() == false)
     {
@@ -174,5 +165,5 @@ int main()
         return 1;
     }
     std::cout << "All Test Passed" << std::endl;
-    return 0;
+	return 0;
 }
