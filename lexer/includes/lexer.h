@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
 
@@ -9,34 +9,34 @@ namespace mcf
 		illegal = 0,
 		eof,
 
-		// ½Äº°ÀÚ + ¸®ÅÍ·²
+		// ì‹ë³„ì + ë¦¬í„°ëŸ´
 		identifier,
 		integer_32bit,
 
-		// ¿¬»êÀÚ
+		// ì—°ì‚°ì
 		assign,
 		plus,
 		minus,
 		asterisk,
 		slash,
 
-		// ±¸ºĞÀÚ
+		// êµ¬ë¶„ì
 		semicolon,
 
-		// ¿¹¾à¾î
+		// ì˜ˆì•½ì–´
 		keyword,
 
-		// ÀÌ ¹ØÀ¸·Î´Â ¼öÁ¤ÇÏ¸é ¾ÈµË´Ï´Ù.
+		// ì´ ë°‘ìœ¼ë¡œëŠ” ìˆ˜ì •í•˜ë©´ ì•ˆë©ë‹ˆë‹¤.
 		count
 	};
 
 	struct token final
 	{
-		mcf::token_type	Type	= mcf::token_type::illegal;
+		mcf::token_type	Type = mcf::token_type::illegal;
 		std::string		Literal;
 	};
 
-	// ÁÖÀÇ: thread-safe ÇÏÁö ¾ÊÀº Å¬·¡½ºÀÔ´Ï´Ù.
+	// ì£¼ì˜: thread-safe í•˜ì§€ ì•Šì€ í´ë˜ìŠ¤ì…ë‹ˆë‹¤.
 	class lexer final {
 	public:
 		enum class error_token : unsigned char {
@@ -50,12 +50,12 @@ namespace mcf
 
 		static const mcf::lexer::error_token get_last_error_token(void) noexcept;
 
-		const mcf::token read_next_token() noexcept;
+		const mcf::token read_next_token(void) noexcept;
 
 	private:
-		void		read_next_byte(void) noexcept;
-		std::string read_keyword_or_identifier(void) noexcept;
-		std::string read_number(void) noexcept;
+		void				read_next_byte(void) noexcept;
+		const std::string	read_keyword_or_identifier(void) noexcept;
+		const std::string	read_number(void) noexcept;
 
 	private:
 		const std::string	_input				= nullptr;

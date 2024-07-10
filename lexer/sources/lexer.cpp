@@ -126,7 +126,7 @@ void mcf::lexer::read_next_byte(void) noexcept
 	_nextPosition += 1;
 }
 
-std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
+const std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
 {
 	debug_assert(internal::is_alphabet(_currentByte) || _currentByte == '_', u8"키워드 혹은 식별자의 시작은 알파벳이거나 '_' 이어야만 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
@@ -141,7 +141,7 @@ std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
 	return _input.substr(lFirstLetterPosition, _currentPosition - lFirstLetterPosition);
 }
 
-std::string mcf::lexer::read_number(void) noexcept
+const std::string mcf::lexer::read_number(void) noexcept
 {
 	debug_assert(internal::is_digit(_currentByte), u8"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
