@@ -4,6 +4,8 @@
 #ifdef _DEBUG
 
 #ifdef _WIN32
+#include <Windows.h>
+
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
@@ -153,11 +155,43 @@ bool test_next_token()
     return true;
 }
 
-int main()
+int main(const size_t argc, const char* const argv[])
 {
-    // chcp 65001 혹은 chcp 949cmd 에서 글자가 깨지는 경우가 있는 경우가 있어서 강제로 로케일을 utf8 로 설정합니다.
-	std::locale::global( std::locale( ".UTF8" ) );
 	detect_memory_leak();
+
+	// #12 [문자열] C4566 유니코드 컴파일 경고
+	// 1. cmd 를 이용하는 경우 시스템 locale 이 .utf8 이 아닌 경우 글자가 깨지는 현상이 있어 콘솔 프로젝트에서 강제로 고정하기로 결정.
+	// 2. cmd 를 이용하는 경우 코드 페이지로 인해 글자가 깨지는 현상이 있지만 이 경우에는 코드 페이지가 고정으로 설정되어도 로컬 머신의
+    //    환경에 따라 글자가 깨지는 현상이 있어 command line arguments 로 --CodePage=<unsigned_integer> 값을 받아 처리하도록 함
+	std::locale::global( std::locale( ".UTF8" ) );
+	if ( argc > 1 )
+    {
+#ifdef _WIN32
+		const char lCP[] = "--CodePage=";
+#endif
+
+        std::cout << "options: ";
+		for ( int i = 1; i < argc; ++i )
+		{
+			std::cout << argv[i] << " ";
+#ifdef _WIN32
+            constexpr size_t lCPLenth = sizeof( lCP ) - 1;
+			if ( strncmp( lCP, argv[i], lCPLenth ) == 0 )
+			{
+                const size_t lCPValueSize = strlen( argv[i] ) - lCPLenth + 1;
+
+                char* lCPValue = new char[lCPValueSize];
+                strncpy_s( lCPValue, lCPValueSize, argv[i] + lCPLenth, lCPValueSize );
+				const UINT lCodePageID = static_cast<UINT>(atoi( lCPValue ));
+				delete[] lCPValue;
+
+				SetConsoleOutputCP( lCodePageID );
+			}
+#endif
+		}
+		std::cout << std::endl;
+    }
+
 
     if (test_next_token() == false)
     {
