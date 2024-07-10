@@ -24,6 +24,9 @@
     <ClInclude Include="includes\parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="includes\ast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sources\parser.cpp">

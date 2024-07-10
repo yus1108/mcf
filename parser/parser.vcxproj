@@ -153,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\ast.h" />
     <ClInclude Include="includes\parser.h" />
     <ClInclude Include="internals\framework.h" />
     <ClInclude Include="internals\pch.h" />
