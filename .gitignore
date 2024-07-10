@@ -34,3 +34,5 @@
 # Visual Studios
 .vs
 x64
+*.args.json
+*.vcxproj.user
