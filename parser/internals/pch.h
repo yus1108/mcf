@@ -8,6 +8,13 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+#include <string>
+#include <vector>
+#include <memory>
+
+#include <lexer/includes/lexer.h>
+
 #include "framework.h"
+#include "ast.h"
 
 #endif //PCH_H

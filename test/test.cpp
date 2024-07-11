@@ -31,7 +31,7 @@ inline void detect_memory_leak(long line = -1) { line; }
 
 #endif // configurations
 
-#include <lexer.h>
+#include <lexer/includes/lexer.h>
 
 constexpr const std::string_view gTokenTypeWStringArray[] =
 {
@@ -56,6 +56,9 @@ constexpr const std::string_view gTokenTypeWStringArray[] =
     "keyword",
 };
 static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeWStringArray) / sizeof(std::string_view)), u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
+
+#include <parser/includes/ast.h>
+#include <parser/includes/parser.h>
 
 #if defined(_DEBUG)
 #define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); __debugbreak(); return false; } ((void)0)
