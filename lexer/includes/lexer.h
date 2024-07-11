@@ -30,6 +30,15 @@ namespace mcf
 		count
 	};
 
+
+	enum class token_keyword_type : unsigned char
+	{
+		invalid = 0,
+		int32,
+
+		count,
+	};
+
 	struct token final
 	{
 		mcf::token_type	Type = mcf::token_type::invalid;

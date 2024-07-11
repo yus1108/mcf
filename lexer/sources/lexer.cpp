@@ -26,6 +26,7 @@ namespace mcf
 			// TODO: decimal 타입 추가 필요
 			"int32",
 		};
+		static_assert(static_cast<size_t>(mcf::token_keyword_type::count) == 2, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
 	}
 }
 
