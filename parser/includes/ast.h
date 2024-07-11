@@ -6,7 +6,8 @@ namespace mcf
 	class pointer
 	{
 	public:
-		pointer(T* data) noexcept : _data(data) {}
+		pointer( T* data ) noexcept : _data( data ) {}
+		pointer( const T* data ) noexcept : _data( data ) {}
 		pointer(void) noexcept = delete;
 		pointer(const pointer& data) noexcept = default;
 		pointer(pointer&& data) noexcept = default;
@@ -27,10 +28,12 @@ namespace mcf
 		inline const T* get_unsafe_pointer(void) const noexcept { return _data; }
 
 		template <typename OtherType>
-		inline const pointer<OtherType>	cast_to(void) const noexcept { return static_cast<OtherType*>(_data); }
+		inline const	pointer<OtherType> cast_to(void) const noexcept { return static_cast<OtherType*>(_data); }
+		template <typename OtherType>
+		inline			pointer<OtherType> cast_to( void ) noexcept { return static_cast<OtherType*>(_data); }
 
 	private:
-		const T* _data = nullptr;
+		T* _data = nullptr;
 	};
 
 	namespace ast
@@ -96,7 +99,7 @@ namespace mcf
 			std::vector<std::unique_ptr<mcf::ast::statement>> _statements;
 		};
 
-		class literal_expession : public expression
+		class literal_expession final : public expression
 		{
 		public: 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
@@ -107,17 +110,20 @@ namespace mcf
 			const std::string	_value;
 		};
 
-		class identifier_expression : public expression
+		class identifier_expression final : public expression
 		{
 		public:
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
+			inline const mcf::token&  get_token( void ) const noexcept { return _token; }
+			inline const std::string& get_value( void ) const noexcept { return _value; }
+
+			inline virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
 
 		private:
 			const mcf::token	_token; // token_type::identifier
 			const std::string	_value;
 		};
 
-		class data_type_expression : public expression
+		class data_type_expression final : public expression
 		{
 		public:
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
@@ -127,14 +133,17 @@ namespace mcf
 			const mcf::token_keyword_type	_keywordType;
 		};
 
-		class variable_declaration_statement : public statement
+		class variable_declaration_statement final : public statement
 		{
 		public:
+			inline const std::string& get_name( void ) const { return _name.get_value(); }
+			inline const mcf::token&  get_name_token( void ) const { return _name.get_token(); }
+
 			inline	virtual const mcf::ast::statement_type	get_expression_type(void) const noexcept final { return mcf::ast::statement_type::variable_declaration; }
 
 		private:
 			const mcf::ast::data_type_expression	_dataType; // { keyword, uint32 }
-			const std::string						_name;
+			const mcf::ast::identifier_expression	_name;
 			const std::unique_ptr<expression>		_expression;
 		};
 	}
