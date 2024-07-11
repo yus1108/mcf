@@ -41,9 +41,6 @@ mcf::lexer::lexer(const std::string input) noexcept
 	read_next_byte();
 }
 
-mcf::lexer::~lexer(void) noexcept
-{}
-
 const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 {
 	if (internal::gErrorHandler.Tokens.empty()) 
