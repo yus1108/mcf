@@ -45,7 +45,8 @@ namespace mcf
 		};
 
 	public:
-		explicit lexer(const std::string input) noexcept;
+		explicit lexer(void) noexcept = delete;
+		explicit lexer(const std::string& input) noexcept;
 
 		static const mcf::lexer::error_token get_last_error_token(void) noexcept;
 

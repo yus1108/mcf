@@ -29,7 +29,7 @@ namespace mcf
 	}
 }
 
-mcf::lexer::lexer(const std::string input) noexcept
+mcf::lexer::lexer(const std::string& input) noexcept
 	: _input(input)
 {
 	if (_input.length() == 0)
