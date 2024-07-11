@@ -35,21 +35,52 @@ namespace mcf
 
 	namespace ast
 	{
+		enum class node_type : unsigned char
+		{
+			expression,
+			statement,
+
+			// 이 밑으로는 수정하면 안됩니다.
+			count,
+		};
+
 		class node
 		{
 		public:
 			virtual ~node(void) noexcept {}
-			virtual const std::string get_token_literal(void) const noexcept = 0;
+			virtual const mcf::ast::node_type	get_node_type(void) const noexcept = 0;
+		};
+
+		enum class statement_type : unsigned char
+		{
+			variable_declaration,
+
+			// 이 밑으로는 수정하면 안됩니다.
+			count,
 		};
 
 		class statement : public node
 		{
-		public: virtual const std::string get_token_literal(void) const noexcept override = 0;
+		public: 
+					virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept = 0;
+			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept final { return mcf::ast::node_type::statement; }
+		};
+
+		enum class expression_type : unsigned char
+		{
+			literal,
+			identifier,
+			data_type,
+
+			// 이 밑으로는 수정하면 안됩니다.
+			count,
 		};
 
 		class expression : public node
 		{
-		public: virtual const std::string get_token_literal(void) const noexcept override = 0;
+		public: 
+					virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept = 0;
+			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept final { return mcf::ast::node_type::expression; }
 		};
 
 		class program final
@@ -57,9 +88,7 @@ namespace mcf
 		public:
 			~program(void) {}
 
-			const std::string get_token_literal(void) const noexcept { return _statements.size() > 0 ? _statements[0]->get_token_literal() : std::string(); }
-
-			inline const size_t								get_statement_size( void ) const noexcept;
+			inline const size_t								get_statement_size(void) const noexcept;
 			inline mcf::pointer<mcf::ast::statement>		get_statement_at(const size_t index);
 			inline const mcf::pointer<mcf::ast::statement>	get_statement_at(const size_t index) const;
 
@@ -70,7 +99,7 @@ namespace mcf
 		class literal_expession : public expression
 		{
 		public: 
-			virtual const std::string get_token_literal(void) const noexcept override { return _token.Literal; }
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
 
 		private:
 			// TODO: 다른 literal 토큰 추가시 적용되게 수정
@@ -81,7 +110,7 @@ namespace mcf
 		class identifier_expression : public expression
 		{
 		public:
-			virtual const std::string get_token_literal(void) const noexcept override { return _token.Literal; }
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
 
 		private:
 			const mcf::token	_token; // token_type::identifier
@@ -91,7 +120,7 @@ namespace mcf
 		class data_type_expression : public expression
 		{
 		public:
-			virtual const std::string get_token_literal(void) const noexcept override { return _token.Literal; }
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept final { return mcf::ast::expression_type::literal; }
 
 		private:
 			const mcf::token				_token; // token_type::keyword
@@ -101,7 +130,7 @@ namespace mcf
 		class variable_declaration_statement : public statement
 		{
 		public:
-			virtual const std::string get_token_literal(void) const noexcept override { return _dataType.get_token_literal(); }
+			inline	virtual const mcf::ast::statement_type	get_expression_type(void) const noexcept final { return mcf::ast::statement_type::variable_declaration; }
 
 		private:
 			const mcf::ast::data_type_expression	_dataType; // { keyword, uint32 }
