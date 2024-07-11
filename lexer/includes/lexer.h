@@ -34,6 +34,7 @@ namespace mcf
 		invalid = 0,
 		int32,
 
+		// 이 밑으로는 수정하면 안됩니다.
 		count,
 	};
 

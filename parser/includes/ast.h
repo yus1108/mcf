@@ -23,11 +23,11 @@ namespace mcf
 		inline const T* operator->(void) const noexcept { return _data; }
 		inline const T& operator*(void) const noexcept { return *_data; }
 
-		inline T*		GetUnsafePointer( void ) noexcept { return _data; }
-		inline const T*	GetUnsafePointer( void ) const noexcept { return _data; }
+		inline T*		get_unsafe_pointer(void) noexcept { return _data; }
+		inline const T* get_unsafe_pointer(void) const noexcept { return _data; }
 
 		template <typename OtherType>
-		inline const pointer<OtherType>	CastTo(void) const noexcept { return static_cast<OtherType*>(_data); }
+		inline const pointer<OtherType>	cast_to(void) const noexcept { return static_cast<OtherType*>(_data); }
 
 	private:
 		const T* _data = nullptr;
