@@ -35,7 +35,7 @@
     <ClCompile Include="sources\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="includes\ast.cpp">
+    <ClCompile Include="sources\ast.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

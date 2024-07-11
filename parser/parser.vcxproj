@@ -159,7 +159,7 @@
     <ClInclude Include="internals\pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="includes\ast.cpp" />
+    <ClCompile Include="sources\ast.cpp" />
     <ClCompile Include="sources\parser.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
