@@ -91,9 +91,9 @@ namespace mcf
 		public:
 			~program(void) {}
 
-			inline const size_t								get_statement_size(void) const noexcept;
-			inline mcf::pointer<mcf::ast::statement>		get_statement_at(const size_t index);
-			inline const mcf::pointer<mcf::ast::statement>	get_statement_at(const size_t index) const;
+			const size_t							get_statement_size(void) const noexcept;
+			mcf::pointer<mcf::ast::statement>		get_statement_at(const size_t index);
+			const mcf::pointer<mcf::ast::statement>	get_statement_at(const size_t index) const;
 
 		private:
 			std::vector<std::unique_ptr<mcf::ast::statement>> _statements;
