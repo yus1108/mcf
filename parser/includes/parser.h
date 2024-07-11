@@ -4,7 +4,7 @@ namespace mcf
 {
 	namespace ast
 	{
-		class Program;
+		class mcf::ast::statement;
 	}
 
 	class parser final
@@ -13,10 +13,12 @@ namespace mcf
 		explicit parser(void) noexcept = delete;
 		explicit parser(const std::string& input) noexcept;
 
-		mcf::ast::program* parse_program( void ) noexcept;
+		void parse_program(std::vector<const mcf::ast::statement*>& outProgram) noexcept;
 
 	private:
-		inline void read_next_token(void) noexcept;
+		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement() noexcept;
+
+		void read_next_toekn(void) noexcept;
 
 	private:
 		mcf::lexer _lexer;

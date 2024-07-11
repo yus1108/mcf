@@ -33,50 +33,75 @@ inline void detect_memory_leak(long line = -1) { line; }
 
 #endif // configurations
 
-#include <lexer/includes/lexer.h>
-constexpr const std::string_view gTokenTypeStringArray[] =
-{
-    "invalid",
-    "eof",
-
-    // 식별자 + 리터럴
-    "identifier",
-    "integer",
-
-    // 연산자
-    "assign",
-    "plus",
-    "minus",
-    "asterisk",
-    "slash",
-
-    // 구분자
-    "semicolon",
-
-    // 예약어
-    "keyword",
-};
-static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeStringArray) / sizeof(std::string_view)), u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
-
-#include <parser/includes/ast.h>
-#include <parser/includes/parser.h>
-constexpr const std::string_view gStatementTypeStringArrays[] =
-{
-	"variable_declaration",
-};
-static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == (sizeof( gStatementTypeStringArrays ) / sizeof( std::string_view )), u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
-
 #if defined(_DEBUG)
 #define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
 #else
 #define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
 #endif
 
+
+// ENUM
+#define ENUM_COUNT(enum) static_cast<size_t>(##enum##::count)
+
 template<typename T>
-const size_t cast_to_index(T value)
+constexpr const size_t ENUM_INDEX(const T value)
 {
-	return static_cast<const size_t>(value);
+	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다");
+	return static_cast<size_t>(value);
 }
+
+template<typename T>
+const T ENUM_AT(const size_t index)
+{
+	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다.");
+	debug_assert(index < ENUM_COUNT(T), u8"index가 해당 enum의 크기보다 큽니다. index=%zu", index);
+	return static_cast<T>(index);
+}
+
+// ARRAY
+template<typename T>
+constexpr const size_t ARRAY_TYPE_SIZE(T array[])
+{
+	array;
+	return sizeof(T);
+}
+
+#define ARRAY_SIZE(array) sizeof(array) / ARRAY_TYPE_SIZE(array);
+
+#include <lexer/includes/lexer.h>
+constexpr const std::string_view TOKEN_TYPES[] =
+{
+	"invalid",
+	"eof",
+
+	// 식별자 + 리터럴
+	"identifier",
+	"integer",
+
+	// 연산자
+	"assign",
+	"plus",
+	"minus",
+	"asterisk",
+	"slash",
+
+	// 구분자
+	"semicolon",
+
+	// 예약어
+	"keyword",
+};
+constexpr const size_t TOKEN_TYPES_SIZE = ARRAY_SIZE(TOKEN_TYPES);
+static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
+
+#include <parser/includes/ast.h>
+#include <parser/includes/parser.h>
+constexpr const std::string_view STATEMENT_TYPES[] =
+{
+	"variable_declaration",
+};
+constexpr const size_t STATEMENT_TYPES_SIZE = ARRAY_SIZE(STATEMENT_TYPES);
+static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
 
 namespace lexer_test
 {
@@ -114,7 +139,7 @@ namespace lexer_test
 			{
 				"int32 foo = 5;",
 				{
-					{mcf::token_type::keyword, "int32"},
+					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "foo"},
 					{mcf::token_type::assign, "="},
 					{mcf::token_type::integer_32bit, "5"},
@@ -124,7 +149,7 @@ namespace lexer_test
 			{
 				"int32 foo = 5 + 5 - 8 * 4 / 2;",
 				{
-					{mcf::token_type::keyword, "int32"},
+					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "foo"},
 					{mcf::token_type::assign, "="},
 					{mcf::token_type::integer_32bit, "5"},
@@ -142,7 +167,7 @@ namespace lexer_test
 			{
 				"int32 foo = -1;",
 				{
-					{mcf::token_type::keyword, "int32"},
+					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "foo"},
 					{mcf::token_type::assign, "="},
 					{mcf::token_type::minus, "-"},
@@ -151,7 +176,7 @@ namespace lexer_test
 				},
 			},
 		};
-		constexpr const size_t lTestCaseCount = sizeof(lTestCase) / sizeof(test_case);
+		constexpr const size_t lTestCaseCount = ARRAY_SIZE(lTestCase);
 
 		for (size_t i = 0; i < lTestCaseCount; i++)
 		{
@@ -160,9 +185,10 @@ namespace lexer_test
 			for (size_t j = 0; j < lVectorSize; j++)
 			{
 				const mcf::token lToken = lLexer.read_next_token();
+				const mcf::token_type lExpectedTokenType = lTestCase[i].ExpectedResultVector[j].Type;
 
-				fatal_assert(lToken.Type == lTestCase[i].ExpectedResultVector[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-					i, j, gTokenTypeStringArray[cast_to_index(lTestCase[i].ExpectedResultVector[j].Type)].data(), gTokenTypeStringArray[cast_to_index(lToken.Type)].data());
+				fatal_assert(lToken.Type == lExpectedTokenType, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+					i, j, TOKEN_TYPES[ENUM_INDEX(lExpectedTokenType)].data(), TOKEN_TYPES[ENUM_INDEX(lToken.Type)].data());
 
 				fatal_assert(lToken.Literal == lTestCase[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
 					i, j, lTestCase[i].ExpectedResultVector[j].Literal.data(), lToken.Literal.data());
@@ -177,14 +203,15 @@ namespace parser_test
 {
 	namespace internal
 	{
-		bool test_variable_declaration_statement( const mcf::pointer<mcf::ast::statement>& statement, const std::string& name )
+		bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType,  const std::string& expectedName)
 		{
-			fatal_assert( statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement가 variable_declaration이 아닙니다. 결과값=%s", gStatementTypeStringArrays[cast_to_index( statement->get_statement_type() )].data() );
+			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement가 variable_declaration이 아닙니다. 결과값=%s", 
+				STATEMENT_TYPES[ENUM_INDEX(statement->get_statement_type())].data());
 
-			mcf::pointer<mcf::ast::variable_declaration_statement> casted_statement = statement.cast_to<mcf::ast::variable_declaration_statement>();
-
-			fatal_assert( casted_statement->get_name() == name, u8"`casted_statement->get_name()`이 '%s'가 아닙니다. 실제값=%s", name.c_str(), casted_statement->get_name().c_str() );
-			fatal_assert( casted_statement->get_name_token().Literal == name, u8"`casted_statement->get_name()`이 '%s'가 아닙니다. 실제값=%s", name.c_str(), casted_statement->get_name().c_str() );
+			const mcf::ast::variable_declaration_statement* lDeclaration = static_cast<const mcf::ast::variable_declaration_statement*>(statement);
+			fatal_assert(lDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s", TOKEN_TYPES[ENUM_INDEX(expectedDataType)].data(), TOKEN_TYPES[ENUM_INDEX(lDeclaration->get_type())].data());
+			fatal_assert(lDeclaration->get_name() == expectedName, u8"변수 선언 이름이 '%s'가 아닙니다. 실제값=%s", expectedName.c_str(), lDeclaration->get_name().c_str());
+			// TODO: #11 initialization 도 구현 필요
 
 			return true;
 		}
@@ -192,39 +219,39 @@ namespace parser_test
 
 	bool test_variable_declaration_statements( void )
 	{
-		struct expected_result final
-		{
-			const mcf::token_type   Type;
-			const std::string_view  Literal;
-		};
-
-		const std::string input = "let x = 5; let y = 10; let foobar = 838383";
+		// TODO: #11 initialization 도 구현 필요
+		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 		
 		mcf::parser lParser = mcf::parser(input);
-		std::unique_ptr<mcf::ast::program> lProgram = std::unique_ptr<mcf::ast::program>(lParser.parse_program());
-		fatal_assert(lProgram.get() != nullptr, u8"parse_program() 가 nullptr 을 반환 하면 안됩니다.");
-		fatal_assert(lProgram->get_statement_size() == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", lProgram->get_statement_size());
+		std::vector<const mcf::ast::statement*> lProgram;
+		lParser.parse_program(lProgram);
+		fatal_assert(lProgram.size() == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", lProgram.size());
 
 		const struct test_case
 		{
-			const std::string ExpectedIdentifier;
+			const mcf::token_type	ExpectedDataType;
+			const std::string						ExpectedIdentifier;
 		} lTestCase[] =
 		{
-			{"in32 x;"},
-			{"in32 y = 0;"},
-			{"in32 foobar = a + b;"},
+			{mcf::token_type::keyword_int32, "x"},
+			{mcf::token_type::keyword_int32, "y"},
+			{mcf::token_type::keyword_int32, "foobar"},
 		};
-		constexpr const size_t lTestCaseCount = sizeof(lTestCase) / sizeof(test_case);
+		constexpr const size_t lTestCaseCount = ARRAY_SIZE(lTestCase);
 
 		for (size_t i = 0; i < lTestCaseCount; i++)
 		{
-			const mcf::pointer<mcf::ast::statement> lStatement = lProgram->get_statement_at(i);
-			if (internal::test_variable_declaration_statement(lStatement, lTestCase[i].ExpectedIdentifier) == false)
+			const mcf::ast::statement* lStatement = lProgram[i];
+			if (internal::test_variable_declaration_statement(lStatement, lTestCase[i].ExpectedDataType, lTestCase[i].ExpectedIdentifier) == false)
 			{
 				return false;
 			}
 		}
 
+		for (size_t i = 0; i < lProgram.size(); i++)
+		{
+			delete lProgram[i];
+		}
 		return true;
 	}
 };

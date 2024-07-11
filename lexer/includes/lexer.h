@@ -21,21 +21,12 @@ namespace mcf
 		// 구분자
 		semicolon,
 
-		// 예약어
-		keyword,
+		// 예약어 구간 시작 (예약어 추가시 예약 구간 종료 바로 위에 추가해주세요)
+		keyword_int32,
+		// 예약어 구간 종료
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count
-	};
-
-
-	enum class token_keyword_type : unsigned char
-	{
-		invalid = 0,
-		int32,
-
-		// 이 밑으로는 수정하면 안됩니다.
-		count,
 	};
 
 	struct token final
@@ -47,7 +38,8 @@ namespace mcf
 	// 주의: thread-safe 하지 않은 클래스입니다.
 	class lexer final {
 	public:
-		enum class error_token : unsigned char {
+		enum class error_token : unsigned char 
+		{
 			no_error = 0,
 			invalid_input_length,
 		};

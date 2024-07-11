@@ -1,9 +1,33 @@
 ﻿#include "pch.h"
 #include "lexer.h"
+#include "framework.h"
 
 namespace mcf
 {
-	namespace internal {
+	namespace internal 
+	{
+		inline static const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept
+		{
+			constexpr const char* KEYWORDS[] =
+			{
+				// TODO: uint32 타입 추가 필요
+				// TODO: 더 많은 signed/unsigned integer 타입 추가 필요
+				// TODO: decimal 타입 추가 필요
+				"int32",
+			};
+			constexpr const size_t KEYWORDS_SIZE = ARRAY_SIZE(KEYWORDS);
+			static_assert(ENUM_COUNT(mcf::token_type) - ENUM_INDEX(mcf::token_type::keyword_int32) == KEYWORDS_SIZE, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
+
+			for (size_t i = 0; i < KEYWORDS_SIZE; i++)
+			{
+				if (tokenLiteral.compare(KEYWORDS[i]) == 0)
+				{
+					return ENUM_AT<mcf::token_type>(ENUM_INDEX(mcf::token_type::keyword_int32) + i);
+				}
+			}
+			return mcf::token_type::identifier;
+		}
+
 		struct
 		{
 			std::stack<lexer::error_token> Tokens;
@@ -18,15 +42,6 @@ namespace mcf
 		{
 			return ('0' <= byte && byte <= '9');
 		}
-
-		std::unordered_set<std::string> gKeywords =
-		{
-			// TODO: uint32 타입 추가 필요
-			// TODO: 더 많은 signed/unsigned integer 타입 추가 필요
-			// TODO: decimal 타입 추가 필요
-			"int32",
-		};
-		static_assert(static_cast<size_t>(mcf::token_keyword_type::count) == 2, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
 	}
 }
 
@@ -56,6 +71,10 @@ const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 
 const mcf::token mcf::lexer::read_next_token() noexcept
 {
+	if (_currentPosition == _input.size())
+	{ 
+		return { token_type::eof, "\0" };
+	}
 	mcf::token lToken;
 
 	// 공백 문자는 스킵 하도록 합니다.
@@ -93,7 +112,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 		{
 			// TODO: 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			lToken.Literal = read_keyword_or_identifier();
-			lToken.Type = internal::gKeywords.find(lToken.Literal) == internal::gKeywords.end() ? mcf::token_type::identifier : mcf::token_type::keyword;
+			lToken.Type = internal::determine_keyword_or_identifier(lToken.Literal);
 			return lToken;
 		}
 		else if (internal::is_digit(_currentByte))
@@ -117,7 +136,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 void mcf::lexer::read_next_byte(void) noexcept
 {
 	const size_t lLength = _input.length();
-	debug_assert(_nextPosition <= lLength, u8"nextPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", lLength, _nextPosition);
+	debug_assert(_nextPosition <= lLength, u8"currentPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", lLength, _nextPosition);
 
 	_currentByte = (_nextPosition > lLength) ? 0 : _input[_nextPosition];
 	_currentPosition = _nextPosition;

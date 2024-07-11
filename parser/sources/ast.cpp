@@ -1,17 +1,12 @@
 #include "pch.h"
 #include "ast.h"
 
-const size_t mcf::ast::program::get_statement_size( void ) const noexcept
+mcf::ast::variable_declaration_statement::variable_declaration_statement(	
+	const mcf::ast::data_type_expression& dataType, 
+	const mcf::ast::identifier_expression& name, 
+	const mcf::ast::expression* rightExpression) noexcept
+	: _dataType(dataType)
+	, _name(name)
+	, _rightExpression(rightExpression)
 {
-	return _statements.size();
-}
-
-mcf::pointer<mcf::ast::statement> mcf::ast::program::get_statement_at( const size_t index )
-{
-	return mcf::pointer<mcf::ast::statement>(_statements[index].get());
-}
-
-const mcf::pointer<mcf::ast::statement> mcf::ast::program::get_statement_at( const size_t index ) const
-{
-	return mcf::pointer<mcf::ast::statement>(_statements[index].get());
 }

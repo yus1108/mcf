@@ -8,10 +8,9 @@
 #define PCH_H
 
 // 여기에 미리 컴파일하려는 헤더 추가
-#include <string>
 #include <new>
 #include <stack>
-#include <unordered_set>
+#include <string>
 
 #include "framework.h"
 
