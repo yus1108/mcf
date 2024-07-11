@@ -19,7 +19,7 @@ mcf::parser::parser(const std::string& input) noexcept
 mcf::ast::program* mcf::parser::parse_program( void ) noexcept
 {
 	ast::program* program = new ast::program();
-	program;
+	delete program;
 	return nullptr;
 }
 
