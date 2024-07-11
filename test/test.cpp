@@ -56,7 +56,7 @@ constexpr const std::string_view gTokenTypeStringArray[] =
     // 예약어
     "keyword",
 };
-static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeStringArray) / sizeof(std::string_view)), u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!\n");
+static_assert(static_cast<size_t>(mcf::token_type::count) == (sizeof(gTokenTypeStringArray) / sizeof(std::string_view)), u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
 
 #include <parser/includes/ast.h>
 #include <parser/includes/parser.h>
@@ -64,12 +64,12 @@ constexpr const std::string_view gStatementTypeStringArrays[] =
 {
 	"variable_declaration",
 };
-static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == (sizeof( gStatementTypeStringArrays ) / sizeof( std::string_view )), u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!\n");
+static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == (sizeof( gStatementTypeStringArrays ) / sizeof( std::string_view )), u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
 
 #if defined(_DEBUG)
-#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); __debugbreak(); return false; } ((void)0)
+#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
 #else
-#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); return false; } ((void)0)
+#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
 #endif
 
 template<typename T>
@@ -161,10 +161,10 @@ namespace lexer_test
 			{
 				const mcf::token lToken = lLexer.read_next_token();
 
-				fatal_assert(lToken.Type == lTestCase[i].ExpectedResultVector[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s\n",
+				fatal_assert(lToken.Type == lTestCase[i].ExpectedResultVector[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
 					i, j, gTokenTypeStringArray[cast_to_index(lTestCase[i].ExpectedResultVector[j].Type)].data(), gTokenTypeStringArray[cast_to_index(lToken.Type)].data());
 
-				fatal_assert(lToken.Literal == lTestCase[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s\n",
+				fatal_assert(lToken.Literal == lTestCase[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
 					i, j, lTestCase[i].ExpectedResultVector[j].Literal.data(), lToken.Literal.data());
 			}
 		}
@@ -179,7 +179,7 @@ namespace parser_test
 	{
 		bool test_variable_declaration_statement( const mcf::pointer<mcf::ast::statement>& statement, const std::string& name )
 		{
-			fatal_assert( statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement가 variable_declaration이 아닙니다. 결과값=%s\n", gStatementTypeStringArrays[cast_to_index( statement->get_statement_type() )].data() );
+			fatal_assert( statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement가 variable_declaration이 아닙니다. 결과값=%s", gStatementTypeStringArrays[cast_to_index( statement->get_statement_type() )].data() );
 
 			mcf::pointer<mcf::ast::variable_declaration_statement> casted_statement = statement.cast_to<mcf::ast::variable_declaration_statement>();
 
@@ -199,12 +199,11 @@ namespace parser_test
 		};
 
 		const std::string input = "let x = 5; let y = 10; let foobar = 838383";
-
+		
 		mcf::parser lParser = mcf::parser(input);
 		std::unique_ptr<mcf::ast::program> lProgram = std::unique_ptr<mcf::ast::program>(lParser.parse_program());
-#if defined(false)
 		fatal_assert(lProgram.get() != nullptr, u8"parse_program() 가 nullptr 을 반환 하면 안됩니다.");
-		fatal_assert(lProgram->get_statement_size() == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu\n", lProgram->get_statement_size());
+		fatal_assert(lProgram->get_statement_size() == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", lProgram->get_statement_size());
 
 		const struct test_case
 		{
@@ -225,7 +224,6 @@ namespace parser_test
 				return false;
 			}
 		}
-#endif
 
 		return true;
 	}
