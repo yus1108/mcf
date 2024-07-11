@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <string>
-
 namespace mcf
 {
 	enum class token_type : unsigned char
