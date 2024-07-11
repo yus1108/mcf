@@ -66,7 +66,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 	switch (_currentByte)
 	{
 	case 0:
-		lToken = { token_type::eof, "" + _currentByte };
+		lToken = { token_type::eof, "\0" };
 		break;
 	case '=':
 		lToken = { token_type::assign, std::string(1, _currentByte) };
