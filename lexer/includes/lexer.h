@@ -6,7 +6,7 @@ namespace mcf
 {
 	enum class token_type : unsigned char
 	{
-		illegal = 0,
+		invalid = 0,
 		eof,
 
 		// 식별자 + 리터럴
@@ -32,7 +32,7 @@ namespace mcf
 
 	struct token final
 	{
-		mcf::token_type	Type = mcf::token_type::illegal;
+		mcf::token_type	Type = mcf::token_type::invalid;
 		std::string		Literal;
 	};
 

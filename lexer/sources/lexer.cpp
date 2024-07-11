@@ -104,7 +104,7 @@ const mcf::token mcf::lexer::read_next_token() noexcept
 		}
 		else
 		{
-			lToken = { token_type::illegal, std::string(1, _currentByte) };
+			lToken = { token_type::invalid, std::string(1, _currentByte) };
 			default_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
