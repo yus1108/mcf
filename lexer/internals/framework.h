@@ -16,30 +16,30 @@
 #endif
 
 // ENUM
-#define ENUM_COUNT(enum) static_cast<size_t>(##enum##::count)
+#define enum_count(enum) static_cast<size_t>(##enum##::count)
 
 template<typename T>
-constexpr const size_t ENUM_INDEX(const T value)
+constexpr const size_t enum_index(const T value)
 {
 	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다");
 	return static_cast<size_t>(value);
 }
 
 template<typename T>
-const T ENUM_AT(const size_t index)
+const T enum_at(const size_t index)
 {
 	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다.");
-	debug_assert(index < ENUM_COUNT(T), u8"index가 해당 enum의 크기보다 큽니다. index=%zu", index);
+	debug_assert(index < enum_count(T), u8"index가 해당 enum의 크기보다 큽니다. index=%zu", index);
 	return static_cast<T>(index);
 }
 
 // ARRAY
 template<typename T>
-constexpr const size_t ARRAY_TYPE_SIZE(T array[])
+constexpr const size_t array_type_size(T array[])
 {
 	array;
 	return sizeof(T);
 }
 
-#define ARRAY_SIZE(array) sizeof(array) / ARRAY_TYPE_SIZE(array);
+#define array_size(array) sizeof(array) / array_type_size(array);
 

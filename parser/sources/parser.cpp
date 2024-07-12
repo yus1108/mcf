@@ -1,15 +1,66 @@
-// parser.cpp : Defines the functions for the static library.
+ï»¿// parser.cpp : Defines the functions for the static library.
 //
 
 #include "pch.h"
 #include "ast.h"
 #include "parser.h"
 
+namespace mcf
+{
+	namespace internal
+	{
+		static std::stack<mcf::parser::error> PARSER_ERRORS;
+
+		constexpr const char* TOKEN_TYPES[] =
+		{
+			"invalid",
+			"eof",
+
+			// ì‹ë³„ì + ë¦¬í„°ëŸ´
+			"identifier",
+			"integer",
+
+			// ì—°ì‚°ì
+			"assign",
+			"plus",
+			"minus",
+			"asterisk",
+			"slash",
+
+			// êµ¬ë¶„ì
+			"semicolon",
+
+			// ì˜ˆì•½ì–´
+			"keyword",
+		};
+		constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
+		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u8"í† í°ì˜ ê°¯ìˆ˜ê°€ ì¼ì¹˜ í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤. ìˆ˜ì •ì´ í•„ìš”í•©ë‹ˆë‹¤!");
+	}
+}
+
+
 mcf::parser::parser(const std::string& input) noexcept
 	: _lexer(input)
 {
 	_currentToken = _lexer.read_next_token();
 	_nextToken = _lexer.read_next_token();
+}
+
+const size_t mcf::parser::get_error_count(void) noexcept
+{
+	return internal::PARSER_ERRORS.size();
+}
+
+const mcf::parser::error mcf::parser::get_last_error(void) noexcept
+{
+	if (internal::PARSER_ERRORS.empty())
+	{
+		return { parser::error::id::no_error, std::string() };
+	}
+
+	const mcf::parser::error error = internal::PARSER_ERRORS.top();
+	internal::PARSER_ERRORS.pop();
+	return error;
 }
 
 void mcf::parser::parse_program(std::vector<const mcf::ast::statement*>& outProgram) noexcept
@@ -22,12 +73,12 @@ void mcf::parser::parse_program(std::vector<const mcf::ast::statement*>& outProg
 			switch (_currentToken.Type)
 			{
 			case mcf::token_type::keyword_int32:
+				static_assert(enum_count(mcf::token_type) - enum_index(mcf::token_type::keyword_int32) == 1, u8"í‚¤ì›Œë“œ íƒ€ì…ì˜ ê°¯ìˆ˜ê°€ ë³€ê²½ ë˜ì—ˆìŠµë‹ˆë‹¤. ë°ì´í„° íƒ€ì…ì´ë¼ë©´ ìˆ˜ì •í•´ì£¼ì„¸ìš”!");
 				lStatement = parse_variable_declaration_statement();
 				break;
 			default:
 				break;
 			}
-			static_assert(ENUM_COUNT(mcf::token_type) - ENUM_INDEX(mcf::token_type::keyword_int32) == 1, u8"Å°¿öµå Å¸ÀÔÀÇ °¹¼ö°¡ º¯°æ µÇ¾ú½À´Ï´Ù. µ¥ÀÌÅÍ Å¸ÀÔÀÌ¶ó¸é ¼öÁ¤ÇØÁÖ¼¼¿ä!");
 		}
 		if (lStatement != nullptr)
 		{
@@ -43,11 +94,10 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 {
 	mcf::ast::data_type_expression lDataType(_currentToken);
 
-	if (_nextToken.Type != token_type::identifier)
+	if (read_next_token_if(token_type::identifier) == false)
 	{
 		return nullptr;
 	}
-	read_next_toekn();
 	mcf::ast::identifier_expression	lName(_currentToken);
 
 	// optional
@@ -55,7 +105,7 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 	if (_nextToken.Type == token_type::assign)
 	{
 		read_next_toekn();
-		// TODO: expression ½Ä ±¸Çö
+		// TODO: expression ì‹ êµ¬í˜„
 	}
 
 	while (_currentToken.Type != token_type::semicolon)
@@ -70,4 +120,12 @@ inline void mcf::parser::read_next_toekn(void) noexcept
 {
 	_currentToken = _nextToken;
 	_nextToken = _lexer.read_next_token();
+}
+
+inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType) noexcept
+{
+	parsing_fail_assert(_nextToken.Type == tokenType, error::id::unexpected_next_token, u8"ë‹¤ìŒ í† í°ì€ %sì—¬ì•¼ë§Œ í•©ë‹ˆë‹¤. ì‹¤ì œ ê°’ìœ¼ë¡œ %së¥¼ ë°›ì•˜ìŠµë‹ˆë‹¤.", 
+		internal::TOKEN_TYPES[enum_index(tokenType)], internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+	read_next_toekn();
+	return true;
 }

@@ -10,6 +10,7 @@
 // add headers that you want to pre-compile here
 #include <memory>
 #include <new>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <vector>
