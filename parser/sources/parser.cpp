@@ -63,31 +63,33 @@ const mcf::parser::error mcf::parser::get_last_error(void) noexcept
 	return error;
 }
 
-void mcf::parser::parse_program(std::vector<const mcf::ast::statement*>& outProgram) noexcept
+void mcf::parser::parse_program(mcf::ast::program& outProgram) noexcept
 {
+	std::vector<const mcf::ast::statement*> unsafeProgram;
 	while (_currentToken.Type != mcf::token_type::eof)
 	{
-		const mcf::ast::statement* lStatement = nullptr;
+		const mcf::ast::statement* statement = nullptr;
 		// parse statement
 		{
 			switch (_currentToken.Type)
 			{
 			case mcf::token_type::keyword_int32:
 				static_assert(enum_count(mcf::token_type) - enum_index(mcf::token_type::keyword_int32) == 1, u8"키워드 타입의 갯수가 변경 되었습니다. 데이터 타입이라면 수정해주세요!");
-				lStatement = parse_variable_declaration_statement();
+				statement = parse_variable_declaration_statement();
 				break;
 			default:
 				break;
 			}
 		}
-		if (lStatement != nullptr)
+		if (statement != nullptr)
 		{
-			outProgram.emplace_back(lStatement);
+			unsafeProgram.emplace_back(statement);
 		}
 
 		// read next token
 		read_next_toekn();
 	}
+	outProgram = mcf::ast::program(unsafeProgram);
 }
 
 const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_declaration_statement() noexcept

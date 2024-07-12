@@ -106,6 +106,7 @@ static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u
 constexpr const std::string_view STATEMENT_TYPES[] =
 {
 	"variable_declaration",
+	"expression",
 };
 constexpr const size_t STATEMENT_TYPES_SIZE = array_size(STATEMENT_TYPES);
 static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
@@ -248,14 +249,9 @@ namespace parser_test
 		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 		
 		mcf::parser parser = mcf::parser(input);
-		std::vector<const mcf::ast::statement*> unsafeProgram;
-		parser.parse_program(unsafeProgram);
-		const size_t statementCount = unsafeProgram.size();
-		std::unique_ptr<std::unique_ptr<const mcf::ast::statement>[]> program = std::make_unique<std::unique_ptr<const mcf::ast::statement>[]>(statementCount);
-		for (size_t i = 0; i < statementCount; i++)
-		{
-			program[i] = std::unique_ptr<const mcf::ast::statement>(unsafeProgram[i]);
-		}
+		mcf::ast::program program;
+		parser.parse_program(program);
+		const size_t statementCount = program.get_statement_count();
 		
 		internal::check_parser_errors(parser);
 		fatal_assert(statementCount == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", statementCount);
@@ -274,12 +270,29 @@ namespace parser_test
 
 		for (size_t i = 0; i < testCaseCount; i++)
 		{
-			const mcf::ast::statement* statement = program[i].get();
+			const mcf::ast::statement* statement = program.get_statement_at(i);
 			if (internal::test_variable_declaration_statement(statement, testCases[i].ExpectedDataType, testCases[i].ExpectedIdentifier) == false)
 			{
 				return false;
 			}
 		}
+		return true;
+	}
+
+	bool test_convert_to_string(void)
+	{
+		mcf::ast::data_type_expression dataType({ mcf::token_type::integer_32bit, "int32" });
+		mcf::ast::identifier_expression name({ mcf::token_type::identifier, "myVar" });
+		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
+		mcf::ast::variable_declaration_statement *variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_declaration_statement(dataType, name, rightExpression);
+		std::vector<const mcf::ast::statement*> statements =
+		{
+			variableDeclarationStatement,
+		};
+
+		mcf::ast::program program(statements);
+		fatal_assert(program.convert_to_string() == "int32 myVar = anotherVar;\n", u8"program의 string 변환이 틀렸습니다. 실제값=`%s`", program.convert_to_string().c_str());
+		
 		return true;
 	}
 };
@@ -330,9 +343,16 @@ int main(const size_t argc, const char* const argv[])
 
 	if ( parser_test::test_variable_declaration_statements() == false )
 	{
-		std::cout << "Test `test_next_token()` Failed" << std::endl;
+		std::cout << "Test `test_variable_declaration_statements()` Failed" << std::endl;
 		return 1;
 	}
+
+	if (parser_test::test_convert_to_string() == false)
+	{
+		std::cout << "Test `test_convert_to_string()` Failed" << std::endl;
+		return 1;
+	}
+
     std::cout << "All Test Passed" << std::endl;
 	return 0;
 }

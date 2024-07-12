@@ -30,7 +30,7 @@ namespace mcf
 		static const size_t				get_error_count(void) noexcept;
 		static const mcf::parser::error get_last_error(void) noexcept;
 
-		void parse_program(std::vector<const mcf::ast::statement*>& outProgram) noexcept;
+		void parse_program(mcf::ast::program& outProgram) noexcept;
 
 	private:
 		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement() noexcept;
