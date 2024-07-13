@@ -16,13 +16,13 @@ namespace mcf
 				"int32",
 			};
 			constexpr const size_t KEYWORDS_SIZE = array_size(KEYWORDS);
-			static_assert(enum_count(mcf::token_type) - enum_index(mcf::token_type::keyword_int32) == KEYWORDS_SIZE, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
+			static_assert(enum_count<mcf::token_type>() - enum_index(mcf::token_type::keyword_int32) == KEYWORDS_SIZE, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
 
 			for (size_t i = 0; i < KEYWORDS_SIZE; i++)
 			{
 				if (tokenLiteral.compare(KEYWORDS[i]) == 0)
 				{
-					return enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_int32) + i);
+					return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_int32) + i);
 				}
 			}
 			return mcf::token_type::identifier;

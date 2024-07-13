@@ -34,7 +34,7 @@ namespace mcf
 			"keyword",
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
-		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
+		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
 	}
 }
 
@@ -68,19 +68,7 @@ void mcf::parser::parse_program(mcf::ast::program& outProgram) noexcept
 	std::vector<const mcf::ast::statement*> unsafeProgram;
 	while (_currentToken.Type != mcf::token_type::eof)
 	{
-		const mcf::ast::statement* statement = nullptr;
-		// parse statement
-		{
-			switch (_currentToken.Type)
-			{
-			case mcf::token_type::keyword_int32:
-				static_assert(enum_count(mcf::token_type) - enum_index(mcf::token_type::keyword_int32) == 1, u8"키워드 타입의 갯수가 변경 되었습니다. 데이터 타입이라면 수정해주세요!");
-				statement = parse_variable_declaration_statement();
-				break;
-			default:
-				break;
-			}
-		}
+		const mcf::ast::statement* statement = parse_statement();
 		if (statement != nullptr)
 		{
 			unsafeProgram.emplace_back(statement);
@@ -92,30 +80,112 @@ void mcf::parser::parse_program(mcf::ast::program& outProgram) noexcept
 	outProgram = mcf::ast::program(unsafeProgram);
 }
 
-const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_declaration_statement() noexcept
+inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 {
-	mcf::ast::data_type_expression lDataType(_currentToken);
+	std::unique_ptr<const ast::statement> statement;
+	constexpr const size_t TOKEN_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (_currentToken.Type)
+	{
+	// 데이터 타입 키워드인 경우
+	case token_type::keyword_int32: __COUNTER__;
+		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
+		break;
+
+	case token_type::eof: __COUNTER__;
+	case token_type::semicolon: __COUNTER__;
+		break;
+
+	case token_type::invalid: __COUNTER__;
+	case token_type::identifier: __COUNTER__;
+	case token_type::integer_32bit: __COUNTER__;
+	case token_type::assign: __COUNTER__;
+	case token_type::plus: __COUNTER__;
+	case token_type::minus: __COUNTER__;
+	case token_type::asterisk: __COUNTER__;
+	case token_type::slash: __COUNTER__;
+	default:
+		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
+		break;
+	}
+	constexpr const size_t TOKEN_TYPE_COUNT = __COUNTER__ - TOKEN_TYPE_COUNT_BEGIN - 1;
+	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPE_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+	return statement.release();
+}
+
+const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_declaration_statement(void) noexcept
+{
+	mcf::ast::data_type_expression dataType(_currentToken);
 
 	if (read_next_token_if(token_type::identifier) == false)
 	{
 		return nullptr;
 	}
-	mcf::ast::identifier_expression	lName(_currentToken);
+	mcf::ast::identifier_expression	name(_currentToken);
 
 	// optional
-	mcf::ast::expression* lRightExpression = nullptr;
+	std::unique_ptr<const mcf::ast::expression> rightExpression;
 	if (_nextToken.Type == token_type::assign)
 	{
 		read_next_toekn();
+		read_next_toekn();
 		// TODO: expression 식 구현
+		rightExpression = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::expression_precedence::lowest));
+		if (rightExpression == nullptr)
+		{
+			return nullptr;
+		}
 	}
 
 	while (_currentToken.Type != token_type::semicolon)
 	{
+		if (_currentToken.Type == token_type::eof || _currentToken.Type == token_type::invalid)
+		{
+			parsing_fail_message(error::id::not_registered_prefix_token, 
+				u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. _currentToken.Type=%s(%zu) _nextToken.Type=%s(%zu)", 
+				internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type),
+				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
+		}
 		read_next_toekn();
 	}
 
-	return new(std::nothrow) mcf::ast::variable_declaration_statement(lDataType, lName, lRightExpression);
+	return new(std::nothrow) mcf::ast::variable_declaration_statement(dataType, name, rightExpression.release());
+}
+
+const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::expression_precedence precedence) noexcept
+{
+	precedence;
+	std::unique_ptr<ast::expression> expression;
+	constexpr const size_t PREFIX_COUNT_BEGIN = __COUNTER__;
+	switch (_currentToken.Type)
+	{
+	case token_type::identifier: __COUNTER__;
+		expression = std::make_unique<ast::identifier_expression>(_currentToken);
+		break;
+	
+	case token_type::integer_32bit: __COUNTER__;
+		expression = std::make_unique<ast::literal_expession>(_currentToken);
+		break;
+
+	case token_type::plus: __COUNTER__;
+	case token_type::minus: __COUNTER__;
+		//expression = parse_prefix_expression();
+		break;
+
+	case token_type::invalid: __COUNTER__;
+	case token_type::eof: __COUNTER__;
+	case token_type::assign: __COUNTER__;
+	case token_type::asterisk: __COUNTER__;
+	case token_type::slash: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
+	case token_type::semicolon: __COUNTER__;
+	default:
+		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
+		break;
+	}
+	constexpr const size_t PREFIX_COUNT = __COUNTER__ - PREFIX_COUNT_BEGIN - 1;
+	static_assert(static_cast<size_t>(mcf::token_type::count) == PREFIX_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+
+	return expression.release();
 }
 
 inline void mcf::parser::read_next_toekn(void) noexcept

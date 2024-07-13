@@ -1,7 +1,64 @@
 ﻿#pragma once
 
+// ENUM
 namespace mcf
 {
+	template<typename T>
+	constexpr const size_t enum_count(void)
+	{
+		static_assert(std::is_enum_v<T> == true, u8"only enum type is required for this function");
+		return static_cast<size_t>(T::count);
+	}
+
+	template<typename T>
+	constexpr const size_t enum_count(const T value)
+	{
+		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
+		return static_cast<size_t>(T::count);
+	}
+
+	template<typename T>
+	constexpr const size_t enum_index(const T value)
+	{
+		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
+		return value < T::count ? static_cast<size_t>(value) : static_cast<size_t>(T::invalid);
+	}
+
+	template<typename T>
+	const T enum_at(const size_t index)
+	{
+		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
+		return index < mcf::enum_count<T>() ? static_cast<T>(index) : T::invalid;
+	}
+}
+
+
+namespace mcf
+{
+	enum class prefix_token_type : unsigned char
+	{
+		invalid = 0,
+
+		plus,
+		minus,
+
+		// 이 밑으로는 수정하면 안됩니다.
+		count
+	};
+
+	enum class infix_token_type : unsigned char
+	{
+		invalid = 0,
+
+		plus,
+		minus,
+		asterisk,
+		slash,
+
+		// 이 밑으로는 수정하면 안됩니다.
+		count
+	};
+
 	enum class token_type : unsigned char
 	{
 		invalid = 0,
@@ -21,9 +78,8 @@ namespace mcf
 		// 구분자
 		semicolon,
 
-		// 예약어 구간 시작 (예약어 추가시 예약 구간 종료 바로 위에 추가해주세요)
+		// 예약어
 		keyword_int32,
-		// 예약어 구간 종료
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count

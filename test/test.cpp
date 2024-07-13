@@ -47,23 +47,7 @@ inline void detect_memory_leak(long line = -1) { line; }
 #define error_message_end abort();
 #endif
 
-// ENUM
-#define enum_count(enum) static_cast<size_t>(##enum##::count)
-
-template<typename T>
-constexpr const size_t enum_index(const T value)
-{
-	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다");
-	return static_cast<size_t>(value);
-}
-
-template<typename T>
-const T enum_at(const size_t index)
-{
-	static_assert(std::is_enum_v<T> == true, u8"해당 함수는 enum value만 사용 가능합니다.");
-	debug_assert(index < enum_count(T), u8"index가 해당 enum의 크기보다 큽니다. index=%zu", index);
-	return static_cast<T>(index);
-}
+#define unused(variable) variable
 
 // ARRAY
 template<typename T>
@@ -105,11 +89,23 @@ static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u
 #include <parser/includes/parser.h>
 constexpr const std::string_view STATEMENT_TYPES[] =
 {
+	"invalid",
+
 	"variable_declaration",
-	"expression",
 };
 constexpr const size_t STATEMENT_TYPES_SIZE = array_size(STATEMENT_TYPES);
-static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, u8"statement_type의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
+static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
+
+constexpr const std::string_view EXPRESSION_TYPES[] =
+{
+	"invalid",
+
+	"literal",
+	"identifier",
+	"data_type",
+};
+constexpr const size_t EXPRESSION_TYPES_SIZE = array_size(EXPRESSION_TYPES);
+static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
 
 namespace lexer_test
 {
@@ -231,8 +227,9 @@ namespace parser_test
 
 		bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType,  const std::string& expectedName)
 		{
-			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement가 variable_declaration이 아닙니다. 결과값=%s", 
-				STATEMENT_TYPES[enum_index(statement->get_statement_type())].data());
+			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, 
+				u8"statement가 variable_declaration이 아닙니다. 결과값=%s", 
+				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
 
 			const mcf::ast::variable_declaration_statement* variableDeclaration = static_cast<const mcf::ast::variable_declaration_statement*>(statement);
 			fatal_assert(variableDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s", TOKEN_TYPES[enum_index(expectedDataType)].data(), TOKEN_TYPES[enum_index(variableDeclaration->get_type())].data());
@@ -243,8 +240,11 @@ namespace parser_test
 		}
 	}
 
-	bool test_variable_declaration_statements( void )
+	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT_BEGIN = __COUNTER__;
+	bool test_variable_declaration_statements(const size_t function_number = __COUNTER__)
 	{
+		unused(function_number);
+
 		// TODO: #11 initialization 도 구현 필요
 		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 		
@@ -279,8 +279,10 @@ namespace parser_test
 		return true;
 	}
 
-	bool test_convert_to_string(void)
+	bool test_convert_to_string(const size_t function_number = __COUNTER__)
 	{
+		unused(function_number);
+
 		mcf::ast::data_type_expression dataType({ mcf::token_type::integer_32bit, "int32" });
 		mcf::ast::identifier_expression name({ mcf::token_type::identifier, "myVar" });
 		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
@@ -295,6 +297,57 @@ namespace parser_test
 		
 		return true;
 	}
+
+	bool test_identifier_expression(const size_t function_number = __COUNTER__)
+	{
+		unused(function_number);
+
+		const std::string input = "int32 foo = bar;";
+		mcf::parser parser(input);
+		mcf::ast::program program;
+		parser.parse_program(program);
+
+		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
+		const mcf::ast::statement* statement = program.get_statement_at(0);
+
+		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s", 
+			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+
+		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"expression의 expression type이 identifier가 아닙니다. identifier=%s",
+			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+
+		const mcf::ast::identifier_expression* identifier = static_cast<const mcf::ast::identifier_expression*>(initExpression);
+		fatal_assert(identifier->get_token().Literal == "bar", u8"identifier의 literal값이 `bar`가 아닙니다. identifier.literal=`%s`", identifier->get_token().Literal.c_str());
+
+		return true;
+	}
+
+	bool test_literal_expression(const size_t function_number = __COUNTER__)
+	{
+		unused(function_number);
+
+		const std::string input = "int32 foo = 5;";
+		mcf::parser parser(input);
+		mcf::ast::program program;
+		parser.parse_program(program);
+
+		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
+		const mcf::ast::statement* statement = program.get_statement_at(0);
+
+		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
+			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+
+		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::literal, u8"expression의 expression type이 identifier가 아닙니다. identifier=%s",
+			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+
+		const mcf::ast::literal_expession* literal = static_cast<const mcf::ast::literal_expession*>(initExpression);
+		fatal_assert(literal->get_token().Literal == "5", u8"identifier의 literal값이 `5`가 아닙니다. identifier.literal=`%s`", literal->get_token().Literal.c_str());
+
+		return true;
+	}
+	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT = PARSER_TEST_FUNCTIONS_COUNT_BEGIN - __COUNTER__ - 1;
 };
 
 int main(const size_t argc, const char* const argv[])
@@ -334,24 +387,45 @@ int main(const size_t argc, const char* const argv[])
 		std::cout << std::endl;
     }
 
-
-    if (lexer_test::test_next_token() == false)
-    {
-        std::cout << "Test `test_next_token()` Failed" << std::endl;
-        return 1;
-    }
-
-	if ( parser_test::test_variable_declaration_statements() == false )
+	// lexer test
 	{
-		std::cout << "Test `test_variable_declaration_statements()` Failed" << std::endl;
-		return 1;
+		if (lexer_test::test_next_token() == false)
+		{
+			std::cout << "Test `test_next_token()` Failed" << std::endl;
+			return 1;
+		}
 	}
 
-	if (parser_test::test_convert_to_string() == false)
+	// parser test
 	{
-		std::cout << "Test `test_convert_to_string()` Failed" << std::endl;
-		return 1;
+		constexpr const size_t PARSER_TEST_FUNCTIONS_CALLED_COUNT_BEGIN = __COUNTER__;
+		if (parser_test::test_variable_declaration_statements(__COUNTER__) == false)
+		{
+			std::cout << "Test `test_variable_declaration_statements()` Failed" << std::endl;
+			return 1;
+		}
+
+		if (parser_test::test_convert_to_string(__COUNTER__) == false)
+		{
+			std::cout << "Test `test_convert_to_string()` Failed" << std::endl;
+			return 1;
+		}
+
+		if (parser_test::test_identifier_expression(__COUNTER__) == false)
+		{
+			std::cout << "Test `test_convert_to_string()` Failed" << std::endl;
+			return 1;
+		}
+		
+		if (parser_test::test_literal_expression(__COUNTER__) == false)
+		{
+			std::cout << "Test `test_convert_to_string()` Failed" << std::endl;
+			return 1;
+		}
+		constexpr const size_t PARSER_TEST_FUNCTIONS_CALLED_COUNT = PARSER_TEST_FUNCTIONS_CALLED_COUNT_BEGIN - __COUNTER__ - 1;
+		static_assert(parser_test::PARSER_TEST_FUNCTIONS_COUNT == PARSER_TEST_FUNCTIONS_CALLED_COUNT, "must add newly added parser test function");
 	}
+	
 
     std::cout << "All Test Passed" << std::endl;
 	return 0;

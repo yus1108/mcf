@@ -4,10 +4,10 @@
 mcf::ast::variable_declaration_statement::variable_declaration_statement(	
 	const mcf::ast::data_type_expression& dataType, 
 	const mcf::ast::identifier_expression& name, 
-	const mcf::ast::expression* rightExpression) noexcept
+	const mcf::ast::expression* initExpression) noexcept
 	: _dataType(dataType)
 	, _name(name)
-	, _rightExpression(rightExpression)
+	, _initExpression(initExpression)
 {
 }
 
@@ -17,28 +17,10 @@ const std::string mcf::ast::variable_declaration_statement::convert_to_string(vo
 
 	buffer += _dataType.convert_to_string();
 	buffer += " " + _name.convert_to_string();
-	if (_rightExpression.get() != nullptr)
+	if (_initExpression.get() != nullptr)
 	{
-		buffer += " = " + _rightExpression->convert_to_string();
+		buffer += " = " + _initExpression->convert_to_string();
 	}
-	buffer += ";";
-
-	return buffer;
-}
-
-mcf::ast::expression_statement::expression_statement(mcf::token token, const mcf::ast::expression* expression) noexcept
-	: _token(token)
-	, _expression(expression)
-{
-}
-
-const std::string mcf::ast::expression_statement::convert_to_string(void) const noexcept
-{
-	// TODO: #14 assert for _expression == nullptr
-
-	std::string buffer;
-
-	buffer += _expression->convert_to_string();
 	buffer += ";";
 
 	return buffer;

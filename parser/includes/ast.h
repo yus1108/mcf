@@ -6,6 +6,8 @@ namespace mcf
 	{
 		enum class node_type : unsigned char
 		{
+			invalid = 0,
+
 			expression,
 			statement,
 
@@ -23,8 +25,9 @@ namespace mcf
 
 		enum class statement_type : unsigned char
 		{
+			invalid = 0,
+
 			variable_declaration,
-			expression,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -39,6 +42,8 @@ namespace mcf
 
 		enum class expression_type : unsigned char
 		{
+			invalid = 0,
+
 			literal,
 			identifier,
 			data_type,
@@ -77,14 +82,15 @@ namespace mcf
 		{
 		public: 
 			explicit literal_expession(void) noexcept = default;
+			explicit literal_expession(const mcf::token& token) noexcept : _token(token) {}
+
+			inline const mcf::token& get_token(void) const noexcept { return _token; }
 
 			inline virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::literal; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
 		private:
-			// TODO: 다른 literal 토큰 추가시 적용되게 수정
 			const mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::integer_32bit, literal }
-			const std::string	_value;
 		};
 
 		class identifier_expression final : public expression
@@ -95,7 +101,7 @@ namespace mcf
 
 			inline const mcf::token&  get_token( void ) const noexcept { return _token; }
 
-			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::literal; }
+			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::identifier; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
 		private:
@@ -110,25 +116,11 @@ namespace mcf
 
 			inline const mcf::token_type get_type(void) const noexcept { return _token.Type; }
 
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::literal; }
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::data_type; }
 			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
 		private:
 			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
-		};
-
-		class expression_statement final : public statement
-		{
-		public:
-			explicit expression_statement(void) noexcept = default;
-			explicit expression_statement(mcf::token token, const mcf::ast::expression* expression) noexcept;
-
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::expression; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			const mcf::token									_token = { token_type::invalid, std::string() }; // 표현식의 첫 번째 토큰
-			const std::unique_ptr<const mcf::ast::expression>	_expression;;
 		};
 
 		class variable_declaration_statement final : public statement
@@ -137,10 +129,11 @@ namespace mcf
 			explicit variable_declaration_statement(void) noexcept = default;
 			explicit variable_declaration_statement(const mcf::ast::data_type_expression& dataType,
 													const mcf::ast::identifier_expression& name,
-													const mcf::ast::expression* rightExpression) noexcept;
+													const mcf::ast::expression* initExpression) noexcept;
 
-			inline const mcf::token_type	get_type(void) const noexcept { return _dataType.get_type(); }
-			inline const std::string&		get_name(void) const noexcept { return _name.get_token().Literal; }
+			inline const mcf::token_type		get_type(void) const noexcept { return _dataType.get_type(); }
+			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
+			inline const mcf::ast::expression*	get_init_expression(void) const noexcept { return _initExpression.get(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_declaration; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
@@ -148,7 +141,7 @@ namespace mcf
 		private:
 			const mcf::ast::data_type_expression				_dataType; // { keyword, int32 }
 			const mcf::ast::identifier_expression				_name;
-			const std::unique_ptr<const mcf::ast::expression>	_rightExpression;
+			const std::unique_ptr<const mcf::ast::expression>	_initExpression;
 		};
 	}
 }
