@@ -90,6 +90,7 @@ namespace mcf
 		mcf::token_type	Type = mcf::token_type::invalid;
 		std::string		Literal;
 	};
+	inline bool operator==(const mcf::token& lhs, const mcf::token& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
 
 	// 주의: thread-safe 하지 않은 클래스입니다.
 	class lexer final {

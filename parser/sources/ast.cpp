@@ -1,6 +1,11 @@
 #include "pch.h"
 #include "ast.h"
 
+const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
+{
+	return "(" + _prefix.Literal + _targetExpression->convert_to_string() + ")";
+}
+
 mcf::ast::variable_declaration_statement::variable_declaration_statement(	
 	const mcf::ast::data_type_expression& dataType, 
 	const mcf::ast::identifier_expression& name, 

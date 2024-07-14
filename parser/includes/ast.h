@@ -47,6 +47,7 @@ namespace mcf
 			literal,
 			identifier,
 			data_type,
+			prefix,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -121,6 +122,24 @@ namespace mcf
 
 		private:
 			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
+		};
+
+		class prefix_expression final : public expression
+		{
+		public:
+			explicit prefix_expression(void) noexcept = default;
+			explicit prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept 
+				: _prefix(prefix), _targetExpression(targetExpression) {}
+
+			inline const mcf::token&			get_prefix_token(void) const noexcept { return _prefix; }
+			inline const mcf::ast::expression*	get_target_expression(void) const noexcept { return _targetExpression.get(); }
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::prefix; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			const mcf::token									_prefix = { token_type::invalid, std::string() }; // { prefix_operator, literal }
+			const std::unique_ptr<const mcf::ast::expression>	_targetExpression; // <expression>
 		};
 
 		class variable_declaration_statement final : public statement

@@ -95,7 +95,6 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::semicolon: __COUNTER__;
 		break;
 
-	case token_type::invalid: __COUNTER__;
 	case token_type::identifier: __COUNTER__;
 	case token_type::integer_32bit: __COUNTER__;
 	case token_type::assign: __COUNTER__;
@@ -107,7 +106,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
 	}
-	constexpr const size_t TOKEN_TYPE_COUNT = __COUNTER__ - TOKEN_TYPE_COUNT_BEGIN - 1;
+	constexpr const size_t TOKEN_TYPE_COUNT = __COUNTER__ - TOKEN_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPE_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
 	return statement.release();
 }
@@ -154,7 +153,7 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::expression_precedence precedence) noexcept
 {
 	precedence;
-	std::unique_ptr<ast::expression> expression;
+	std::unique_ptr<const ast::expression> expression;
 	constexpr const size_t PREFIX_COUNT_BEGIN = __COUNTER__;
 	switch (_currentToken.Type)
 	{
@@ -168,10 +167,9 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::exp
 
 	case token_type::plus: __COUNTER__;
 	case token_type::minus: __COUNTER__;
-		//expression = parse_prefix_expression();
+		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
-	case token_type::invalid: __COUNTER__;
 	case token_type::eof: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::asterisk: __COUNTER__;
@@ -182,10 +180,25 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::exp
 		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
 	}
-	constexpr const size_t PREFIX_COUNT = __COUNTER__ - PREFIX_COUNT_BEGIN - 1;
+	constexpr const size_t PREFIX_COUNT = __COUNTER__ - PREFIX_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::token_type::count) == PREFIX_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
 
 	return expression.release();
+}
+
+const mcf::ast::prefix_expression* mcf::parser::parse_prefix_expression(void) noexcept
+{
+	const token prefixToken = _currentToken;
+
+	read_next_toekn();
+
+	const ast::expression* targetExpression = parse_expression(parser::expression_precedence::prefix);
+	if (targetExpression == nullptr)
+	{
+		return nullptr;
+	}
+
+	return new(std::nothrow) ast::prefix_expression(prefixToken, targetExpression);
 }
 
 inline void mcf::parser::read_next_toekn(void) noexcept

@@ -11,13 +11,16 @@ namespace mcf
 	public:
 		enum class expression_precedence : unsigned char
 		{
-			lowest = 0,
-			equals,			// ==
-			lessgreater,	// > | <
+			invalid = 0,
+
+			lowest,
+			equals,			// == | !=	TODO: #16 구현 필요
+			lessgreater,	// > | <	TODO: #16 구현 필요
 			sum,			// + | -
 			product,		// * | /
 			prefix,			// -foo | !boo
-			call,			// func(x)
+			call,			// func(x)	TODO: #16 구현 필요
+
 			// 이 밑으로는 수정하면 안됩니다.
 			count
 		};
@@ -52,6 +55,7 @@ namespace mcf
 		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement(void) noexcept;
 
 		const mcf::ast::expression* parse_expression(const mcf::parser::expression_precedence precedence) noexcept;
+		const mcf::ast::prefix_expression* parse_prefix_expression(void) noexcept;
 
 		void		read_next_toekn(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
