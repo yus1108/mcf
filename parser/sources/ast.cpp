@@ -46,14 +46,18 @@ const mcf::ast::statement* mcf::ast::program::get_statement_at(const size_t inde
 	return _statements[index].get();
 }
 
-const std::string mcf::ast::program::convert_to_string(void) const noexcept
+const std::string mcf::ast::program::convert_to_string(const bool isAddNewLineForEachStatement /*= true*/) const noexcept
 {
 	std::string buffer;
 
 	for (size_t i = 0; i < _count; i++)
 	{
 		// TODO: #14 assert for _statements[i] == nullptr
-		buffer += _statements[i]->convert_to_string() + "\n";
+		buffer += _statements[i]->convert_to_string();
+		if (isAddNewLineForEachStatement)
+		{
+			buffer += "\n";
+		}
 	}
 
 	return buffer;

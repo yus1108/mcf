@@ -275,8 +275,8 @@ namespace parser_test
 		}
 	}
 
-	constexpr const size_t FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN = __COUNTER__;
-	bool test_variable_declaration_statements(const size_t function_number = FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN)
+	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT_BEGIN = __COUNTER__;
+	bool test_variable_declaration_statements(const size_t function_number = PARSER_TEST_FUNCTIONS_COUNT_BEGIN)
 	{
 		unused(function_number);
 
@@ -381,9 +381,79 @@ namespace parser_test
 
 		return true;
 	}
-	constexpr const size_t FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN_END = __COUNTER__ - FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN;
+	bool test_operator_precedence(const size_t function_number = __COUNTER__)
+	{
+		unused(function_number);
 
-	bool test_prefix_expressions(const size_t function_number = FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN_END + 1)
+		const struct test_case
+		{
+			const std::string	Input;
+			const std::string	Expected;
+		} testCases[] =
+		{
+			{
+				"int32 test = -a * b;",
+				"int32 test = ((-a) * b);",
+			},
+			/*{
+				"int32 test = !-a;",
+				"int32 test = (!(-a));",
+			},*/
+			{
+				"int32 test = a + b - c;",
+				"int32 test = ((a + b) - c);",
+			},
+			{
+				"int32 test = a * b * c;",
+				"int32 test = ((a * b) * c);",
+			},
+			{
+				"int32 test = a * b / c;",
+				"int32 test = ((a * b) / c);",
+			},
+			{
+				"int32 test = a + b / c;",
+				"int32 test = (a + (b / c));",
+			},
+			{
+				"int32 test = a + b * c + d / e - f;",
+				"int32 test = (((a + (b * c)) + (d / e)) - f);",
+			},
+			{
+				"int32 test = 3 + 4; int32 test2 = -5 * 5;",
+				"int32 test = (3 + 4);int32 test2 = ((-5) * 5);",
+			},
+			/*{
+				"int32 test = 5 > 4 == 3 < 4;",
+				"int32 test = ((5 > 4) == (3 < 4));",
+			},
+			{
+				"int32 test = 5 < 4 != 3 > 4;",
+				"int32 test = ((5 < 4) != (3 > 4));",
+			},
+			{
+				"int32 test = 3 + 4 * 5 == 3 * 1 + 4 * 5;",
+				"int32 test = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
+			},*/
+		};
+		constexpr const size_t testCaseCount = array_size(testCases);
+
+		for (size_t i = 0; i < testCaseCount; i++)
+		{
+			mcf::parser parser(testCases[i].Input);
+			mcf::ast::program program;
+			parser.parse_program(program);
+			internal::check_parser_errors(parser);
+
+			const std::string actual = program.convert_to_string(false);
+			fatal_assert(actual == testCases[i].Expected, "expected=`%s`, actual=`%s`", testCases[i].Expected.c_str(), actual.c_str());
+		}
+
+		return true;
+	}
+	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT_END = __COUNTER__ - PARSER_TEST_FUNCTIONS_COUNT_BEGIN;
+
+	bool test_prefix_expressions(const size_t function_number = PARSER_TEST_FUNCTIONS_COUNT_BEGIN + 1)
 	{
 		unused(function_number);
 
@@ -461,7 +531,7 @@ namespace parser_test
 
 		return true;
 	}
-	bool test_infix_expressions(const size_t function_number = FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN_END + 2)
+	bool test_infix_expressions(const size_t function_number = PARSER_TEST_FUNCTIONS_COUNT_BEGIN + 2)
 	{
 		unused(function_number);
 
@@ -561,7 +631,7 @@ namespace parser_test
 		return true;
 	}
 
-	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT = FIRST_PARSER_TEST_FUNCTIONS_COUNT_BEGIN_END + 2;
+	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT = PARSER_TEST_FUNCTIONS_COUNT_END + 2;
 };
 
 int main(const size_t argc, const char* const argv[])
@@ -644,6 +714,12 @@ int main(const size_t argc, const char* const argv[])
 		}
 
 		if (parser_test::test_infix_expressions(__COUNTER__) == false)
+		{
+			std::cout << "Test `test_infix_expressions()` Failed" << std::endl;
+			return 1;
+		}
+
+		if (parser_test::test_operator_precedence(__COUNTER__) == false)
 		{
 			std::cout << "Test `test_infix_expressions()` Failed" << std::endl;
 			return 1;

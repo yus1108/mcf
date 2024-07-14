@@ -70,7 +70,7 @@ namespace mcf
 			inline	const size_t				get_statement_count(void) const noexcept { return _count; }
 					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
 
-			const std::string convert_to_string(void) const noexcept;
+			const std::string convert_to_string(const bool isAddNewLineForEachStatement = true) const noexcept;
 
 		private:
 			using unique_statement = std::unique_ptr <const mcf::ast::statement>;
