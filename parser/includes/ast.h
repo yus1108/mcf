@@ -28,6 +28,7 @@ namespace mcf
 			invalid = 0,
 
 			variable_declaration,
+			variable_assignment,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -183,9 +184,26 @@ namespace mcf
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			const mcf::ast::data_type_expression				_dataType; // { keyword, int32 }
+			const mcf::ast::data_type_expression				_dataType;
 			const mcf::ast::identifier_expression				_name;
 			const std::unique_ptr<const mcf::ast::expression>	_initExpression;
+		};
+
+		class variable_assignment_statement final : public statement
+		{
+		public:
+			explicit variable_assignment_statement(void) noexcept = default;
+			explicit variable_assignment_statement(const mcf::ast::identifier_expression& name, const mcf::ast::expression* assignExpression) noexcept;
+
+			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
+			inline const mcf::ast::expression*	get_assign_expression(void) const noexcept { return _assignExpression.get(); }
+
+			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assignment; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			const mcf::ast::identifier_expression				_name;
+			const std::unique_ptr<const mcf::ast::expression>	_assignExpression;
 		};
 	}
 }

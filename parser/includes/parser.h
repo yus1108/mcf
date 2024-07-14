@@ -52,12 +52,13 @@ namespace mcf
 		void parse_program(mcf::ast::program& outProgram) noexcept;
 
 	private:
-		const mcf::ast::statement* parse_statement(void) noexcept;
+		const mcf::ast::statement*						parse_statement(void) noexcept;
 		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement(void) noexcept;
+		const mcf::ast::variable_assignment_statement*	parse_variable_assignment_statement(void) noexcept;
 
-		const mcf::ast::expression* parse_expression(const mcf::parser::precedence precedence) noexcept;
-		const mcf::ast::prefix_expression* parse_prefix_expression(void) noexcept;
-		const mcf::ast::infix_expression* parse_infix_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::expression*			parse_expression(const mcf::parser::precedence precedence) noexcept;
+		const mcf::ast::prefix_expression*	parse_prefix_expression(void) noexcept;
+		const mcf::ast::infix_expression*	parse_infix_expression(const mcf::ast::expression* left) noexcept;
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;

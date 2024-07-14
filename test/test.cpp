@@ -103,6 +103,7 @@ constexpr const std::string_view STATEMENT_TYPES[] =
 	"invalid",
 
 	"variable_declaration",
+	"variable_assignment",
 };
 constexpr const size_t STATEMENT_TYPES_SIZE = array_size(STATEMENT_TYPES);
 static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
@@ -434,6 +435,50 @@ namespace parser_test
 			{
 				"int32 test = 3 + 4 * 5 == 3 * 1 + 4 * 5;",
 				"int32 test = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
+			},*/
+			{
+				"test = -a * b;",
+				"test = ((-a) * b);",
+			},
+			/*{
+				"test = !-a;",
+				"test = (!(-a));",
+			},*/
+			{
+				"test = a + b - c;",
+				"test = ((a + b) - c);",
+			},
+			{
+				"test = a * b * c;",
+				"test = ((a * b) * c);",
+			},
+			{
+				"test = a * b / c;",
+				"test = ((a * b) / c);",
+			},
+			{
+				"test = a + b / c;",
+				"test = (a + (b / c));",
+			},
+			{
+				"test = a + b * c + d / e - f;",
+				"test = (((a + (b * c)) + (d / e)) - f);",
+			},
+			{
+				"int32 test = 3 + 4; test = -5 * 5;",
+				"int32 test = (3 + 4);test = ((-5) * 5);",
+			},
+			/*{
+				"test = 5 > 4 == 3 < 4;",
+				"test = ((5 > 4) == (3 < 4));",
+			},
+			{
+				"test = 5 < 4 != 3 > 4;",
+				"test = ((5 < 4) != (3 > 4));",
+			},
+			{
+				"test = 3 + 4 * 5 == 3 * 1 + 4 * 5;",
+				"test = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
 			},*/
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);

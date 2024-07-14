@@ -189,11 +189,13 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
 		break;
 
+	case token_type::identifier: __COUNTER__;
+		statement = std::unique_ptr<const ast::statement>(parse_variable_assignment_statement());
+
 	case token_type::eof: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 		break;
 
-	case token_type::identifier: __COUNTER__;
 	case token_type::integer_32bit: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::plus: __COUNTER__;
@@ -233,25 +235,35 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 		}
 	}
 
-	while (_currentToken.Type != token_type::semicolon)
+	if (read_next_token_if(token_type::semicolon) == false)
 	{
-		if (_currentToken.Type == token_type::eof || _currentToken.Type == token_type::invalid)
-		{
-			parsing_fail_message(error::id::not_registered_prefix_token, 
-				u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. _currentToken.Type=%s(%zu) _nextToken.Type=%s(%zu)", 
-				internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type),
-				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
-			return nullptr;
-		}
-		read_next_token();
+		return nullptr;
 	}
 
 	return new(std::nothrow) mcf::ast::variable_declaration_statement(dataType, name, rightExpression.release());
 }
 
+const mcf::ast::variable_assignment_statement* mcf::parser::parse_variable_assignment_statement(void) noexcept
+{
+	mcf::ast::identifier_expression	name(_currentToken);
+
+	if (read_next_token_if(token_type::assign) == false)
+	{
+		return nullptr;
+	}
+	read_next_token();
+	std::unique_ptr<const mcf::ast::expression> rightExpression = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::precedence::lowest));
+
+	if (read_next_token_if(token_type::semicolon) == false)
+	{
+		return nullptr;
+	}
+
+	return new(std::nothrow) mcf::ast::variable_assignment_statement(name, rightExpression.release());
+}
+
 const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
 {
-	precedence;
 	std::unique_ptr<const ast::expression> expression;
 	constexpr const size_t EXPRESSION_TOKEN_COUNT_BEGIN = __COUNTER__;
 	switch (_currentToken.Type)

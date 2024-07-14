@@ -67,3 +67,22 @@ const std::string mcf::ast::infix_expression::convert_to_string(void) const noex
 {
 	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
 }
+
+mcf::ast::variable_assignment_statement::variable_assignment_statement(const mcf::ast::identifier_expression& name, const mcf::ast::expression* assignExpression) noexcept
+	: _name(name)
+	, _assignExpression(assignExpression)
+{
+	// TODO: #14 assert for _assignExpression == nullptr
+}
+
+const std::string mcf::ast::variable_assignment_statement::convert_to_string(void) const noexcept
+{
+	std::string buffer;
+
+	buffer += _name.convert_to_string();
+	// TODO: #14 assert for _assignExpression == nullptr
+	buffer += " = " + _assignExpression->convert_to_string();
+	buffer += ";";
+
+	return buffer;
+}
