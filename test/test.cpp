@@ -255,22 +255,22 @@ namespace parser_test
 
 		bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken)
 		{
-			fatal_assert(expression->get_expression_type() == mcf::ast::expression_type::literal, "expression의 expression type이 literal이 아닙니다. expression_type=%s",
+			fatal_assert(expression->get_expression_type() == mcf::ast::expression_type::literal, u8"expression의 expression type이 literal이 아닙니다. expression_type=%s",
 				EXPRESSION_TYPES[mcf::enum_index(expression->get_expression_type())].data());
 			const mcf::ast::literal_expession* literalExpression = static_cast<const mcf::ast::literal_expession*>(expression);
 
-			fatal_assert(literalExpression->get_token() == expectedToken, "literalExpression의 token이 %s이 아닙니다. expression_type=%s",
+			fatal_assert(literalExpression->get_token() == expectedToken, u8"literalExpression의 token이 %s이 아닙니다. expression_type=%s",
 				convert_to_string(expectedToken).c_str(), convert_to_string(literalExpression->get_token()).c_str());
 			return true;
 		}
 
 		bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken)
 		{
-			fatal_assert(targetExpression->get_expression_type() == mcf::ast::expression_type::identifier, "expression의 expression type이 identifier이 아닙니다. expression_type=%s",
+			fatal_assert(targetExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"expression의 expression type이 identifier이 아닙니다. expression_type=%s",
 				EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())].data());
 			const mcf::ast::identifier_expression* identifierExpression = static_cast<const mcf::ast::identifier_expression*>(targetExpression);
 
-			fatal_assert(identifierExpression->get_token() == expectedToken, "identifierExpression의 token이 %s이 아닙니다. expression_type=%s",
+			fatal_assert(identifierExpression->get_token() == expectedToken, u8"identifierExpression의 token이 %s이 아닙니다. expression_type=%s",
 				convert_to_string(expectedToken).c_str(), convert_to_string(identifierExpression->get_token()).c_str());
 			return true;
 		}
