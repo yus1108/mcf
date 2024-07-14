@@ -774,6 +774,6 @@ int main(const size_t argc, const char* const argv[])
 	}
 	
 
-    std::cout << "All Test Passed" << std::endl;
+    std::cout << "All Tests Passed" << std::endl;
 	return 0;
 }
