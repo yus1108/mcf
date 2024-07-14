@@ -3,7 +3,7 @@
 
 const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
 {
-	return "(" + _prefix.Literal + _targetExpression->convert_to_string() + ")";
+	return "(" + _prefixOperator.Literal + _targetExpression->convert_to_string() + ")";
 }
 
 mcf::ast::variable_declaration_statement::variable_declaration_statement(	
@@ -57,4 +57,9 @@ const std::string mcf::ast::program::convert_to_string(void) const noexcept
 	}
 
 	return buffer;
+}
+
+const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
+{
+	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
 }

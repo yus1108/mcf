@@ -5,6 +5,75 @@
 #include "ast.h"
 #include "parser.h"
 
+// ASSERT
+#if defined(_DEBUG)
+#define parsing_fail_assert(PREDICATE, ERROR_ID, FORMAT, ...) if ((PREDICATE) == false) \
+{ \
+	std::string pfa_message; \
+	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
+	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
+	mcf::parser::error pfa_error = { ERROR_ID, pfa_message }; \
+	mcf::internal::PARSER_ERRORS.push(pfa_error); \
+	__debugbreak(); \
+	return false;\
+} ((void)0)
+#define parsing_fail_message(ERROR_ID, FORMAT, ...) \
+{ \
+	std::string pfa_message; \
+	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
+	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
+	mcf::parser::error pfa_error = { ERROR_ID, pfa_message }; \
+	mcf::internal::PARSER_ERRORS.push(pfa_error); \
+	__debugbreak(); \
+} ((void)0)
+#else
+#define parsing_fail_assert(PREDICATE, ERROR_ID, FORMAT, ...) if ((PREDICATE) == false)  \
+{ \
+	std::string pfa_message; \
+	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
+	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
+	mcf::parser::error pfa_error = { ERROR_ID, pfa_message }; \
+	mcf::internal::PARSER_ERRORS.push(pfa_error); \
+	return false;\
+} ((void)0)
+#define parsing_fail_message(ERROR_ID, FORMAT, ...) \
+{ \
+	std::string pfa_message; \
+	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
+	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
+	mcf::parser::error pfa_error = { ERROR_ID, pfa_message }; \
+	mcf::internal::PARSER_ERRORS.push(pfa_error); \
+} ((void)0)
+#endif
+
 namespace mcf
 {
 	namespace internal
@@ -35,9 +104,38 @@ namespace mcf
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
+
+		inline static const mcf::parser::precedence get_expression_precedence(const mcf::token_type tokenType)
+		{
+			constexpr const size_t PRECEDENCE_COUNT_BEGIN = __COUNTER__;
+			switch (tokenType)
+			{
+			case mcf::token_type::plus: __COUNTER__;
+			case mcf::token_type::minus: __COUNTER__;
+				return mcf::parser::precedence::sum;
+
+			case mcf::token_type::asterisk: __COUNTER__;
+			case mcf::token_type::slash: __COUNTER__;
+				return mcf::parser::precedence::product;
+
+			case mcf::token_type::eof: __COUNTER__;
+			case mcf::token_type::identifier: __COUNTER__;
+			case mcf::token_type::integer_32bit: __COUNTER__;
+			case mcf::token_type::assign: __COUNTER__;
+			case mcf::token_type::keyword_int32: __COUNTER__;
+			case mcf::token_type::semicolon: __COUNTER__;
+			default:
+				parsing_fail_message(mcf::parser::error::id::not_registered_infix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", 
+					mcf::internal::TOKEN_TYPES[enum_index(tokenType)], enum_index(tokenType));
+				break;
+			}
+			constexpr const size_t PRECEDENCE_COUNT = __COUNTER__ - PRECEDENCE_COUNT_BEGIN;
+			static_assert(static_cast<size_t>(mcf::token_type::count) == PRECEDENCE_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+
+			return mcf::parser::precedence::lowest;
+		}
 	}
 }
-
 
 mcf::parser::parser(const std::string& input) noexcept
 	: _lexer(input)
@@ -75,7 +173,7 @@ void mcf::parser::parse_program(mcf::ast::program& outProgram) noexcept
 		}
 
 		// read next token
-		read_next_toekn();
+		read_next_token();
 	}
 	outProgram = mcf::ast::program(unsafeProgram);
 }
@@ -125,10 +223,10 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 	std::unique_ptr<const mcf::ast::expression> rightExpression;
 	if (_nextToken.Type == token_type::assign)
 	{
-		read_next_toekn();
-		read_next_toekn();
+		read_next_token();
+		read_next_token();
 		// TODO: expression 식 구현
-		rightExpression = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::expression_precedence::lowest));
+		rightExpression = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::precedence::lowest));
 		if (rightExpression == nullptr)
 		{
 			return nullptr;
@@ -143,18 +241,19 @@ const mcf::ast::variable_declaration_statement* mcf::parser::parse_variable_decl
 				u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. _currentToken.Type=%s(%zu) _nextToken.Type=%s(%zu)", 
 				internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type),
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
+			return nullptr;
 		}
-		read_next_toekn();
+		read_next_token();
 	}
 
 	return new(std::nothrow) mcf::ast::variable_declaration_statement(dataType, name, rightExpression.release());
 }
 
-const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::expression_precedence precedence) noexcept
+const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
 {
 	precedence;
 	std::unique_ptr<const ast::expression> expression;
-	constexpr const size_t PREFIX_COUNT_BEGIN = __COUNTER__;
+	constexpr const size_t EXPRESSION_TOKEN_COUNT_BEGIN = __COUNTER__;
 	switch (_currentToken.Type)
 	{
 	case token_type::identifier: __COUNTER__;
@@ -177,11 +276,40 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::exp
 	case token_type::keyword_int32: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 	default:
-		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
+		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", 
+			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
 	}
-	constexpr const size_t PREFIX_COUNT = __COUNTER__ - PREFIX_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::token_type::count) == PREFIX_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+	constexpr const size_t EXPRESSION_TOKEN_COUNT = __COUNTER__ - EXPRESSION_TOKEN_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::token_type::count) == EXPRESSION_TOKEN_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+
+	while (expression.get() != nullptr && _nextToken.Type != token_type::semicolon && precedence < get_next_precedence())
+	{
+		constexpr const size_t INFIX_COUNT_BEGIN = __COUNTER__;
+		switch (_nextToken.Type)
+		{
+		case token_type::plus: __COUNTER__;
+		case token_type::minus: __COUNTER__;
+		case token_type::asterisk: __COUNTER__;
+		case token_type::slash: __COUNTER__;
+			read_next_token();
+			expression = std::unique_ptr<const ast::expression>(parse_infix_expression(expression.release()));
+			break;
+
+		case token_type::eof: __COUNTER__;
+		case token_type::identifier: __COUNTER__;
+		case token_type::integer_32bit: __COUNTER__;
+		case token_type::assign: __COUNTER__;
+		case token_type::semicolon: __COUNTER__;
+		case token_type::keyword_int32: __COUNTER__;
+		default:
+			parsing_fail_message(error::id::not_registered_infix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
+			return nullptr;
+		}
+		constexpr const size_t INFIX_COUNT = __COUNTER__ - INFIX_COUNT_BEGIN;
+		static_assert(static_cast<size_t>(mcf::token_type::count) == INFIX_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+	}
 
 	return expression.release();
 }
@@ -190,18 +318,33 @@ const mcf::ast::prefix_expression* mcf::parser::parse_prefix_expression(void) no
 {
 	const token prefixToken = _currentToken;
 
-	read_next_toekn();
+	read_next_token();
 
-	const ast::expression* targetExpression = parse_expression(parser::expression_precedence::prefix);
+	std::unique_ptr<const ast::expression> targetExpression(parse_expression(precedence::prefix));
 	if (targetExpression == nullptr)
 	{
 		return nullptr;
 	}
 
-	return new(std::nothrow) ast::prefix_expression(prefixToken, targetExpression);
+	return new(std::nothrow) ast::prefix_expression(prefixToken, targetExpression.release());
 }
 
-inline void mcf::parser::read_next_toekn(void) noexcept
+const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf::ast::expression* left) noexcept
+{
+	std::unique_ptr<const ast::expression> leftExpression(left);
+
+	const token infixOperatorToken = _currentToken;
+	const precedence precedence = get_current_token_precedence();
+	read_next_token();
+	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence));
+	if (rightExpression.get() == nullptr)
+	{
+		return nullptr;
+	}
+	return new(std::nothrow) ast::infix_expression(leftExpression.release(), infixOperatorToken, rightExpression.release());
+}
+
+inline void mcf::parser::read_next_token(void) noexcept
 {
 	_currentToken = _nextToken;
 	_nextToken = _lexer.read_next_token();
@@ -211,6 +354,16 @@ inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType) noe
 {
 	parsing_fail_assert(_nextToken.Type == tokenType, error::id::unexpected_next_token, u8"다음 토큰은 %s여야만 합니다. 실제 값으로 %s를 받았습니다.", 
 		internal::TOKEN_TYPES[enum_index(tokenType)], internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
-	read_next_toekn();
+	read_next_token();
 	return true;
+}
+
+const mcf::parser::precedence mcf::parser::get_next_precedence(void) const noexcept
+{
+	return internal::get_expression_precedence(_nextToken.Type);
+}
+
+const mcf::parser::precedence mcf::parser::get_current_token_precedence(void) const noexcept
+{
+	return internal::get_expression_precedence(_currentToken.Type);
 }

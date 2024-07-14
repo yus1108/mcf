@@ -9,7 +9,7 @@ namespace mcf
 	class parser final
 	{
 	public:
-		enum class expression_precedence : unsigned char
+		enum class precedence : unsigned char
 		{
 			invalid = 0,
 
@@ -34,6 +34,7 @@ namespace mcf
 				no_error,
 				unexpected_next_token,
 				not_registered_prefix_token,
+				not_registered_infix_token,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				count,
@@ -54,11 +55,15 @@ namespace mcf
 		const mcf::ast::statement* parse_statement(void) noexcept;
 		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement(void) noexcept;
 
-		const mcf::ast::expression* parse_expression(const mcf::parser::expression_precedence precedence) noexcept;
+		const mcf::ast::expression* parse_expression(const mcf::parser::precedence precedence) noexcept;
 		const mcf::ast::prefix_expression* parse_prefix_expression(void) noexcept;
+		const mcf::ast::infix_expression* parse_infix_expression(const mcf::ast::expression* left) noexcept;
 
-		void		read_next_toekn(void) noexcept;
+		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
+
+		const mcf::parser::precedence get_next_precedence(void) const noexcept;
+		const mcf::parser::precedence get_current_token_precedence(void) const noexcept;
 
 	private:
 		mcf::lexer _lexer;

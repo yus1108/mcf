@@ -48,6 +48,7 @@ namespace mcf
 			identifier,
 			data_type,
 			prefix,
+			infix,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -129,17 +130,41 @@ namespace mcf
 		public:
 			explicit prefix_expression(void) noexcept = default;
 			explicit prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept 
-				: _prefix(prefix), _targetExpression(targetExpression) {}
+				: _prefixOperator(prefix), _targetExpression(targetExpression) {}
 
-			inline const mcf::token&			get_prefix_token(void) const noexcept { return _prefix; }
+			inline const mcf::token&			get_prefix_operator_token(void) const noexcept { return _prefixOperator; }
 			inline const mcf::ast::expression*	get_target_expression(void) const noexcept { return _targetExpression.get(); }
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::prefix; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			const mcf::token									_prefix = { token_type::invalid, std::string() }; // { prefix_operator, literal }
-			const std::unique_ptr<const mcf::ast::expression>	_targetExpression; // <expression>
+			using expression = std::unique_ptr<const mcf::ast::expression>;
+
+			const mcf::token _prefixOperator = { token_type::invalid, std::string() };	// { prefix_operator, literal }
+			const expression _targetExpression;									// <expression>
+		};
+
+		class infix_expression final : public expression
+		{
+		public:
+			explicit infix_expression(void) noexcept = default;
+			explicit infix_expression(const mcf::ast::expression* left, const mcf::token& infix, const mcf::ast::expression* right) noexcept
+				: _left(left), _infixOperator(infix), _right(right) {}
+
+			inline const mcf::token&			get_infix_operator_token(void) const noexcept { return _infixOperator; }
+			inline const mcf::ast::expression*	get_left_expression(void) const noexcept { return _left.get(); }
+			inline const mcf::ast::expression*	get_right_expression(void) const noexcept { return _right.get(); }
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::infix; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			using expression = std::unique_ptr<const mcf::ast::expression>;
+
+			const mcf::token _infixOperator = { token_type::invalid, std::string() };	// { infix_operator, literal }
+			const expression _left;														// <expression>
+			const expression _right;													// <expression>
 		};
 
 		class variable_declaration_statement final : public statement
