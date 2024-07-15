@@ -93,7 +93,12 @@ namespace UnitTest
 	class Lexer final : UnitTest
 	{
 	public:
+		explicit Lexer(void) noexcept;
 		virtual const bool Test(void) const noexcept override final;
+
+	private:
+		std::vector<std::string>			_names;
+		std::vector<std::function<bool()>>	_tests;
 	};
 
 	class Parser final : UnitTest

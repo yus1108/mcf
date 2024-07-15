@@ -402,6 +402,7 @@ const bool UnitTest::Parser::Test(void) const noexcept
 			std::cout << "Test[#" << i << "] `" << _names[i] << "()` Failed" << std::endl;
 			return false;
 		}
+		std::cout << "Parser Test[#" << i << "] `" << _names[i] << "()` Passed" << std::endl;
 	}
 	return true;
 }
