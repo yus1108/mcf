@@ -18,7 +18,7 @@
 #define fatal_error(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
 #endif
 
-#define error_message_begin(ERROR_COUNT) printf(u8"[Error]: %s(Line: %d) %zu개의 에러 메시지가 있습니다.\n", ##__FILE__, ##__LINE__, ERROR_COUNT)
+#define error_message_begin(ERROR_COUNT) printf(u8"[Error][Parser]: %s(Line: %d) %zu개의 에러 메시지가 있습니다.\n", ##__FILE__, ##__LINE__, ERROR_COUNT)
 #define error_message(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); ((void)0)
 #if defined(_DEBUG)
 #define error_message_end __debugbreak();
