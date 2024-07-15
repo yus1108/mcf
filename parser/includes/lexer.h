@@ -12,14 +12,24 @@ namespace mcf
 		integer_32bit,	// [0-9]+
 
 		// 연산자
-		assign,
+		assign,			// =
 		plus,			// +
 		minus,			// -
 		asterisk,		// *
 		slash,			// /
+		lt,				// <
+		gt,				// >
+
+		lparen,			// (
+		rparen,			// )
+		lbrace,			// {
+		rbrace,			// }
+		lbracket,		// [
+		rbracket,		// ]
 
 		// 구분자
 		semicolon,		// ;
+		comma,			// ,
 
 		// 예약어
 		keyword_int32,	// int32

@@ -24,19 +24,22 @@ namespace UnitTest
 			} testCases[] =
 			{
 				{
-					// TODO: constexpr std::string_view lInput = "=+-*/(){},;";
-					"=+-*/;",
+					"=+-*/<>(){}[],;",
 					{
 						{mcf::token_type::assign, "="},
 						{mcf::token_type::plus, "+"},
 						{mcf::token_type::minus, "-"},
 						{mcf::token_type::asterisk, "*"},
 						{mcf::token_type::slash, "/"},
-						// TODO: {mcf::token_type::lparen, "("},
-						// TODO: {mcf::token_type::rparen, ")"},
-						// TODO: {mcf::token_type::lbrace, "{"},
-						// TODO: {mcf::token_type::rbrace, "}"},
-						// TODO: {mcf::token_type::comma, ","},
+						{mcf::token_type::lt, "<"},
+						{mcf::token_type::gt, ">"},
+						{mcf::token_type::lparen, "("},
+						{mcf::token_type::rparen, ")"},
+						{mcf::token_type::lbrace, "{"},
+						{mcf::token_type::rbrace, "}"},
+						{mcf::token_type::lbracket, "["},
+						{mcf::token_type::rbracket, "]"},
+						{mcf::token_type::comma, ","},
 						{mcf::token_type::semicolon, ";"},
 					},
 				},

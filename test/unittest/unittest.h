@@ -26,8 +26,6 @@
 #define error_message_end abort();
 #endif
 
-#define unused(variable) variable
-
 namespace UnitTest
 {
 	constexpr const char* TOKEN_TYPES[] =
@@ -45,16 +43,27 @@ namespace UnitTest
 		"minus",
 		"asterisk",
 		"slash",
+		"lt",
+		"gt",
+
+		"lparen",
+		"rparen",
+		"lbrace",
+		"rbrace",
+		"lbracket",
+		"rbracket",
+
 
 		// 구분자
 		"semicolon",
+		"comma",
 
 		// 예약어
 		"keyword",
 	};
 	constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE,
-		u8"token count not matching!");
+		"token count not matching!");
 
 	constexpr const char* STATEMENT_TYPES[] =
 	{

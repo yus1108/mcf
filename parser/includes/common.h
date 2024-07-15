@@ -1,5 +1,8 @@
 #pragma once
 
+#define unused(variable) variable
+#define array_size(value) sizeof(value) / mcf::array_type_size(value)
+
 namespace mcf
 {
 	// ENUM
@@ -39,5 +42,3 @@ namespace mcf
 		return sizeof(T);
 	}
 }
-
-#define array_size(value) sizeof(value) / mcf::array_type_size(value)

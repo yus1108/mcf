@@ -97,9 +97,20 @@ namespace mcf
 			"minus",
 			"asterisk",
 			"slash",
+			"lt",
+			"gt",
+
+			"lparen",
+			"rparen",
+			"lbrace",
+			"rbrace",
+			"lbracket",
+			"rbracket",
+
 
 			// 구분자
 			"semicolon",
+			"comma",
 
 			// 예약어
 			"keyword",
@@ -120,12 +131,27 @@ namespace mcf
 			case mcf::token_type::slash: __COUNTER__;
 				return mcf::parser::precedence::product;
 
+			case mcf::token_type::lt: __COUNTER__;
+			case mcf::token_type::gt: __COUNTER__;
+				return mcf::parser::precedence::lessgreater;
+
+			case mcf::token_type::lparen: __COUNTER__;
+				return mcf::parser::precedence::call;
+
+			case mcf::token_type::lbracket: __COUNTER__;
+				return mcf::parser::precedence::index;
+
 			case mcf::token_type::eof: __COUNTER__;
 			case mcf::token_type::identifier: __COUNTER__;
 			case mcf::token_type::integer_32bit: __COUNTER__;
 			case mcf::token_type::assign: __COUNTER__;
+			case mcf::token_type::rparen: __COUNTER__;
+			case mcf::token_type::lbrace: __COUNTER__;
+			case mcf::token_type::rbrace: __COUNTER__;
+			case mcf::token_type::rbracket: __COUNTER__;
 			case mcf::token_type::keyword_int32: __COUNTER__;
 			case mcf::token_type::semicolon: __COUNTER__;
+			case mcf::token_type::comma: __COUNTER__;
 			default:
 				parsing_fail_message(mcf::parser::error::id::not_registered_infix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", 
 					mcf::internal::TOKEN_TYPES[enum_index(tokenType)], enum_index(tokenType));
@@ -204,6 +230,15 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::minus: __COUNTER__;
 	case token_type::asterisk: __COUNTER__;
 	case token_type::slash: __COUNTER__;
+	case token_type::lt: __COUNTER__;
+	case token_type::gt: __COUNTER__;
+	case token_type::lparen: __COUNTER__;
+	case token_type::rparen: __COUNTER__;
+	case token_type::lbrace: __COUNTER__;
+	case token_type::rbrace: __COUNTER__;
+	case token_type::lbracket: __COUNTER__;
+	case token_type::rbracket: __COUNTER__;
+	case token_type::comma: __COUNTER__;
 	default:
 		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
@@ -283,12 +318,23 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
+	
+
 	case token_type::eof: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::asterisk: __COUNTER__;
 	case token_type::slash: __COUNTER__;
+	case token_type::lt: __COUNTER__;
+	case token_type::gt: __COUNTER__;
+	case token_type::lparen: __COUNTER__;
+	case token_type::rparen: __COUNTER__;
+	case token_type::lbrace: __COUNTER__;
+	case token_type::rbrace: __COUNTER__;
+	case token_type::lbracket: __COUNTER__;
+	case token_type::rbracket: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
+	case token_type::comma: __COUNTER__;
 	default:
 		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", 
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
@@ -306,15 +352,32 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::minus: __COUNTER__;
 		case token_type::asterisk: __COUNTER__;
 		case token_type::slash: __COUNTER__;
+		case token_type::lt: __COUNTER__;
+		case token_type::gt: __COUNTER__;
 			read_next_token();
 			expression = std::unique_ptr<const ast::expression>(parse_infix_expression(expression.release()));
+			break;
+
+		case token_type::lparen: __COUNTER__;
+			read_next_token();
+			expression = std::unique_ptr<const ast::expression>(parse_call_expression(expression.release()));
+			break;
+
+		case token_type::lbracket: __COUNTER__;
+			read_next_token();
+			expression = std::unique_ptr<const ast::expression>(parse_index_expression(expression.release()));
 			break;
 
 		case token_type::eof: __COUNTER__;
 		case token_type::identifier: __COUNTER__;
 		case token_type::integer_32bit: __COUNTER__;
 		case token_type::assign: __COUNTER__;
+		case token_type::rparen: __COUNTER__;
+		case token_type::lbrace: __COUNTER__;
+		case token_type::rbrace: __COUNTER__;
+		case token_type::rbracket: __COUNTER__;
 		case token_type::semicolon: __COUNTER__;
+		case token_type::comma: __COUNTER__;
 		case token_type::keyword_int32: __COUNTER__;
 		default:
 			parsing_fail_message(error::id::not_registered_infix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
@@ -356,6 +419,20 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 		return nullptr;
 	}
 	return new(std::nothrow) ast::infix_expression(leftExpression.release(), infixOperatorToken, rightExpression.release());
+}
+
+const mcf::ast::infix_expression* mcf::parser::parse_call_expression(const mcf::ast::expression* left) noexcept
+{
+	unused(left);
+	parsing_fail_message(error::id::not_registered_infix_token, "#18 기본적인 평가기 개발 구현 필요");
+	return nullptr;
+}
+
+const mcf::ast::infix_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
+{
+	unused(left);
+	parsing_fail_message(error::id::not_registered_infix_token, "#18 기본적인 평가기 개발 구현 필요");
+	return nullptr;
 }
 
 inline void mcf::parser::read_next_token(void) noexcept

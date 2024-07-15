@@ -14,12 +14,13 @@ namespace mcf
 			invalid = 0,
 
 			lowest,
-			equals,			// == | !=	TODO: #16 구현 필요
-			lessgreater,	// > | <	TODO: #16 구현 필요
+			equals,			// == | !=		TODO: #16 구현 필요
+			lessgreater,	// > | <		TODO: #16 구현 필요
 			sum,			// + | -
 			product,		// * | /
 			prefix,			// -foo | !boo
-			call,			// func(x)	TODO: #16 구현 필요
+			call,			// func(x)		TODO: #16 구현 필요
+			index,			// foo[0]		TODO: #16 구현 필요
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count
@@ -59,6 +60,8 @@ namespace mcf
 		const mcf::ast::expression*			parse_expression(const mcf::parser::precedence precedence) noexcept;
 		const mcf::ast::prefix_expression*	parse_prefix_expression(void) noexcept;
 		const mcf::ast::infix_expression*	parse_infix_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::infix_expression*	parse_call_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::infix_expression*	parse_index_expression(const mcf::ast::expression* left) noexcept;
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;

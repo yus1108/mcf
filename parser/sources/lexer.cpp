@@ -85,41 +85,69 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		read_next_byte();
 	}
 
+	constexpr const size_t TOKEN_COUNT_BEGIN = __COUNTER__;
 	switch (_currentByte)
 	{
-	case 0:
+	case 0: __COUNTER__;
 		lToken = { token_type::eof, "\0" };
 		break;
-	case '=':
+	case '=': __COUNTER__;
 		lToken = { token_type::assign, std::string(1, _currentByte) };
 		break;
-	case '+':
+	case '+': __COUNTER__;
 		lToken = { token_type::plus, std::string(1, _currentByte) };
 		break;
-	case '-':
+	case '-': __COUNTER__;
 		lToken = { token_type::minus, std::string(1, _currentByte) };
 		break;
-	case '*':
+	case '*': __COUNTER__;
 		lToken = { token_type::asterisk, std::string(1, _currentByte) };
 		break;
-	case '/':
+	case '/': __COUNTER__;
 		lToken = { token_type::slash, std::string(1, _currentByte) };
 		break;
-	case ';':
+	case '<': __COUNTER__;
+		lToken = { token_type::lt, std::string(1, _currentByte) };
+		break;
+	case '>': __COUNTER__;
+		lToken = { token_type::gt, std::string(1, _currentByte) };
+		break;
+	case '(': __COUNTER__;
+		lToken = { token_type::lparen, std::string(1, _currentByte) };
+		break;
+	case ')': __COUNTER__;
+		lToken = { token_type::rparen, std::string(1, _currentByte) };
+		break;
+	case '{': __COUNTER__;
+		lToken = { token_type::lbrace, std::string(1, _currentByte) };
+		break;
+	case '}': __COUNTER__;
+		lToken = { token_type::rbrace, std::string(1, _currentByte) };
+		break;
+	case '[': __COUNTER__;
+		lToken = { token_type::lbracket, std::string(1, _currentByte) };
+		break;
+	case ']': __COUNTER__;
+		lToken = { token_type::rbracket, std::string(1, _currentByte) };
+		break;
+	case ';': __COUNTER__;
 		lToken = { token_type::semicolon, std::string(1, _currentByte) };
+		break;
+	case ',': __COUNTER__;
+		lToken = { token_type::comma, std::string(1, _currentByte) };
 		break;
 	default:
 		// keyword + identifier 는 첫 시작이 '_' 이거나 알파벳 이어야만 합니다.
 		if (internal::is_alphabet(_currentByte) || _currentByte == '_')
 		{
 			// TODO: 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
-			lToken.Literal = read_keyword_or_identifier();
+			lToken.Literal = read_keyword_or_identifier(); 
 			lToken.Type = internal::determine_keyword_or_identifier(lToken.Literal);
-			return lToken;
+			return lToken; __COUNTER__; __COUNTER__; // count for keyword & identifier
 		}
 		else if (internal::is_digit(_currentByte))
 		{
-			lToken = { token_type::integer_32bit, read_number() };
+			lToken = { token_type::integer_32bit, read_number() }; __COUNTER__;
 			// TODO: decimal 토큰을 생성 가능하게 개선 필요
 			// TODO: 이후 postfix 로 타입 지정 가능하게 개선 필요
 			return lToken;
@@ -130,6 +158,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			default_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
+	constexpr const size_t TOKEN_COUNT = __COUNTER__ - TOKEN_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
 
 	read_next_byte();
 	return lToken;
