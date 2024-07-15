@@ -421,10 +421,12 @@ UnitTest::Parser::Parser(void) noexcept
 			{
 				std::ifstream file(_names.back().c_str());
 				std::string line;
-				while (std::getline(file, line, '\n'))
+				while (!file.eof())
 				{
-					input += line + "\n";
-					std::cout << line;
+					int ch = file.get();
+					input += ch;
+					std::cout << ch;
+
 				}
 				input.erase(input.length() - 1);
 			}
