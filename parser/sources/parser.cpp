@@ -104,7 +104,7 @@ namespace mcf
 			// 예약어
 			"keyword",
 		};
-		constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
+		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
 
 		inline static const mcf::parser::precedence get_expression_precedence(const mcf::token_type tokenType)

@@ -1,8 +1,8 @@
 #pragma once
 
-// ENUM
 namespace mcf
 {
+	// ENUM
 	template<typename T>
 	constexpr const size_t enum_count(void)
 	{
@@ -30,14 +30,14 @@ namespace mcf
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
 		return index < mcf::enum_count<T>() ? static_cast<T>(index) : T::invalid;
 	}
+
+	// ARRAY
+	template<typename T>
+	constexpr const size_t array_type_size(T array[])
+	{
+		array;
+		return sizeof(T);
+	}
 }
 
-// ARRAY
-template<typename T>
-constexpr const size_t array_type_size(T array[])
-{
-	array;
-	return sizeof(T);
-}
-
-#define array_size(array) sizeof(array) / array_type_size(array);
+#define array_size(value) sizeof(value) / mcf::array_type_size(value)

@@ -17,7 +17,7 @@ namespace mcf
 				// TODO: decimal 타입 추가 필요
 				"int32",
 			};
-			constexpr const size_t KEYWORDS_SIZE = array_size(KEYWORDS);
+			constexpr const size_t KEYWORDS_SIZE = sizeof(KEYWORDS) / mcf::array_type_size(KEYWORDS);
 			static_assert(enum_count<mcf::token_type>() - enum_index(mcf::token_type::keyword_int32) == KEYWORDS_SIZE, u8"키워드 타입의 갯수가 변경 되었습니다. 수정이 필요합니다!");
 
 			for (size_t i = 0; i < KEYWORDS_SIZE; i++)
@@ -71,7 +71,7 @@ const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 	return lError;
 }
 
-const mcf::token mcf::lexer::read_next_token() noexcept
+const mcf::token mcf::lexer::read_next_token(void) noexcept
 {
 	if (_currentPosition == _input.size())
 	{ 
