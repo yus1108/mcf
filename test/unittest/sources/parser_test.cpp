@@ -480,7 +480,7 @@ bool UnitTest::Parser::check_parser_errors(mcf::parser& parser) noexcept
 	mcf::parser::error curr = parser.get_last_error();
 	while (curr.ID != mcf::parser::error::id::no_error)
 	{
-		error_message(u8"[Error][Parser] ID=%zu: %s", enum_index(curr.ID), curr.Message.c_str());
+		error_message(u8"[ID:%zu], %s", enum_index(curr.ID), curr.Message.c_str());
 		curr = parser.get_last_error();
 	}
 	error_message_end;
