@@ -35,51 +35,27 @@ namespace mcf
 
 namespace mcf
 {
-	enum class prefix_token_type : unsigned char
-	{
-		invalid = 0,
-
-		plus,
-		minus,
-
-		// 이 밑으로는 수정하면 안됩니다.
-		count
-	};
-
-	enum class infix_token_type : unsigned char
-	{
-		invalid = 0,
-
-		plus,
-		minus,
-		asterisk,
-		slash,
-
-		// 이 밑으로는 수정하면 안됩니다.
-		count
-	};
-
 	enum class token_type : unsigned char
 	{
 		invalid = 0,
-		eof,
+		eof,			// \0
 
 		// 식별자 + 리터럴
-		identifier,
-		integer_32bit,
+		identifier,		// [_a-zA-Z]+[_a-zA-Z0-9]*
+		integer_32bit,	// [0-9]+
 
 		// 연산자
 		assign,
-		plus,
-		minus,
-		asterisk,
-		slash,
+		plus,			// +
+		minus,			// -
+		asterisk,		// *
+		slash,			// /
 
 		// 구분자
-		semicolon,
+		semicolon,		// ;
 
 		// 예약어
-		keyword_int32,
+		keyword_int32,	// int32
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count

@@ -27,8 +27,8 @@ namespace mcf
 		{
 			invalid = 0,
 
-			variable_declaration,
-			variable_assignment,
+			variable_declaration,	// <data_type> identifier [optional: assign <expression>] semicolon
+			variable_assignment,	// identifier assign <expression> semicolon
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -45,11 +45,14 @@ namespace mcf
 		{
 			invalid = 0,
 
-			literal,
-			identifier,
-			data_type,
+			literal,	// integer_32bit
+			identifier, // identifier
+			data_type,	// keyword_int32
+
+			// plus|minus <literal>
+			// plus|minus <identifier>
 			prefix,
-			infix,
+			infix,	// <expression> plus|minus|asterisk|slash <expression>
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
