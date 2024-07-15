@@ -424,14 +424,14 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 const mcf::ast::infix_expression* mcf::parser::parse_call_expression(const mcf::ast::expression* left) noexcept
 {
 	unused(left);
-	parsing_fail_message(error::id::not_registered_infix_token, "#18 기본적인 평가기 개발 구현 필요");
+	parsing_fail_message(error::id::not_registered_infix_token, u8"#18 기본적인 평가기 개발 구현 필요");
 	return nullptr;
 }
 
 const mcf::ast::infix_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
 {
 	unused(left);
-	parsing_fail_message(error::id::not_registered_infix_token, "#18 기본적인 평가기 개발 구현 필요");
+	parsing_fail_message(error::id::not_registered_infix_token, u8"#18 기본적인 평가기 개발 구현 필요");
 	return nullptr;
 }
 
