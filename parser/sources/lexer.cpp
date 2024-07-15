@@ -1,4 +1,6 @@
 ﻿#include "pch.h"
+#include "common.h"
+
 #include "lexer.h"
 #include "framework.h"
 

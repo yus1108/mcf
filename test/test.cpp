@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include <string>
+#include <parser/includes/common.h>
 
 #ifdef _DEBUG
 
@@ -51,18 +52,11 @@ inline void detect_memory_leak(long line = -1) { line; }
 
 #define unused(variable) variable
 
-// ARRAY
-template<typename T>
-constexpr const size_t array_type_size(T array[])
-{
-	array;
-	return sizeof(T);
-}
+#include <parser/includes/ast.h>
+#include <parser/includes/lexer.h>
+#include <parser/includes/parser.h>
 
-#define array_size(array) sizeof(array) / array_type_size(array);
-
-#include <lexer/includes/lexer.h>
-constexpr const std::string_view TOKEN_TYPES[] =
+constexpr const char* TOKEN_TYPES[] =
 {
 	"invalid",
 	"eof",
@@ -87,18 +81,7 @@ constexpr const std::string_view TOKEN_TYPES[] =
 constexpr const size_t TOKEN_TYPES_SIZE = array_size(TOKEN_TYPES);
 static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, u8"토큰의 갯수가 일치 하지 않습니다. 수정이 필요합니다!");
 
-std::string convert_to_string(const mcf::token& token)
-{
-	std::string result;
-	result += "mcf::token{Type : ";
-	result += TOKEN_TYPES[mcf::enum_index(token.Type)];
-	result += ", Literal : " + token.Literal + "}";
-	return result;
-}
-
-#include <parser/includes/ast.h>
-#include <parser/includes/parser.h>
-constexpr const std::string_view STATEMENT_TYPES[] =
+constexpr const char* STATEMENT_TYPES[] =
 {
 	"invalid",
 
@@ -108,7 +91,7 @@ constexpr const std::string_view STATEMENT_TYPES[] =
 constexpr const size_t STATEMENT_TYPES_SIZE = array_size(STATEMENT_TYPES);
 static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
 
-constexpr const std::string_view EXPRESSION_TYPES[] =
+constexpr const char* EXPRESSION_TYPES[] =
 {
 	"invalid",
 
@@ -121,6 +104,15 @@ constexpr const std::string_view EXPRESSION_TYPES[] =
 constexpr const size_t EXPRESSION_TYPES_SIZE = array_size(EXPRESSION_TYPES);
 static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
 
+std::string convert_to_string(const mcf::token& token)
+{
+	std::string result;
+	result += "mcf::token{Type : ";
+	result += TOKEN_TYPES[mcf::enum_index(token.Type)];
+	result += ", Literal : " + token.Literal + "}";
+	return result;
+}
+
 namespace lexer_test
 {
 	bool test_next_token()
@@ -128,7 +120,7 @@ namespace lexer_test
 		struct expected_result final
 		{
 			const mcf::token_type   Type;
-			const std::string_view  Literal;
+			const char*				Literal;
 		};
 
 		const struct test_case
@@ -206,10 +198,10 @@ namespace lexer_test
 				const mcf::token_type expectedTokenType = testCases[i].ExpectedResultVector[j].Type;
 
 				fatal_assert(token.Type == expectedTokenType, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-					i, j, TOKEN_TYPES[enum_index(expectedTokenType)].data(), TOKEN_TYPES[enum_index(token.Type)].data());
+					i, j, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
 
 				fatal_assert(token.Literal == testCases[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-					i, j, testCases[i].ExpectedResultVector[j].Literal.data(), token.Literal.data());
+					i, j, testCases[i].ExpectedResultVector[j].Literal, token.Literal.c_str());
 			}
 		}
 
@@ -243,10 +235,10 @@ namespace parser_test
 		{
 			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, 
 				u8"statement가 variable_declaration이 아닙니다. 결과값=%s", 
-				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 
 			const mcf::ast::variable_declaration_statement* variableDeclaration = static_cast<const mcf::ast::variable_declaration_statement*>(statement);
-			fatal_assert(variableDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s", TOKEN_TYPES[enum_index(expectedDataType)].data(), TOKEN_TYPES[enum_index(variableDeclaration->get_type())].data());
+			fatal_assert(variableDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s", TOKEN_TYPES[enum_index(expectedDataType)], TOKEN_TYPES[enum_index(variableDeclaration->get_type())]);
 			fatal_assert(variableDeclaration->get_name() == expectedName, u8"변수 선언 이름이 '%s'가 아닙니다. 실제값=%s", expectedName.c_str(), variableDeclaration->get_name().c_str());
 			// TODO: #11 initialization 도 구현 필요
 
@@ -256,7 +248,7 @@ namespace parser_test
 		bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken)
 		{
 			fatal_assert(expression->get_expression_type() == mcf::ast::expression_type::literal, u8"expression의 expression type이 literal이 아닙니다. expression_type=%s",
-				EXPRESSION_TYPES[mcf::enum_index(expression->get_expression_type())].data());
+				EXPRESSION_TYPES[mcf::enum_index(expression->get_expression_type())]);
 			const mcf::ast::literal_expession* literalExpression = static_cast<const mcf::ast::literal_expession*>(expression);
 
 			fatal_assert(literalExpression->get_token() == expectedToken, u8"literalExpression의 token이 %s이 아닙니다. expression_type=%s",
@@ -267,7 +259,7 @@ namespace parser_test
 		bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken)
 		{
 			fatal_assert(targetExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"expression의 expression type이 identifier이 아닙니다. expression_type=%s",
-				EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())].data());
+				EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
 			const mcf::ast::identifier_expression* identifierExpression = static_cast<const mcf::ast::identifier_expression*>(targetExpression);
 
 			fatal_assert(identifierExpression->get_token() == expectedToken, u8"identifierExpression의 token이 %s이 아닙니다. expression_type=%s",
@@ -346,11 +338,11 @@ namespace parser_test
 		const mcf::ast::statement* statement = program.get_statement_at(0);
 
 		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s", 
-			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
 
 		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"init expression의 expression type이 identifier가 아닙니다. expression_type=%s",
-			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
 
 		const mcf::ast::identifier_expression* identifier = static_cast<const mcf::ast::identifier_expression*>(initExpression);
 		fatal_assert(identifier->get_token().Literal == "bar", u8"identifier의 literal값이 `bar`가 아닙니다. identifier.literal=`%s`", identifier->get_token().Literal.c_str());
@@ -371,11 +363,11 @@ namespace parser_test
 		const mcf::ast::statement* statement = program.get_statement_at(0);
 
 		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
-			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
 
 		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::literal, u8"init expression의 expression type이 literal가 아닙니다. expression_type=%s",
-			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
 
 		const mcf::ast::literal_expession* literal = static_cast<const mcf::ast::literal_expession*>(initExpression);
 		fatal_assert(literal->get_token().Literal == "5", u8"literal의 literal값이 `5`가 아닙니다. identifier.literal=`%s`", literal->get_token().Literal.c_str());
@@ -532,11 +524,11 @@ namespace parser_test
 			const mcf::ast::statement* statement = program.get_statement_at(0);
 
 			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
-				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
 
 			fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::prefix, u8"init expression의 expression type이 prefix가 아닙니다. expression_type=%s",
-				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
 
 			const mcf::ast::prefix_expression* prefixExpression = static_cast<const mcf::ast::prefix_expression*>(initExpression);
 			fatal_assert(prefixExpression->get_prefix_operator_token() == testCases[i].ExpectedPrefixToken, u8"prefix operator token이 %s와 다릅니다. token=%s",
@@ -549,7 +541,7 @@ namespace parser_test
 			{
 			case mcf::ast::expression_type::literal: __COUNTER__;
 				fatal_assert(testCases[i].ExpectedTargetExpression->get_expression_type() == mcf::ast::expression_type::literal,
-					u8"targetExpression의 expression type은 literal여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())].data());
+					u8"targetExpression의 expression type은 literal여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
 				if (internal::test_literal(targetExpression, static_cast<const mcf::ast::literal_expession*>(testCases[i].ExpectedTargetExpression.get())->get_token()) == false)
 				{
 					return false;
@@ -557,7 +549,7 @@ namespace parser_test
 				break;
 			case mcf::ast::expression_type::identifier: __COUNTER__;
 				fatal_assert(testCases[i].ExpectedTargetExpression->get_expression_type() == mcf::ast::expression_type::identifier,
-					u8"targetExpression의 expression type은 identifier여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())].data());
+					u8"targetExpression의 expression type은 identifier여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
 				if (internal::test_identifier(targetExpression, static_cast<const mcf::ast::identifier_expression*>(testCases[i].ExpectedTargetExpression.get())->get_token()) == false)
 				{
 					return false;
@@ -568,7 +560,7 @@ namespace parser_test
 			case mcf::ast::expression_type::infix: __COUNTER__;
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)", 
-					EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())].data(), mcf::enum_index(targetExpression->get_expression_type()));
+					EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())], mcf::enum_index(targetExpression->get_expression_type()));
 			}
 			constexpr const size_t TARGET_EXPRESSION_TYPE_COUNT = __COUNTER__ - TARGET_EXPRESSION_TYPE_COUNT_BEGIN;
 			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == TARGET_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
@@ -610,11 +602,11 @@ namespace parser_test
 			const mcf::ast::statement* statement = program.get_statement_at(0);
 
 			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
-				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())].data());
+				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
 
 			fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::infix, u8"init expression의 expression type이 infix가 아닙니다. expression_type=%s",
-				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())].data());
+				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
 			const mcf::ast::infix_expression* infixExpression = static_cast<const mcf::ast::infix_expression*>(initExpression);
 
 			const mcf::ast::expression* leftExpression = infixExpression->get_left_expression();
@@ -638,7 +630,7 @@ namespace parser_test
 			case mcf::ast::expression_type::infix: __COUNTER__;
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. left expression_type=%s(%zu)",
-					EXPRESSION_TYPES[mcf::enum_index(leftExpression->get_expression_type())].data(), mcf::enum_index(leftExpression->get_expression_type()));
+					EXPRESSION_TYPES[mcf::enum_index(leftExpression->get_expression_type())], mcf::enum_index(leftExpression->get_expression_type()));
 			}
 			constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;
 			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == LEFT_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
@@ -667,7 +659,7 @@ namespace parser_test
 			case mcf::ast::expression_type::infix: __COUNTER__;
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. right expression_type=%s(%zu)",
-					EXPRESSION_TYPES[mcf::enum_index(rightExpression->get_expression_type())].data(), mcf::enum_index(rightExpression->get_expression_type()));
+					EXPRESSION_TYPES[mcf::enum_index(rightExpression->get_expression_type())], mcf::enum_index(rightExpression->get_expression_type()));
 			}
 			constexpr const size_t RIGHT_EXPRESSION_TYPE_COUNT = __COUNTER__ - RIGHT_EXPRESSION_TYPE_COUNT_BEGIN;
 			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == RIGHT_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");

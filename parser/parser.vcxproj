@@ -124,7 +124,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir);internals;includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>internals;includes;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -154,12 +154,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="includes\ast.h" />
+    <ClInclude Include="includes\lexer.h" />
     <ClInclude Include="includes\parser.h" />
     <ClInclude Include="internals\framework.h" />
     <ClInclude Include="internals\pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="includes\common.h" />
     <ClCompile Include="sources\ast.cpp" />
+    <ClCompile Include="sources\lexer.cpp" />
     <ClCompile Include="sources\parser.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -167,11 +170,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\lexer\lexer.vcxproj">
-      <Project>{1cc650c2-dc38-4024-8700-543daa4a9979}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -15,8 +15,7 @@
 #include <string_view>
 #include <vector>
 
-#include <lexer/includes/lexer.h>
-
+#include "common.h"
 #include "framework.h"
 
 #endif //PCH_H
