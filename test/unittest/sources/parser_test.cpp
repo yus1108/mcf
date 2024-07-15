@@ -415,6 +415,7 @@ UnitTest::Parser::Parser(void) noexcept
 	_tests.emplace_back([&]() {
 		
 		mcf::ast::program actualProgram;
+		std::cout << "file read begin" << std::endl;
 		{
 			std::string input;
 			{
@@ -434,6 +435,7 @@ UnitTest::Parser::Parser(void) noexcept
 				return false;
 			}
 		}
+		std::cout << "file read end" << std::endl;
 
 		using namespace mcf;
 		using namespace mcf::ast;
