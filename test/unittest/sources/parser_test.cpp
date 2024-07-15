@@ -1,42 +1,43 @@
 #include <iostream>
+#include <fstream>
 #include "test/unittest/unittest.h"
 
 UnitTest::Parser::Parser(void) noexcept
 {
 	_names.emplace_back("test_variable_declaration_statements");
 	_tests.emplace_back([&]() {
-			// TODO: #11 initialization 도 구현 필요
-			const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
+		// TODO: #11 initialization 도 구현 필요
+		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 
-			mcf::parser parser = mcf::parser(input);
-			mcf::ast::program program;
-			parser.parse_program(program);
-			const size_t statementCount = program.get_statement_count();
+		mcf::parser parser = mcf::parser(input);
+		mcf::ast::program program;
+		parser.parse_program(program);
+		const size_t statementCount = program.get_statement_count();
 
-			check_parser_errors(parser);
-			fatal_assert(statementCount == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", statementCount);
+		check_parser_errors(parser);
+		fatal_assert(statementCount == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", statementCount);
 
-			const struct test_case
+		const struct test_case
+		{
+			const mcf::token_type	ExpectedDataType;
+			const std::string		ExpectedIdentifier;
+		} testCases[] =
+		{
+			{mcf::token_type::keyword_int32, "x"},
+			{mcf::token_type::keyword_int32, "y"},
+			{mcf::token_type::keyword_int32, "foobar"},
+		};
+		constexpr const size_t testCaseCount = array_size(testCases);
+
+		for (size_t i = 0; i < testCaseCount; i++)
+		{
+			const mcf::ast::statement* statement = program.get_statement_at(i);
+			if (test_variable_declaration_statement(statement, testCases[i].ExpectedDataType, testCases[i].ExpectedIdentifier) == false)
 			{
-				const mcf::token_type	ExpectedDataType;
-				const std::string		ExpectedIdentifier;
-			} testCases[] =
-			{
-				{mcf::token_type::keyword_int32, "x"},
-				{mcf::token_type::keyword_int32, "y"},
-				{mcf::token_type::keyword_int32, "foobar"},
-			};
-			constexpr const size_t testCaseCount = array_size(testCases);
-
-			for (size_t i = 0; i < testCaseCount; i++)
-			{
-				const mcf::ast::statement* statement = program.get_statement_at(i);
-				if (test_variable_declaration_statement(statement, testCases[i].ExpectedDataType, testCases[i].ExpectedIdentifier) == false)
-				{
-					return false;
-				}
+				return false;
 			}
-			return true;
+		}
+		return true;
 		});
 
 	_names.emplace_back("test_convert_to_string");
@@ -391,6 +392,45 @@ UnitTest::Parser::Parser(void) noexcept
 
 		return true;
 		});
+
+	_names.emplace_back("./unittest/texts/test_file_read.txt");
+	_tests.emplace_back([&]() {
+		
+		mcf::ast::program actualProgram;
+		{
+			std::string input;
+			{
+				std::ifstream file(_names.back().c_str());
+				std::string line;
+				while (std::getline(file, line))
+				{
+					input += line + "\n";
+				}
+				input.erase(input.length() - 1);
+			}
+			mcf::parser parser(input);
+			parser.parse_program(actualProgram);
+			check_parser_errors(parser);
+		}
+
+		using namespace mcf;
+		using namespace mcf::ast;
+
+		auto generate_variable_declaration = [&](token_type t1, const char* l1, token_type t2, const char* l2, token_type t3, const char* l3) -> statement* {
+			return new variable_declaration_statement(data_type_expression({ t1, l1 }), identifier_expression({ t2, l2 }), new literal_expession({ t3, l3 }));
+			};
+
+		std::vector<const mcf::ast::statement*> statements =
+		{
+			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "foo", token_type::integer_32bit, "10"),
+			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),
+		};
+		program expectedProgram(statements);
+		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
+			actualProgram.convert_to_string(false).c_str(), expectedProgram.convert_to_string(false).c_str());
+
+		return true;
+		});
 }
 
 const bool UnitTest::Parser::Test(void) const noexcept
@@ -399,10 +439,10 @@ const bool UnitTest::Parser::Test(void) const noexcept
 	{
 		if (_tests[i]() == false)
 		{
-			std::cout << "Test[#" << i << "] `" << _names[i] << "()` Failed" << std::endl;
+			std::cout << "Test[#" << i << "] `" << _names[i] << "` Failed" << std::endl;
 			return false;
 		}
-		std::cout << "Parser Test[#" << i << "] `" << _names[i] << "()` Passed" << std::endl;
+		std::cout << "Parser Test[#" << i << "] `" << _names[i] << "` Passed" << std::endl;
 	}
 	return true;
 }
