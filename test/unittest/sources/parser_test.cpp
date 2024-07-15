@@ -421,7 +421,7 @@ UnitTest::Parser::Parser(void) noexcept
 			{
 				std::ifstream file(_names.back().c_str());
 				std::string line;
-				while (std::getline(file, line))
+				while (std::getline(file, line, '\r'))
 				{
 					input += line + "\n";
 					std::cout << input << std::endl;
