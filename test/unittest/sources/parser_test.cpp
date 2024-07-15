@@ -424,8 +424,8 @@ UnitTest::Parser::Parser(void) noexcept
 				while (!file.eof())
 				{
 					int ch = file.get();
-					input += ch;
-					std::cout << ch;
+					input += (char)ch;
+					std::cout << input << std::endl;
 
 				}
 				input.erase(input.length() - 1);
