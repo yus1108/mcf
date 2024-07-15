@@ -21,9 +21,9 @@
 #define error_message_begin(ERROR_COUNT) printf(u8"[Error]: %s(Line: %d) %zu개의 에러 메시지가 있습니다.\n", ##__FILE__, ##__LINE__, ERROR_COUNT)
 #define error_message(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); ((void)0)
 #if defined(_DEBUG)
-#define error_message_end __debugbreak(); abort();
+#define error_message_end __debugbreak();
 #else
-#define error_message_end abort();
+#define error_message_end
 #endif
 
 namespace UnitTest
@@ -117,7 +117,7 @@ namespace UnitTest
 		virtual const bool Test(void) const noexcept override final;
 
 	private:
-		static void check_parser_errors(mcf::parser& parser) noexcept;
+		static bool check_parser_errors(mcf::parser& parser) noexcept;
 		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
 		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
 		static bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken) noexcept;

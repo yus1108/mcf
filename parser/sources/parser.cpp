@@ -7,14 +7,15 @@
 #include "ast.h"
 #include "parser.h"
 
+constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "%s(Line: %d)\n[Description]: ";
 // ASSERT
 #if defined(_DEBUG)
 #define parsing_fail_assert(PREDICATE, ERROR_ID, FORMAT, ...) if ((PREDICATE) == false) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
@@ -29,9 +30,9 @@
 #define parsing_fail_message(ERROR_ID, FORMAT, ...) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
@@ -46,9 +47,9 @@
 #define parsing_fail_assert(PREDICATE, ERROR_ID, FORMAT, ...) if ((PREDICATE) == false)  \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
@@ -62,9 +63,9 @@
 #define parsing_fail_message(ERROR_ID, FORMAT, ...) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, "Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, "[Fatal Error: ID[%d]: %s(Line: %d)\n[Description]: ", ERROR_ID, ##__FILE__, ##__LINE__); \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, ##__FILE__, ##__LINE__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
@@ -240,7 +241,8 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::rbracket: __COUNTER__;
 	case token_type::comma: __COUNTER__;
 	default:
-		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)", internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
+		parsing_fail_message(error::id::not_registered_prefix_token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`", 
+			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 		break;
 	}
 	constexpr const size_t TOKEN_TYPE_COUNT = __COUNTER__ - TOKEN_TYPE_COUNT_BEGIN;

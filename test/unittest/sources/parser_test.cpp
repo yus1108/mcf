@@ -14,7 +14,10 @@ UnitTest::Parser::Parser(void) noexcept
 		parser.parse_program(program);
 		const size_t statementCount = program.get_statement_count();
 
-		check_parser_errors(parser);
+		if (check_parser_errors(parser) == false)
+		{
+			return false;
+		}
 		fatal_assert(statementCount == 3, u8"program._statements 안에 3개의 명령문을 가지고 있어야 합니다. 결과값=%zu", statementCount);
 
 		const struct test_case
@@ -63,7 +66,10 @@ UnitTest::Parser::Parser(void) noexcept
 		mcf::parser parser(input);
 		mcf::ast::program program;
 		parser.parse_program(program);
-		check_parser_errors(parser);
+		if (check_parser_errors(parser) == false)
+		{
+			return false;
+		}
 
 		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 		const mcf::ast::statement* statement = program.get_statement_at(0);
@@ -87,7 +93,10 @@ UnitTest::Parser::Parser(void) noexcept
 		mcf::parser parser(input);
 		mcf::ast::program program;
 		parser.parse_program(program);
-		check_parser_errors(parser);
+		if (check_parser_errors(parser) == false)
+		{
+			return false;
+		}
 
 		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 		const mcf::ast::statement* statement = program.get_statement_at(0);
@@ -131,7 +140,10 @@ UnitTest::Parser::Parser(void) noexcept
 			mcf::parser parser(testCases[i].Input);
 			mcf::ast::program program;
 			parser.parse_program(program);
-			check_parser_errors(parser);
+			if (check_parser_errors(parser) == false)
+			{
+				return false;
+			}
 
 			fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 			const mcf::ast::statement* statement = program.get_statement_at(0);
@@ -208,7 +220,10 @@ UnitTest::Parser::Parser(void) noexcept
 			mcf::parser parser(testCases[i].Input);
 			mcf::ast::program program;
 			parser.parse_program(program);
-			check_parser_errors(parser);
+			if (check_parser_errors(parser) == false)
+			{
+				return false;
+			}
 
 			fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 			const mcf::ast::statement* statement = program.get_statement_at(0);
@@ -384,7 +399,10 @@ UnitTest::Parser::Parser(void) noexcept
 			mcf::parser parser(testCases[i].Input);
 			mcf::ast::program program;
 			parser.parse_program(program);
-			check_parser_errors(parser);
+			if (check_parser_errors(parser) == false)
+			{
+				return false;
+			}
 
 			const std::string actual = program.convert_to_string(false);
 			fatal_assert(actual == testCases[i].Expected, "expected=`%s`, actual=`%s`", testCases[i].Expected.c_str(), actual.c_str());
@@ -410,7 +428,10 @@ UnitTest::Parser::Parser(void) noexcept
 			}
 			mcf::parser parser(input);
 			parser.parse_program(actualProgram);
-			check_parser_errors(parser);
+			if (check_parser_errors(parser) == false)
+			{
+				return false;
+			}
 		}
 
 		using namespace mcf;
@@ -447,22 +468,23 @@ const bool UnitTest::Parser::Test(void) const noexcept
 	return true;
 }
 
-void UnitTest::Parser::check_parser_errors(mcf::parser& parser) noexcept
+bool UnitTest::Parser::check_parser_errors(mcf::parser& parser) noexcept
 {
 	const size_t errorCount = parser.get_error_count();
 	if (errorCount == 0)
 	{
-		return;
+		return true;
 	}
 
 	error_message_begin(errorCount);
 	mcf::parser::error curr = parser.get_last_error();
 	while (curr.ID != mcf::parser::error::id::no_error)
 	{
-		error_message(u8"p%zu, 파싱 에러: %s", enum_index(curr.ID), curr.Message.c_str());
+		error_message(u8"[Error][Parser] ID=%zu: %s", enum_index(curr.ID), curr.Message.c_str());
 		curr = parser.get_last_error();
 	}
 	error_message_end;
+	return false;
 }
 
 bool UnitTest::Parser::test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept
