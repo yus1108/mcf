@@ -679,7 +679,7 @@ namespace parser_test
 	constexpr const size_t PARSER_TEST_FUNCTIONS_COUNT = PARSER_TEST_FUNCTIONS_COUNT_END + 2;
 };
 
-int main(const size_t argc, const char* const argv[])
+const int main(const size_t argc, const char* const argv[])
 {
 	detect_memory_leak();
 
