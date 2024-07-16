@@ -1,2 +1,2 @@
-﻿int32 foo = 10;
+int32 foo = 10;
 int32 boo = 5;
