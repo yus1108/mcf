@@ -416,7 +416,6 @@ UnitTest::Parser::Parser( void ) noexcept
 	_tests.emplace_back( [&]() {
 
 		mcf::ast::program actualProgram;
-		std::cout << "file read begin" << std::endl;
 		{
 			std::string input;
 			{
@@ -425,7 +424,6 @@ UnitTest::Parser::Parser( void ) noexcept
 				while (std::getline( file, line ))
 				{
 					input += line;
-					std::cout << input << std::endl;
 
 				}
 			}
@@ -436,7 +434,6 @@ UnitTest::Parser::Parser( void ) noexcept
 				return false;
 			}
 		}
-		std::cout << "file read end" << std::endl;
 
 		using namespace mcf;
 		using namespace mcf::ast;
@@ -451,11 +448,9 @@ UnitTest::Parser::Parser( void ) noexcept
 			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),
 		};
 		program expectedProgram(statements);
-		std::cout << "actualProgram.convert_to_string() == expectedProgram.convert_to_string()" << std::endl;
 		fatal_assert( actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
 			actualProgram.convert_to_string(false).c_str(), expectedProgram.convert_to_string(false).c_str());
 
-		std::cout << "actualProgram.convert_to_string() == expectedProgram.convert_to_string() end" << std::endl;
 		return true;
 		} );
 }
