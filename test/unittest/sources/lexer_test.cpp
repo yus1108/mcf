@@ -88,7 +88,7 @@ namespace UnitTest
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
 				const size_t vectorSize = testCases[i].ExpectedResultVector.size();
-				mcf::lexer lexer(testCases[i].Input);
+				mcf::lexer lexer(testCases[i].Input, false);
 				for (size_t j = 0; j < vectorSize; j++)
 				{
 					const mcf::token token = lexer.read_next_token();

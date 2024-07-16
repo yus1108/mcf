@@ -417,6 +417,9 @@ UnitTest::Parser::Parser( void ) noexcept
 		mcf::ast::program actualProgram;
 		{
 			mcf::parser parser(_names.back().c_str(), true);
+			mcf::parser::error parserInitError = parser.get_last_error();
+			fatal_assert(parserInitError.ID == mcf::parser::error::id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s", 
+				PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
 			parser.parse_program(actualProgram);
 			if ( check_parser_errors( parser ) == false )
 			{
@@ -470,7 +473,7 @@ bool UnitTest::Parser::check_parser_errors( mcf::parser& parser ) noexcept
 	mcf::parser::error curr = parser.get_last_error();
 	while ( curr.ID != mcf::parser::error::id::no_error )
 	{
-		error_message( u8"[ID:%zu]%s%s", enum_index(curr.ID), curr.Name.c_str(), curr.Message.c_str());
+		error_message("[ID:%zu]%s%s", enum_index(curr.ID), curr.Name.c_str(), curr.Message.c_str());
 		curr = parser.get_last_error();
 	}
 	error_message_end;

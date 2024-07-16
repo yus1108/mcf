@@ -30,11 +30,6 @@ namespace mcf
 			return mcf::token_type::identifier;
 		}
 
-		struct
-		{
-			std::stack<lexer::error_token> Tokens;
-		} gErrorHandler;
-
 		inline static constexpr const bool is_alphabet(const char byte) noexcept
 		{
 			return ('a' <= byte && byte <= 'z') || ('A' <= byte && byte <= 'Z');
@@ -44,15 +39,48 @@ namespace mcf
 		{
 			return ('0' <= byte && byte <= '9');
 		}
+
+		inline static const std::string read_file(const std::string& path)
+		{
+			std::string input;
+			{
+				std::ifstream file(path.c_str());
+				if (file.is_open() == false || file.fail() == true)
+				{
+					return std::string();
+				}
+
+				std::string line;
+				while (std::getline(file, line))
+				{
+					if (file.fail() == true)
+					{
+						return std::string();
+					}
+					input += line;
+				}
+			}
+			return input;
+		}
 	}
 }
 
-mcf::lexer::lexer(const std::string& input) noexcept
-	: _input( input )
+mcf::lexer::lexer(const std::string& input, const bool isFIle) noexcept
+	: _input(isFIle ? internal::read_file(input) : input)
+	, _name(input)
 {
 	if ( _input.length() == 0 )
 	{
-		internal::gErrorHandler.Tokens.push( lexer::error_token::invalid_input_length );
+		if (isFIle)
+		{
+			std::ifstream file(_name.c_str());
+			if (file.fail())
+			{
+				_tokens.push(lexer::error_token::fail_read_file);
+				return;
+			}
+		}
+		_tokens.push( lexer::error_token::invalid_input_length );
 		return;
 	}
 
@@ -63,13 +91,13 @@ mcf::lexer::lexer(const std::string& input) noexcept
 
 const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 {
-	if (internal::gErrorHandler.Tokens.empty()) 
+	if (_tokens.empty())
 	{ 
 		return lexer::error_token::no_error;
 	}
 
-	const mcf::lexer::error_token lError = internal::gErrorHandler.Tokens.top();
-	internal::gErrorHandler.Tokens.pop();
+	const mcf::lexer::error_token lError = _tokens.top();
+	_tokens.pop();
 	return lError;
 }
 

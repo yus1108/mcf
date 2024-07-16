@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <stack>
 
 namespace mcf
 {
@@ -52,15 +53,21 @@ namespace mcf
 	public:
 		enum class error_token : unsigned char 
 		{
-			no_error = 0,
+			invalid = 0,
+
+			no_error,
 			invalid_input_length,
+			fail_read_file,
+
+			count,
 		};
 
 	public:
 		explicit lexer(void) noexcept = delete;
-		explicit lexer(const std::string& input) noexcept;
+		explicit lexer(const std::string& input, const bool isFIle) noexcept;
 
-		static const mcf::lexer::error_token get_last_error_token(void) noexcept;
+		const mcf::lexer::error_token	get_last_error_token(void) noexcept;
+		const std::string				get_name(void) const noexcept { return _name; }
 
 		const mcf::token read_next_token(void) noexcept;
 
@@ -70,11 +77,13 @@ namespace mcf
 		const std::string	read_number(void) noexcept;
 
 	private:
-		const std::string	_input				= nullptr;
-		size_t				_currentPosition	= 0;
-		size_t				_nextPosition		= 0;
-		size_t				_currentLine		= 1; // 코드 명령줄은 항상 1부터 시작합니다.
-		size_t				_currentIndex		= 0;
-		char				_currentByte		= 0;
+		std::stack<lexer::error_token>	_tokens;
+		const std::string				_input;
+		const std::string				_name;
+		size_t							_currentPosition	= 0;
+		size_t							_nextPosition		= 0;
+		size_t							_currentLine		= 1; // 코드 명령줄은 항상 1부터 시작합니다.
+		size_t							_currentIndex		= 0;
+		char							_currentByte		= 0;
 	};
 }

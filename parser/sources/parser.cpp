@@ -13,18 +13,13 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 #define parsing_fail_assert(PREDICATE, ERROR_ID, TOKEN, FORMAT, ...) if ((PREDICATE) == false) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
+	int pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	if (pfa_buffer == nullptr) { return false; } \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
-	pfa_message += pfa_buffer; delete[] pfa_buffer; \
-	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
-	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
 	if (pfa_buffer == nullptr) { return false; } \
 	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
-	mcf::parser::error pfa_error = { ERROR_ID, _name, pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push(pfa_error); \
 	__debugbreak(); \
 	return false;\
@@ -32,22 +27,15 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 #define parsing_fail_message(ERROR_ID, TOKEN, FORMAT, ...) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
+	int pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
 	if (pfa_buffer != nullptr) \
 	{ \
-		snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
-		pfa_message += pfa_buffer; delete[] pfa_buffer; \
-		pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
-		pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-		if (pfa_buffer != nullptr) \
-		{ \
-			snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
-			pfa_message += pfa_buffer; delete[] pfa_buffer; \
-			pfa_message += "\n"; \
-		} \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
 	} \
-	mcf::parser::error pfa_error = { ERROR_ID, _name, pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push( pfa_error ); \
 	__debugbreak(); \
 } ((void)0)
@@ -55,40 +43,28 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 #define parsing_fail_assert(PREDICATE, ERROR_ID, TOKEN, FORMAT, ...) if ((PREDICATE) == false) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
+	int pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-	if (pfa_buffer == nullptr) { return false; } \
-	snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
-	pfa_message += pfa_buffer; delete[] pfa_buffer; \
-	pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
-	pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
 	if (pfa_buffer == nullptr) { return false; } \
 	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
-	mcf::parser::error pfa_error = { ERROR_ID, _name, pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push(pfa_error); \
 	return false;\
 } ((void)0)
 #define parsing_fail_message(ERROR_ID, TOKEN, FORMAT, ...) \
 { \
 	std::string pfa_message; \
-	int pfa_bufferLength = snprintf(nullptr, 0, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
+	int pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
 	char* pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
 	if (pfa_buffer != nullptr) \
 	{ \
-		snprintf(pfa_buffer, pfa_bufferLength + 1, PARSING_FAIL_MESSAGE_FORMAT, TOKEN.Line, TOKEN.Index); \
-		pfa_message += pfa_buffer; delete[] pfa_buffer; \
-		pfa_bufferLength = snprintf(nullptr, 0, FORMAT, __VA_ARGS__); \
-		pfa_buffer = new(std::nothrow) char[pfa_bufferLength + 1]; \
-		if (pfa_buffer != nullptr) \
-		{ \
-			snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
-			pfa_message += pfa_buffer; delete[] pfa_buffer; \
-			pfa_message += "\n"; \
-		} \
+	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
+	pfa_message += pfa_buffer; delete[] pfa_buffer; \
+	pfa_message += "\n"; \
 	} \
-	mcf::parser::error pfa_error = { ERROR_ID, _name, pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push( pfa_error ); \
 } ((void)0)
 #endif
@@ -134,27 +110,16 @@ namespace mcf
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
-
-		inline static const std::string read_file(const std::string& path)
-		{
-			std::string input;
-			{
-				std::ifstream file(path.c_str());
-				std::string line;
-				while ( std::getline( file, line ) )
-				{
-					input += line;
-				}
-			}
-			return input;
-		}
 	}
 }
 
 mcf::parser::parser(const std::string& input, const bool isFile) noexcept
-	: _lexer(isFile ? internal::read_file(input) : input)
-	, _name(input)
+	: _lexer(input, isFile)
 {
+	if (check_last_lexer_error() == false)
+	{
+		return;
+	}
 	_currentToken = _lexer.read_next_token();
 	_nextToken = _lexer.read_next_token();
 }
@@ -168,7 +133,7 @@ const mcf::parser::error mcf::parser::get_last_error(void) noexcept
 {
 	if (_errors.empty())
 	{
-		return { parser::error::id::no_error, _name, std::string(), 0, 0};
+		return { parser::error::id::no_error, _lexer.get_name(), std::string(), 0, 0};
 	}
 
 	const mcf::parser::error error = _errors.top();
@@ -488,4 +453,33 @@ inline const mcf::parser::precedence mcf::parser::get_next_precedence(void) noex
 inline const mcf::parser::precedence mcf::parser::get_current_token_precedence(void) noexcept
 {
 	return get_expression_precedence(_currentToken);
+}
+
+const bool mcf::parser::check_last_lexer_error(void) noexcept
+{
+	// 렉서에 에러가 있는지 체크
+	lexer::error_token lexerError = _lexer.get_last_error_token();
+	constexpr const size_t LEXER_ERROR_TOKEN_COUNT_BEGIN = __COUNTER__;
+	switch (lexerError)
+	{
+	case lexer::error_token::no_error: __COUNTER__;
+		return true;
+
+	case lexer::error_token::invalid_input_length: __COUNTER__;
+		parsing_fail_message(error::id::invalid_input_length, token(), u8"input의 길이가 0입니다.");
+		break;
+
+	case lexer::error_token::fail_read_file: __COUNTER__;
+		parsing_fail_message(error::id::fail_read_file, token(), u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
+		break;
+
+	default:
+		parsing_fail_message(error::id::invalid_lexer_error_token, token(), u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. parser::error::id=invalid_lexer_error_token");
+		break;
+	}
+	constexpr const size_t LEXER_ERROR_TOKEN_COUNT = __COUNTER__ - LEXER_ERROR_TOKEN_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(lexer::error_token::count) == LEXER_ERROR_TOKEN_COUNT, "lexer error_token is changed. this SWITCH need to be changed as well.");
+
+	check_last_lexer_error();
+	return false;
 }

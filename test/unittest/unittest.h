@@ -90,20 +90,36 @@ namespace UnitTest
 	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE,
 		"expression_type count not matching");
 
+	constexpr const char* PARSER_ERROR_ID[] =
+	{
+		"invalid",
+
+		"no_error",
+		"invalid_lexer_error_token",
+		"invalid_input_length",
+		"fail_read_file",
+		"unexpected_next_token",
+		"not_registered_prefix_token",
+		"not_registered_infix_token",
+	};
+	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
+	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE,
+		"mcf::parser::error::id count not matching");
+
 	const std::string convert_to_string( const mcf::token& token );
 
 	class UnitTest
 	{
 	public:
-		virtual inline ~UnitTest( void ) noexcept {}
-		virtual const bool Test( void ) const noexcept = 0;
+		virtual inline ~UnitTest(void) noexcept {}
+		virtual const bool Test(void) const noexcept = 0;
 	};
 
 	class Lexer final : UnitTest
 	{
 	public:
-		explicit Lexer( void ) noexcept;
-		virtual const bool Test( void ) const noexcept override final;
+		explicit Lexer(void) noexcept;
+		virtual const bool Test(void) const noexcept override final;
 
 	private:
 		std::vector<std::string>			_names;
@@ -113,14 +129,14 @@ namespace UnitTest
 	class Parser final : UnitTest
 	{
 	public:
-		explicit Parser( void ) noexcept;
-		virtual const bool Test( void ) const noexcept override final;
+		explicit Parser(void) noexcept;
+		virtual const bool Test(void) const noexcept override final;
 
 	private:
-		static bool check_parser_errors( mcf::parser& parser ) noexcept;
-		static bool test_variable_declaration_statement( const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName ) noexcept;
-		static bool test_literal( const mcf::ast::expression* expression, const mcf::token& expectedToken ) noexcept;
-		static bool test_identifier( const mcf::ast::expression* targetExpression, const mcf::token& expectedToken ) noexcept;
+		static bool check_parser_errors(mcf::parser& parser) noexcept;
+		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
+		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
+		static bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken) noexcept;
 
 	private:
 		std::vector<std::string>			_names;
@@ -130,7 +146,7 @@ namespace UnitTest
 	inline static void detect_memory_leak( long line = -1 )
 	{
 		//Also need this for memory leak code stuff
-		_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
-		_CrtSetBreakAlloc( line ); //Important!
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+		_CrtSetBreakAlloc(line); //Important!
 	}
 }

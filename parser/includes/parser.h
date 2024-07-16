@@ -35,6 +35,9 @@ namespace mcf
 				invalid = 0,
 
 				no_error,
+				invalid_lexer_error_token,
+				invalid_input_length,
+				fail_read_file,
 				unexpected_next_token,
 				not_registered_prefix_token,
 				not_registered_infix_token,
@@ -75,11 +78,12 @@ namespace mcf
 		const mcf::parser::precedence get_next_precedence( void ) noexcept;
 		const mcf::parser::precedence get_current_token_precedence(void) noexcept;
 
+		const bool check_last_lexer_error(void) noexcept;
+
 	private:
 		std::stack<mcf::parser::error>	_errors;
 		mcf::lexer						_lexer;
 		mcf::token						_currentToken;
 		mcf::token						_nextToken;
-		const std::string				_name;
 	};
 }
