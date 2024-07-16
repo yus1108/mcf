@@ -48,15 +48,17 @@ namespace mcf
 }
 
 mcf::lexer::lexer(const std::string& input) noexcept
-	: _input(input)
+	: _input( input )
 {
-	if (_input.length() == 0)
+	if ( _input.length() == 0 )
 	{
-		internal::gErrorHandler.Tokens.push(lexer::error_token::invalid_input_length);
+		internal::gErrorHandler.Tokens.push( lexer::error_token::invalid_input_length );
 		return;
 	}
 
 	read_next_byte();
+	// reset index to 0 after read next byte
+	_currentIndex = 0;
 }
 
 const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
@@ -83,78 +85,85 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 	while (_currentByte == ' ' || _currentByte == '\t' || _currentByte == '\n' || _currentByte == '\r')
 	{
 		read_next_byte();
+		if ( _currentByte == '\n' )
+		{
+			_currentLine++;
+			_currentIndex = 0;
+		}
 	}
 
 	constexpr const size_t TOKEN_COUNT_BEGIN = __COUNTER__;
 	switch (_currentByte)
 	{
 	case 0: __COUNTER__;
-		lToken = { token_type::eof, "\0" };
+		lToken = { token_type::eof, "\0", _currentLine, _currentIndex };
 		break;
 	case '=': __COUNTER__;
-		lToken = { token_type::assign, std::string(1, _currentByte) };
+		lToken = { token_type::assign, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '+': __COUNTER__;
-		lToken = { token_type::plus, std::string(1, _currentByte) };
+		lToken = { token_type::plus, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '-': __COUNTER__;
-		lToken = { token_type::minus, std::string(1, _currentByte) };
+		lToken = { token_type::minus, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '*': __COUNTER__;
-		lToken = { token_type::asterisk, std::string(1, _currentByte) };
+		lToken = { token_type::asterisk, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '/': __COUNTER__;
-		lToken = { token_type::slash, std::string(1, _currentByte) };
+		lToken = { token_type::slash, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '<': __COUNTER__;
-		lToken = { token_type::lt, std::string(1, _currentByte) };
+		lToken = { token_type::lt, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '>': __COUNTER__;
-		lToken = { token_type::gt, std::string(1, _currentByte) };
+		lToken = { token_type::gt, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '(': __COUNTER__;
-		lToken = { token_type::lparen, std::string(1, _currentByte) };
+		lToken = { token_type::lparen, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case ')': __COUNTER__;
-		lToken = { token_type::rparen, std::string(1, _currentByte) };
+		lToken = { token_type::rparen, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '{': __COUNTER__;
-		lToken = { token_type::lbrace, std::string(1, _currentByte) };
+		lToken = { token_type::lbrace, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '}': __COUNTER__;
-		lToken = { token_type::rbrace, std::string(1, _currentByte) };
+		lToken = { token_type::rbrace, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '[': __COUNTER__;
-		lToken = { token_type::lbracket, std::string(1, _currentByte) };
+		lToken = { token_type::lbracket, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case ']': __COUNTER__;
-		lToken = { token_type::rbracket, std::string(1, _currentByte) };
+		lToken = { token_type::rbracket, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case ';': __COUNTER__;
-		lToken = { token_type::semicolon, std::string(1, _currentByte) };
+		lToken = { token_type::semicolon, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case ',': __COUNTER__;
-		lToken = { token_type::comma, std::string(1, _currentByte) };
+		lToken = { token_type::comma, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	default:
 		// keyword + identifier 는 첫 시작이 '_' 이거나 알파벳 이어야만 합니다.
 		if (internal::is_alphabet(_currentByte) || _currentByte == '_')
 		{
-			// TODO: 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
+			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			lToken.Literal = read_keyword_or_identifier(); 
 			lToken.Type = internal::determine_keyword_or_identifier(lToken.Literal);
+			lToken.Line = _currentLine;
+			lToken.Index = _currentIndex;
 			return lToken; __COUNTER__; __COUNTER__; // count for keyword & identifier
 		}
 		else if (internal::is_digit(_currentByte))
 		{
-			lToken = { token_type::integer_32bit, read_number() }; __COUNTER__;
+			lToken = { token_type::integer_32bit, read_number(), _currentLine, _currentIndex }; __COUNTER__;
 			// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
 			// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
 			return lToken;
 		}
 		else
 		{
-			lToken = { token_type::invalid, std::string(1, _currentByte) };
+			lToken = { token_type::invalid, std::string(1, _currentByte), _currentLine, _currentIndex };
 			default_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
@@ -173,6 +182,7 @@ void mcf::lexer::read_next_byte(void) noexcept
 	_currentByte = (_nextPosition > lLength) ? 0 : _input[_nextPosition];
 	_currentPosition = _nextPosition;
 	_nextPosition += 1;
+	_currentIndex += 1;
 }
 
 const std::string mcf::lexer::read_keyword_or_identifier(void) noexcept

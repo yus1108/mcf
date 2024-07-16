@@ -42,6 +42,8 @@ namespace mcf
 	{
 		mcf::token_type	Type = mcf::token_type::invalid;
 		std::string		Literal;
+		size_t			Line	= 0;
+		size_t			Index	= 0;
 	};
 	inline bool operator==(const mcf::token& lhs, const mcf::token& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
 
@@ -71,6 +73,8 @@ namespace mcf
 		const std::string	_input				= nullptr;
 		size_t				_currentPosition	= 0;
 		size_t				_nextPosition		= 0;
+		size_t				_currentLine		= 1; // 코드 명령줄은 항상 1부터 시작합니다.
+		size_t				_currentIndex		= 0;
 		char				_currentByte		= 0;
 	};
 }

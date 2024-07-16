@@ -1,4 +1,6 @@
 ﻿#pragma once
+#include <stack>
+
 namespace mcf
 {
 	namespace ast
@@ -40,15 +42,18 @@ namespace mcf
 				// 이 밑으로는 수정하면 안됩니다.
 				count,
 			} ID;
+			std::string Name;
 			std::string Message;
+			size_t		Line;
+			size_t		Index;
 		};
 
 	public:
 		explicit parser(void) noexcept = delete;
-		explicit parser(const std::string& input) noexcept;
+		explicit parser(const std::string& input, const bool isFile) noexcept;
 
-		static const size_t				get_error_count(void) noexcept;
-		static const mcf::parser::error get_last_error(void) noexcept;
+		const size_t				get_error_count(void) noexcept;
+		const mcf::parser::error	get_last_error(void) noexcept;
 
 		void parse_program(mcf::ast::program& outProgram) noexcept;
 
@@ -66,12 +71,15 @@ namespace mcf
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
 
-		const mcf::parser::precedence get_next_precedence(void) const noexcept;
-		const mcf::parser::precedence get_current_token_precedence(void) const noexcept;
+		const mcf::parser::precedence get_expression_precedence(const mcf::token& token) noexcept;
+		const mcf::parser::precedence get_next_precedence( void ) noexcept;
+		const mcf::parser::precedence get_current_token_precedence(void) noexcept;
 
 	private:
-		mcf::lexer _lexer;
-		mcf::token _currentToken;
-		mcf::token _nextToken;
+		std::stack<mcf::parser::error>	_errors;
+		mcf::lexer						_lexer;
+		mcf::token						_currentToken;
+		mcf::token						_nextToken;
+		const std::string				_name;
 	};
 }

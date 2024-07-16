@@ -1,5 +1,4 @@
-﻿#include <filesystem>
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include "test/unittest/unittest.h"
 
@@ -10,7 +9,7 @@ UnitTest::Parser::Parser( void ) noexcept
 		// TODO: #11 initialization 도 구현 필요
 		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 
-		mcf::parser parser = mcf::parser( input );
+		mcf::parser parser = mcf::parser(input, false);
 		mcf::ast::program program;
 		parser.parse_program( program );
 		const size_t statementCount = program.get_statement_count();
@@ -64,7 +63,7 @@ UnitTest::Parser::Parser( void ) noexcept
 	_names.emplace_back( "test_identifier_expression" );
 	_tests.emplace_back( [&]() {
 		const std::string input = "int32 foo = bar;";
-		mcf::parser parser( input );
+		mcf::parser parser(input, false);
 		mcf::ast::program program;
 		parser.parse_program( program );
 		if ( check_parser_errors( parser ) == false )
@@ -91,7 +90,7 @@ UnitTest::Parser::Parser( void ) noexcept
 	_names.emplace_back( "test_literal_expression" );
 	_tests.emplace_back( [&]() {
 		const std::string input = "int32 foo = 5;";
-		mcf::parser parser( input );
+		mcf::parser parser(input, false);
 		mcf::ast::program program;
 		parser.parse_program( program );
 		if ( check_parser_errors( parser ) == false )
@@ -138,7 +137,7 @@ UnitTest::Parser::Parser( void ) noexcept
 
 		for ( size_t i = 0; i < testCaseCount; i++ )
 		{
-			mcf::parser parser( testCases[i].Input );
+			mcf::parser parser(testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program( program );
 			if ( check_parser_errors( parser ) == false )
@@ -181,9 +180,9 @@ UnitTest::Parser::Parser( void ) noexcept
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__;
-			case mcf::ast::expression_type::prefix: __COUNTER__;
-			case mcf::ast::expression_type::infix: __COUNTER__;
+			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error( u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index( targetExpression->get_expression_type() )], mcf::enum_index( targetExpression->get_expression_type() ) );
@@ -218,7 +217,7 @@ UnitTest::Parser::Parser( void ) noexcept
 
 		for ( size_t i = 0; i < testCaseCount; i++ )
 		{
-			mcf::parser parser( testCases[i].Input );
+			mcf::parser parser(testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program( program );
 			if ( check_parser_errors( parser ) == false )
@@ -253,9 +252,9 @@ UnitTest::Parser::Parser( void ) noexcept
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__;
-			case mcf::ast::expression_type::prefix: __COUNTER__;
-			case mcf::ast::expression_type::infix: __COUNTER__;
+			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error( u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. left expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index( leftExpression->get_expression_type() )], mcf::enum_index( leftExpression->get_expression_type() ) );
@@ -282,9 +281,9 @@ UnitTest::Parser::Parser( void ) noexcept
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__;
-			case mcf::ast::expression_type::prefix: __COUNTER__;
-			case mcf::ast::expression_type::infix: __COUNTER__;
+			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error( u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. right expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index( rightExpression->get_expression_type() )], mcf::enum_index( rightExpression->get_expression_type() ) );
@@ -397,7 +396,7 @@ UnitTest::Parser::Parser( void ) noexcept
 
 		for ( size_t i = 0; i < testCaseCount; i++ )
 		{
-			mcf::parser parser( testCases[i].Input );
+			mcf::parser parser(testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program( program );
 			if ( check_parser_errors( parser ) == false )
@@ -417,17 +416,7 @@ UnitTest::Parser::Parser( void ) noexcept
 
 		mcf::ast::program actualProgram;
 		{
-			std::string input;
-			{
-				std::ifstream file(_names.back().c_str());
-				std::string line;
-				while (std::getline( file, line ))
-				{
-					input += line;
-
-				}
-			}
-			mcf::parser parser(input);
+			mcf::parser parser(_names.back().c_str(), true);
 			parser.parse_program(actualProgram);
 			if ( check_parser_errors( parser ) == false )
 			{
@@ -481,7 +470,7 @@ bool UnitTest::Parser::check_parser_errors( mcf::parser& parser ) noexcept
 	mcf::parser::error curr = parser.get_last_error();
 	while ( curr.ID != mcf::parser::error::id::no_error )
 	{
-		error_message( u8"[ID:%zu], %s", enum_index( curr.ID ), curr.Message.c_str() );
+		error_message( u8"[ID:%zu]%s%s", enum_index(curr.ID), curr.Name.c_str(), curr.Message.c_str());
 		curr = parser.get_last_error();
 	}
 	error_message_end;
