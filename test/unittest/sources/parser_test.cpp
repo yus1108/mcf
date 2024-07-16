@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <filesystem>
+#include <iostream>
 #include <fstream>
 #include "test/unittest/unittest.h"
 
@@ -411,7 +412,7 @@ UnitTest::Parser::Parser( void ) noexcept
 		return true;
 		} );
 
-	_names.emplace_back( "./unittest/texts/test_file_read.txt" );
+	_names.emplace_back( "./unittest/test_file_read.txt" );
 	_tests.emplace_back( [&]() {
 
 		mcf::ast::program actualProgram;
@@ -420,15 +421,17 @@ UnitTest::Parser::Parser( void ) noexcept
 			std::string input;
 			{
 				std::ifstream file(_names.back().c_str());
+				std::filesystem::path cwd = std::filesystem::current_path();
+				std::cout << "path: " << cwd << std::endl;
 				std::string line;
 				std::getline( file, line );
 				std::cout << line << std::endl;
-				/*while ( std::getline( file, line ) )
+				while ( std::getline( file, line ) )
 				{
 					input += line;
 					std::cout << input << std::endl;
 
-				}*/
+				}
 			}
 			mcf::parser parser(input);
 			parser.parse_program(actualProgram);
