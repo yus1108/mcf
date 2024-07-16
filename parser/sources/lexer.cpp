@@ -148,8 +148,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		else if (internal::is_digit(_currentByte))
 		{
 			lToken = { token_type::integer_32bit, read_number() }; __COUNTER__;
-			// TODO: decimal 토큰을 생성 가능하게 개선 필요
-			// TODO: 이후 postfix 로 타입 지정 가능하게 개선 필요
+			// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
+			// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
 			return lToken;
 		}
 		else
