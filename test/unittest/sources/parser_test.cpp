@@ -422,9 +422,7 @@ UnitTest::Parser::Parser( void ) noexcept
 			{
 				std::ifstream file(_names.back().c_str());
 				std::string line;
-				std::getline( file, line );
-				std::cout << line << std::endl;
-				while ( std::getline( file, line ) )
+				while (std::getline( file, line ))
 				{
 					input += line;
 					std::cout << input << std::endl;
@@ -433,7 +431,7 @@ UnitTest::Parser::Parser( void ) noexcept
 			}
 			mcf::parser parser(input);
 			parser.parse_program(actualProgram);
-			if (check_parser_errors(parser) == false)
+			if ( check_parser_errors( parser ) == false )
 			{
 				return false;
 			}
@@ -453,9 +451,11 @@ UnitTest::Parser::Parser( void ) noexcept
 			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),
 		};
 		program expectedProgram(statements);
-		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
+		std::cout << "actualProgram.convert_to_string() == expectedProgram.convert_to_string()" << std::endl;
+		fatal_assert( actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
 			actualProgram.convert_to_string(false).c_str(), expectedProgram.convert_to_string(false).c_str());
 
+		std::cout << "actualProgram.convert_to_string() == expectedProgram.convert_to_string() end" << std::endl;
 		return true;
 		} );
 }
