@@ -45,6 +45,7 @@ namespace UnitTest
 		"slash",
 		"lt",
 		"gt",
+		"ampersand",
 
 		"lparen",
 		"rparen",
@@ -57,9 +58,16 @@ namespace UnitTest
 		// 구분자
 		"semicolon",
 		"comma",
+		"colon",
 
-		// 예약어
-		"keyword",
+		// 식별자 키워드
+		"keyword_identifier_start",
+		"keyword_int32",
+		"keyword_enum",
+		"keyword_identifier_end",
+
+		// '.' 으로 시작하는 토큰
+		"keyword_variadic",
 	};
 	constexpr const size_t TOKEN_TYPES_SIZE = array_size( TOKEN_TYPES );
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE,
@@ -99,8 +107,9 @@ namespace UnitTest
 		"invalid_input_length",
 		"fail_read_file",
 		"unexpected_next_token",
-		"not_registered_prefix_token",
-		"not_registered_infix_token",
+		"not_registered_statement_token",
+		"not_registered_expression_token",
+		"not_registered_infix_expression_token",
 	};
 	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
 	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE,

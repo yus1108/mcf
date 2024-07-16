@@ -6,34 +6,42 @@ namespace mcf
 	enum class token_type : unsigned char
 	{
 		invalid = 0,
-		eof,			// \0
+		eof,		// \0
 
 		// 식별자 + 리터럴
 		identifier,		// [_a-zA-Z]+[_a-zA-Z0-9]*
 		integer_32bit,	// [0-9]+
 
 		// 연산자
-		assign,			// =
-		plus,			// +
-		minus,			// -
-		asterisk,		// *
-		slash,			// /
-		lt,				// <
-		gt,				// >
+		assign,		// =
+		plus,		// +
+		minus,		// -
+		asterisk,	// *
+		slash,		// /
+		lt,			// <
+		gt,			// >
+		ampersand,	// &
 
-		lparen,			// (
-		rparen,			// )
-		lbrace,			// {
-		rbrace,			// }
-		lbracket,		// [
-		rbracket,		// ]
+		lparen,		// (
+		rparen,		// )
+		lbrace,		// {
+		rbrace,		// }
+		lbracket,	// [
+		rbracket,	// ]
 
 		// 구분자
-		semicolon,		// ;
-		comma,			// ,
+		semicolon,	// ;
+		comma,		// ,
+		colon,		// :
 
-		// 예약어
-		keyword_int32,	// int32
+		// 식별자 키워드
+		keyword_identifier_start,	// 실제 값으로 사용되어선 안됩니다!!!
+		keyword_int32,				// int32
+		keyword_enum,				// enum
+		keyword_identifier_end,		// 실제 값으로 사용되어선 안됩니다!!!
+
+		// '.' 으로 시작하는 토큰
+		keyword_variadic,	// ...
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count
@@ -72,9 +80,12 @@ namespace mcf
 		const mcf::token read_next_token(void) noexcept;
 
 	private:
+		const char get_next_char(void) const noexcept;
+
 		void				read_next_byte(void) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
+		const mcf::token	read_dot_starting_token(void) noexcept;
 
 	private:
 		std::stack<lexer::error_token>	_tokens;

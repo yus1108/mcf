@@ -39,8 +39,9 @@ namespace mcf
 				invalid_input_length,
 				fail_read_file,
 				unexpected_next_token,
-				not_registered_prefix_token,
-				not_registered_infix_token,
+				not_registered_statement_token,
+				not_registered_expression_token,
+				not_registered_infix_expression_token,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				count,

@@ -92,6 +92,7 @@ namespace mcf
 			"slash",
 			"lt",
 			"gt",
+			"ampersand",
 
 			"lparen",
 			"rparen",
@@ -104,9 +105,16 @@ namespace mcf
 			// 구분자
 			"semicolon",
 			"comma",
+			"colon",
 
-			// 예약어
-			"keyword",
+			// 식별자 키워드
+			"keyword_identifier_start",
+			"keyword_int32",
+			"keyword_enum",
+			"keyword_identifier_end",
+
+			// '.' 으로 시작하는 토큰
+			"keyword_variadic",
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
@@ -171,6 +179,11 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 
 	case token_type::identifier: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_variable_assignment_statement());
+		break;
+
+	case token_type::keyword_enum: __COUNTER__;
+		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		break;
 
 	case token_type::eof: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
@@ -184,6 +197,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::slash: __COUNTER__;
 	case token_type::lt: __COUNTER__;
 	case token_type::gt: __COUNTER__;
+	case token_type::ampersand: __COUNTER__;
 	case token_type::lparen: __COUNTER__;
 	case token_type::rparen: __COUNTER__;
 	case token_type::lbrace: __COUNTER__;
@@ -191,8 +205,12 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::lbracket: __COUNTER__;
 	case token_type::rbracket: __COUNTER__;
 	case token_type::comma: __COUNTER__;
+	case token_type::colon: __COUNTER__;
+	case token_type::keyword_identifier_start: __COUNTER__;
+	case token_type::keyword_identifier_end: __COUNTER__;
+	case token_type::keyword_variadic: __COUNTER__;
 	default:
-		parsing_fail_message(error::id::not_registered_prefix_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
+		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 		break;
 	}
@@ -271,12 +289,17 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
+	case token_type::keyword_variadic: __COUNTER__;
+		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		break;
+
 	case token_type::eof: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::asterisk: __COUNTER__;
 	case token_type::slash: __COUNTER__;
 	case token_type::lt: __COUNTER__;
 	case token_type::gt: __COUNTER__;
+	case token_type::ampersand: __COUNTER__;
 	case token_type::lparen: __COUNTER__;
 	case token_type::rparen: __COUNTER__;
 	case token_type::lbrace: __COUNTER__;
@@ -286,8 +309,12 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_int32: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 	case token_type::comma: __COUNTER__;
+	case token_type::colon: __COUNTER__;
+	case token_type::keyword_identifier_start: __COUNTER__;
+	case token_type::keyword_enum: __COUNTER__;
+	case token_type::keyword_identifier_end: __COUNTER__;
 	default:
-		parsing_fail_message(error::id::not_registered_prefix_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
 	}
@@ -319,6 +346,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 			expression = std::unique_ptr<const ast::expression>(parse_index_expression(expression.release()));
 			break;
 
+		case token_type::ampersand: __COUNTER__;
+			parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"TODO 비트 연산자 파싱");
+			break;
+
 		case token_type::eof: __COUNTER__;
 		case token_type::identifier: __COUNTER__;
 		case token_type::integer_32bit: __COUNTER__;
@@ -329,9 +360,14 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::rbracket: __COUNTER__;
 		case token_type::semicolon: __COUNTER__;
 		case token_type::comma: __COUNTER__;
+		case token_type::colon: __COUNTER__;
+		case token_type::keyword_identifier_start: __COUNTER__;
 		case token_type::keyword_int32: __COUNTER__;
+		case token_type::keyword_enum: __COUNTER__;
+		case token_type::keyword_identifier_end: __COUNTER__;
+		case token_type::keyword_variadic: __COUNTER__;
 		default:
-			parsing_fail_message(error::id::not_registered_infix_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
 			return nullptr;
 		}
@@ -375,14 +411,14 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 const mcf::ast::infix_expression* mcf::parser::parse_call_expression(const mcf::ast::expression* left) noexcept
 {
 	unused(left);
-	parsing_fail_message(error::id::not_registered_infix_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
+	parsing_fail_message(error::id::not_registered_infix_expression_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
 	return nullptr;
 }
 
 const mcf::ast::infix_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
 {
 	unused(left);
-	parsing_fail_message(error::id::not_registered_infix_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
+	parsing_fail_message(error::id::not_registered_infix_expression_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
 	return nullptr;
 }
 
@@ -427,15 +463,21 @@ inline const mcf::parser::precedence mcf::parser::get_expression_precedence(cons
 	case token_type::identifier: __COUNTER__;
 	case token_type::integer_32bit: __COUNTER__;
 	case token_type::assign: __COUNTER__;
+	case token_type::ampersand: __COUNTER__;
 	case token_type::rparen: __COUNTER__;
 	case token_type::lbrace: __COUNTER__;
 	case token_type::rbrace: __COUNTER__;
 	case token_type::rbracket: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 	case token_type::comma: __COUNTER__;
+	case token_type::colon: __COUNTER__;
+	case token_type::keyword_identifier_start: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_enum: __COUNTER__;
+	case token_type::keyword_identifier_end: __COUNTER__;
+	case token_type::keyword_variadic: __COUNTER__;
 	default:
-		parsing_fail_message(parser::error::id::not_registered_infix_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(token.Type)], enum_index(token.Type));
 		break;
 	}
