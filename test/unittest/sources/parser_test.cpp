@@ -412,7 +412,7 @@ UnitTest::Parser::Parser( void ) noexcept
 		return true;
 		} );
 
-	_names.emplace_back( "./unittest/test_file_read.txt" );
+	_names.emplace_back( "./test/unittest/texts/test_file_read.txt" );
 	_tests.emplace_back( [&]() {
 
 		mcf::ast::program actualProgram;
@@ -421,8 +421,6 @@ UnitTest::Parser::Parser( void ) noexcept
 			std::string input;
 			{
 				std::ifstream file(_names.back().c_str());
-				std::filesystem::path cwd = std::filesystem::current_path();
-				std::cout << "path: " << cwd << std::endl;
 				std::string line;
 				std::getline( file, line );
 				std::cout << line << std::endl;
