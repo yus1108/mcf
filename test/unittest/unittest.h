@@ -62,8 +62,12 @@ namespace UnitTest
 
 		// 식별자 키워드
 		"keyword_identifier_start",
+		"keyword_const",
+		"keyword_void",
 		"keyword_int32",
+		"keyword_utf8",
 		"keyword_enum",
+		"keyword_unused",
 		"keyword_identifier_end",
 
 		// '.' 으로 시작하는 토큰

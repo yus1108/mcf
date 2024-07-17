@@ -109,8 +109,12 @@ namespace mcf
 
 			// 식별자 키워드
 			"keyword_identifier_start",
+			"keyword_const",
+			"keyword_void",
 			"keyword_int32",
+			"keyword_utf8",
 			"keyword_enum",
+			"keyword_unused",
 			"keyword_identifier_end",
 
 			// '.' 으로 시작하는 토큰
@@ -181,8 +185,11 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	constexpr const size_t TOKEN_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (_currentToken.Type)
 	{
-	// 데이터 타입 키워드인 경우
+		// !<declaration> 관련 키워드인 경우
+	case token_type::keyword_const: __COUNTER__;
+	case token_type::keyword_void: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_utf8: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
 		break;
 
@@ -224,6 +231,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::comma: __COUNTER__;
 	case token_type::colon: __COUNTER__;
 	case token_type::keyword_identifier_start: __COUNTER__;
+	case token_type::keyword_unused: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
@@ -310,6 +318,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
+	case token_type::keyword_unused: __COUNTER__;
+		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		break;
+
 	case token_type::keyword_variadic: __COUNTER__;
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
 		break;
@@ -327,7 +339,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::rbrace: __COUNTER__;
 	case token_type::lbracket: __COUNTER__;
 	case token_type::rbracket: __COUNTER__;
+	case token_type::keyword_const: __COUNTER__;
+	case token_type::keyword_void: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_utf8: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 	case token_type::comma: __COUNTER__;
 	case token_type::colon: __COUNTER__;
@@ -389,8 +404,12 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::comma: __COUNTER__;
 		case token_type::colon: __COUNTER__;
 		case token_type::keyword_identifier_start: __COUNTER__;
+		case token_type::keyword_const: __COUNTER__;
+		case token_type::keyword_void: __COUNTER__;
 		case token_type::keyword_int32: __COUNTER__;
+		case token_type::keyword_utf8: __COUNTER__;
 		case token_type::keyword_enum: __COUNTER__;
+		case token_type::keyword_unused: __COUNTER__;
 		case token_type::keyword_identifier_end: __COUNTER__;
 		case token_type::keyword_variadic: __COUNTER__;
 		case token_type::macro_start: __COUNTER__;
@@ -510,8 +529,12 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::comma: __COUNTER__;
 	case token_type::colon: __COUNTER__;
 	case token_type::keyword_identifier_start: __COUNTER__;
+	case token_type::keyword_const: __COUNTER__;
+	case token_type::keyword_void: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_utf8: __COUNTER__;
 	case token_type::keyword_enum: __COUNTER__;
+	case token_type::keyword_unused: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;

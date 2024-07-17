@@ -39,8 +39,12 @@ namespace mcf
 
 		// 식별자 키워드
 		keyword_identifier_start,	// 실제 값으로 사용되어선 안됩니다!!!
+		keyword_const,				// const
+		keyword_void,				// void
 		keyword_int32,				// int32
+		keyword_utf8,				// utf8
 		keyword_enum,				// enum
+		keyword_unused,				// unused
 		keyword_identifier_end,		// 실제 값으로 사용되어선 안됩니다!!!
 
 		// '.' 으로 시작하는 토큰

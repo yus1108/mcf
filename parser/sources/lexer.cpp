@@ -16,8 +16,12 @@ namespace mcf
 				// TODO: #5 uint32 타입 추가 필요
 				// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
 				// TODO: #7 decimal 타입 추가 필요
+				"const",
+				"void",
 				"int32",
+				"utf8",
 				"enum",
+				"unused",
 			};
 			constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
 			static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE, 
@@ -27,7 +31,7 @@ namespace mcf
 			{
 				if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
 				{
-					return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_int32) + i);
+					return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
 				}
 			}
 			return mcf::token_type::identifier;
@@ -238,8 +242,12 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		if (internal::is_alphabet(_currentByte) || _currentByte == '_')
 		{
 			__COUNTER__; // count for identifier
+			__COUNTER__; // count for keyword_const
+			__COUNTER__; // count for keyword_void
 			__COUNTER__; // count for keyword_int32
+			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
+			__COUNTER__; // count for keyword_unused
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			lToken.Literal = read_keyword_or_identifier(); 
 			lToken.Type = internal::determine_keyword_or_identifier(lToken.Literal);
