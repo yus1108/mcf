@@ -10,7 +10,13 @@
 #endif
 
 #if defined(_DEBUG)
-#define default_break(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); break
+#define debug_break(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); break
 #else
-#define default_break(FORMAT, ...) break
+#define debug_break(FORMAT, ...) break
+#endif
+
+#if defined(_DEBUG)
+#define debug_message(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak();
+#else
+#define debug_message(FORMAT, ...)
 #endif

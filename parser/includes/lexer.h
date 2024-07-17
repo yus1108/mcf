@@ -43,6 +43,11 @@ namespace mcf
 		// '.' 으로 시작하는 토큰
 		keyword_variadic,	// ...
 
+		// 매크로
+		macro_start,	// 실제 값으로 사용되어선 안됩니다!!!
+		macro_include,	// #include <[^<>\n\r]+> 또는 #include "[^<>\n\r]+"
+		macro_end,		// 실제 값으로 사용되어선 안됩니다!!!
+
 		// 이 밑으로는 수정하면 안됩니다.
 		count
 	};
@@ -66,6 +71,7 @@ namespace mcf
 			no_error,
 			invalid_input_length,
 			fail_read_file,
+			fail_memory_allocation,
 
 			count,
 		};
@@ -83,9 +89,12 @@ namespace mcf
 		const char get_next_char(void) const noexcept;
 
 		void				read_next_byte(void) noexcept;
+		const bool			read_and_validate_start_with(std::string* optionalOut, const char* startWith) noexcept;
+		const bool			read_and_validate_string_with_filter( std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
 		const mcf::token	read_dot_starting_token(void) noexcept;
+		const mcf::token	read_macro_token(void) noexcept;
 
 	private:
 		std::stack<lexer::error_token>	_tokens;

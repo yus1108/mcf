@@ -115,6 +115,11 @@ namespace mcf
 
 			// '.' 으로 시작하는 토큰
 			"keyword_variadic",
+
+			// 매크로
+			"macro_start",		// 실제 값으로 사용되어선 안됩니다!!!
+			"macro_include",	// #include <[^<>\n\r]+> 또는 #include "[^<>\n\r]+"
+			"macro_end",		// 실제 값으로 사용되어선 안됩니다!!!
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
@@ -185,6 +190,10 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
 		break;
 
+	case token_type::macro_include: __COUNTER__;
+		parsing_fail_message( error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발" );
+		break;
+
 	case token_type::eof: __COUNTER__;
 	case token_type::semicolon: __COUNTER__;
 		break;
@@ -209,6 +218,8 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
+	case token_type::macro_start: __COUNTER__;
+	case token_type::macro_end: __COUNTER__;
 	default:
 		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -313,6 +324,9 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
+	case token_type::macro_start: __COUNTER__;
+	case token_type::macro_include: __COUNTER__;
+	case token_type::macro_end: __COUNTER__;
 	default:
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
@@ -321,7 +335,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	constexpr const size_t EXPRESSION_TOKEN_COUNT = __COUNTER__ - EXPRESSION_TOKEN_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::token_type::count) == EXPRESSION_TOKEN_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
 
-	while (expression.get() != nullptr && _nextToken.Type != token_type::semicolon && precedence < get_next_precedence())
+	while (expression.get() != nullptr && _nextToken.Type != token_type::semicolon && precedence < get_next_infix_expression_token_precedence())
 	{
 		constexpr const size_t INFIX_COUNT_BEGIN = __COUNTER__;
 		switch (_nextToken.Type)
@@ -366,6 +380,9 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_enum: __COUNTER__;
 		case token_type::keyword_identifier_end: __COUNTER__;
 		case token_type::keyword_variadic: __COUNTER__;
+		case token_type::macro_start: __COUNTER__;
+		case token_type::macro_include: __COUNTER__;
+		case token_type::macro_end: __COUNTER__;
 		default:
 			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
@@ -398,7 +415,7 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 	std::unique_ptr<const ast::expression> leftExpression(left);
 
 	const token infixOperatorToken = _currentToken;
-	const precedence precedence = get_current_token_precedence();
+	const precedence precedence = get_current_infix_expression_token_precedence();
 	read_next_token();
 	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence));
 	if (rightExpression.get() == nullptr)
@@ -436,7 +453,7 @@ inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType) noe
 	return true;
 }
 
-inline const mcf::parser::precedence mcf::parser::get_expression_precedence(const mcf::token& token) noexcept
+inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_precedence(const mcf::token& token) noexcept
 {
 	constexpr const size_t PRECEDENCE_COUNT_BEGIN = __COUNTER__;
 	switch (token.Type)
@@ -476,6 +493,9 @@ inline const mcf::parser::precedence mcf::parser::get_expression_precedence(cons
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
+	case token_type::macro_start: __COUNTER__;
+	case token_type::macro_include: __COUNTER__;
+	case token_type::macro_end: __COUNTER__;
 	default:
 		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(token.Type)], enum_index(token.Type));
@@ -487,14 +507,14 @@ inline const mcf::parser::precedence mcf::parser::get_expression_precedence(cons
 	return parser::precedence::lowest;
 }
 
-inline const mcf::parser::precedence mcf::parser::get_next_precedence(void) noexcept
+inline const mcf::parser::precedence mcf::parser::get_next_infix_expression_token_precedence(void) noexcept
 {
-	return get_expression_precedence(_nextToken);
+	return get_infix_expression_token_precedence(_nextToken);
 }
 
-inline const mcf::parser::precedence mcf::parser::get_current_token_precedence(void) noexcept
+inline const mcf::parser::precedence mcf::parser::get_current_infix_expression_token_precedence(void) noexcept
 {
-	return get_expression_precedence(_currentToken);
+	return get_infix_expression_token_precedence(_currentToken);
 }
 
 const bool mcf::parser::check_last_lexer_error(void) noexcept
@@ -513,6 +533,10 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 
 	case lexer::error_token::fail_read_file: __COUNTER__;
 		parsing_fail_message(error::id::fail_read_file, token(), u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
+		break;
+
+	case lexer::error_token::fail_memory_allocation: __COUNTER__;
+		parsing_fail_message(error::id::fail_memory_allocation, token(), u8"메모리 할당에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
 		break;
 
 	default:

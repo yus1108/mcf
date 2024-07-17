@@ -68,6 +68,11 @@ namespace UnitTest
 
 		// '.' 으로 시작하는 토큰
 		"keyword_variadic",
+
+		// 매크로
+		"macro_start",
+		"macro_include",
+		"macro_end",
 	};
 	constexpr const size_t TOKEN_TYPES_SIZE = array_size( TOKEN_TYPES );
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE,
@@ -106,6 +111,7 @@ namespace UnitTest
 		"invalid_lexer_error_token",
 		"invalid_input_length",
 		"fail_read_file",
+		"fail_memory_allocation",
 		"unexpected_next_token",
 		"not_registered_statement_token",
 		"not_registered_expression_token",

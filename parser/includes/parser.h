@@ -38,6 +38,7 @@ namespace mcf
 				invalid_lexer_error_token,
 				invalid_input_length,
 				fail_read_file,
+				fail_memory_allocation,
 				unexpected_next_token,
 				not_registered_statement_token,
 				not_registered_expression_token,
@@ -75,9 +76,9 @@ namespace mcf
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
 
-		const mcf::parser::precedence get_expression_precedence(const mcf::token& token) noexcept;
-		const mcf::parser::precedence get_next_precedence( void ) noexcept;
-		const mcf::parser::precedence get_current_token_precedence(void) noexcept;
+		const mcf::parser::precedence get_infix_expression_token_precedence(const mcf::token& token) noexcept;
+		const mcf::parser::precedence get_next_infix_expression_token_precedence( void ) noexcept;
+		const mcf::parser::precedence get_current_infix_expression_token_precedence(void) noexcept;
 
 		const bool check_last_lexer_error(void) noexcept;
 

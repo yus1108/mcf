@@ -82,6 +82,12 @@ namespace UnitTest
 						{mcf::token_type::semicolon, ";"},
 					},
 				},
+				{
+					"#include <builtins>",
+					{
+						{mcf::token_type::macro_include, "int32"},
+					},
+				},
 			};
 			constexpr const size_t testCaseCount = array_size(testCases);
 
