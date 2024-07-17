@@ -396,7 +396,7 @@ inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
 		return { token_type::comment, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
-	debug_assert(debugOutput == "/", "결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 코드에 문제가 없는지 확인하세요.");
+	debug_assert(debugOutput == "/", u8"결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 코드에 문제가 없는지 확인하세요.");
 	return { token_type::slash, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }
 

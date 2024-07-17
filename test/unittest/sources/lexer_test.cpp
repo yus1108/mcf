@@ -127,7 +127,8 @@ namespace UnitTest
 					{mcf::token_type::assign, "="},
 					{mcf::token_type::integer_32bit, "10"},
 					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::comment, "// invalid;"},
+					{mcf::token_type::comment, "//\\"},
+					{mcf::token_type::comment, u8"// TODO: 주석의 마지막이 \"\\\\n\" 라면 \\n을 escape 한다. 해당 구현 완료되면 이 주석의 \"//\"를 제거 하세요."},
 					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "boo"},
 					{mcf::token_type::assign, "="},
@@ -138,14 +139,14 @@ namespace UnitTest
 			mcf::lexer lexer(_names.back().c_str(), true);
 			for (size_t i = 0; i < expectedResultVectorSize; i++)
 			{
-				/*const mcf::token token = lexer.read_next_token();
+				const mcf::token token = lexer.read_next_token();
 				const mcf::token_type expectedTokenType = expectedResultVector[i].Type;
 
 				fatal_assert(token.Type == expectedTokenType, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
 					token.Line, token.Index, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
 
 				fatal_assert(token.Literal == expectedResultVector[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-					token.Line, token.Index, expectedResultVector[i].Literal, token.Literal.c_str());*/
+					token.Line, token.Index, expectedResultVector[i].Literal, token.Literal.c_str());
 			}
 
 			return true;
