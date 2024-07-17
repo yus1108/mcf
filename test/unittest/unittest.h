@@ -71,12 +71,12 @@ namespace UnitTest
 
 		// 매크로
 		"macro_start",
-		"macro_include",
+		"macro_iibrary_file_include",
+		"macro_project_file_include",
 		"macro_end",
 	};
 	constexpr const size_t TOKEN_TYPES_SIZE = array_size( TOKEN_TYPES );
-	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE,
-		"token count not matching!");
+	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token count not matching!");
 
 	constexpr const char* STATEMENT_TYPES[] =
 	{
@@ -86,8 +86,7 @@ namespace UnitTest
 		"variable_assignment",
 	};
 	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
-	static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE,
-		"statement_type count not matching");
+	static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
 
 	constexpr const char* EXPRESSION_TYPES[] =
 	{
@@ -100,8 +99,7 @@ namespace UnitTest
 		"infix",
 	};
 	constexpr const size_t EXPRESSION_TYPES_SIZE = array_size( EXPRESSION_TYPES );
-	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE,
-		"expression_type count not matching");
+	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
 
 	constexpr const char* PARSER_ERROR_ID[] =
 	{
@@ -118,8 +116,7 @@ namespace UnitTest
 		"not_registered_infix_expression_token",
 	};
 	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
-	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE,
-		"mcf::parser::error::id count not matching");
+	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");
 
 	const std::string convert_to_string( const mcf::token& token );
 

@@ -118,7 +118,8 @@ namespace mcf
 
 			// 매크로
 			"macro_start",		// 실제 값으로 사용되어선 안됩니다!!!
-			"macro_include",	// #include <[^<>\n\r]+> 또는 #include "[^<>\n\r]+"
+			"macro_iibrary_file_include",	// #include <[^<>\n\r]+>
+			"macro_project_file_include",	// #include "[^<>\n\r]+"
 			"macro_end",		// 실제 값으로 사용되어선 안됩니다!!!
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
@@ -190,8 +191,12 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
 		break;
 
-	case token_type::macro_include: __COUNTER__;
-		parsing_fail_message( error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발" );
+	case token_type::macro_iibrary_file_include: __COUNTER__;
+		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		break;
+
+	case token_type::macro_project_file_include: __COUNTER__;
+		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
 		break;
 
 	case token_type::eof: __COUNTER__;
@@ -325,7 +330,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_include: __COUNTER__;
+	case token_type::macro_iibrary_file_include: __COUNTER__;
+	case token_type::macro_project_file_include: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
 	default:
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
@@ -381,7 +387,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_identifier_end: __COUNTER__;
 		case token_type::keyword_variadic: __COUNTER__;
 		case token_type::macro_start: __COUNTER__;
-		case token_type::macro_include: __COUNTER__;
+		case token_type::macro_iibrary_file_include: __COUNTER__;
+		case token_type::macro_project_file_include: __COUNTER__;
 		case token_type::macro_end: __COUNTER__;
 		default:
 			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
@@ -494,7 +501,8 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_include: __COUNTER__;
+	case token_type::macro_iibrary_file_include: __COUNTER__;
+	case token_type::macro_project_file_include: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
 	default:
 		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",

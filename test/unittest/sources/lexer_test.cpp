@@ -1,4 +1,4 @@
-#include <iostream>
+ï»¿#include <iostream>
 #include <vector>
 #include <memory>
 #include <string>
@@ -85,7 +85,7 @@ namespace UnitTest
 				{
 					"#include <builtins>",
 					{
-						{mcf::token_type::macro_include, "int32"},
+						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
 					},
 				},
 			};
@@ -100,10 +100,10 @@ namespace UnitTest
 					const mcf::token token = lexer.read_next_token();
 					const mcf::token_type expectedTokenType = testCases[i].ExpectedResultVector[j].Type;
 
-					fatal_assert(token.Type == expectedTokenType, u8"tests[%zu-%zu] - ÅäÅ« Å¸ÀÔÀÌ Æ²·È½À´Ï´Ù. ¿¹»ó°ª=%s, ½ÇÁ¦°ª=%s",
+					fatal_assert(token.Type == expectedTokenType, u8"tests[%zu-%zu] - í† í° íƒ€ì…ì´ í‹€ë ¸ìŠµë‹ˆë‹¤. ì˜ˆìƒê°’=%s, ì‹¤ì œê°’=%s",
 						i, j, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
 
-					fatal_assert(token.Literal == testCases[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - ÅäÅ« ¸®ÅÍ·²ÀÌ Æ²·È½À´Ï´Ù. ¿¹»ó°ª=%s, ½ÇÁ¦°ª=%s",
+					fatal_assert(token.Literal == testCases[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - í† í° ë¦¬í„°ëŸ´ì´ í‹€ë ¸ìŠµë‹ˆë‹¤. ì˜ˆìƒê°’=%s, ì‹¤ì œê°’=%s",
 						i, j, testCases[i].ExpectedResultVector[j].Literal, token.Literal.c_str());
 				}
 			}

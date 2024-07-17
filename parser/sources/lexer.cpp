@@ -181,41 +181,42 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		lToken = { token_type::colon, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '.':
-		return read_dot_starting_token();
 		__COUNTER__; // count for keyword_variadic
+		return read_dot_starting_token();
 	case '#':
+		__COUNTER__; // count for macro_iibrary_file_include
+		__COUNTER__; // count for macro_project_file_include
 		return read_macro_token();
-		__COUNTER__; // count for macro_include
 	default:
 		// keyword + identifier 는 첫 시작이 '_' 이거나 알파벳 이어야만 합니다.
 		if (internal::is_alphabet(_currentByte) || _currentByte == '_')
 		{
+			__COUNTER__; // count for identifier
+			__COUNTER__; // count for keyword_int32
+			__COUNTER__; // count for keyword_enum
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			lToken.Literal = read_keyword_or_identifier(); 
 			lToken.Type = internal::determine_keyword_or_identifier(lToken.Literal);
 			lToken.Line = _currentLine;
 			lToken.Index = _currentIndex;
 			return lToken; 
-			__COUNTER__; // count for identifier
-			__COUNTER__; // count for keyword_int32
-			__COUNTER__; // count for keyword_enum
 		}
 		else if (internal::is_digit(_currentByte))
 		{
+			__COUNTER__; // count for integer_32bit
 			lToken = { token_type::integer_32bit, read_number(), _currentLine, _currentIndex };
 			// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
 			// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
 			return lToken;
-			__COUNTER__; // count for integer_32bit
 		}
 		else
 		{
-			lToken = { token_type::invalid, std::string(1, _currentByte), _currentLine, _currentIndex };
-			debug_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 			__COUNTER__; // count for keyword_identifier_start
 			__COUNTER__; // count for keyword_identifier_end
 			__COUNTER__; // count for macro_start
 			__COUNTER__; // count for macro_end
+			lToken = { token_type::invalid, std::string(1, _currentByte), _currentLine, _currentIndex };
+			debug_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
 	constexpr const size_t TOKEN_COUNT = __COUNTER__ - TOKEN_COUNT_BEGIN;
@@ -278,15 +279,17 @@ inline const bool mcf::lexer::read_and_validate_string_with_filter(std::string* 
 	}
 
 	// endWith 문자열이 나오기 전까지 코드를 읽습니다.
-	bool isPass = true;
 	while (read_and_validate_start_with(nullptr, endWith) == false)
 	{
 		// 인풋의 끝에 도달 하면 바로 종료
 		if (_currentByte == 0)
 		{
 			debug_message(u8"`%s`으로 끝나기 전에 EOF에 도달하였습니다.", endWith);
-			isPass = false;
-			break;
+			if (optionalOut != nullptr)
+			{
+				*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+			}
+			return false;
 		}
 
 		// 특정 문자가 들어 오게 되었을 때 강제 종료
@@ -295,19 +298,22 @@ inline const bool mcf::lexer::read_and_validate_string_with_filter(std::string* 
 			if ( _currentByte == invalidChars[i] )
 			{
 				debug_message( u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte );
-				isPass = false;
-				break;
+				if (optionalOut != nullptr)
+				{
+					*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+				}
+				return false;
 			}
 		}
 
 		read_next_byte();
 	}
 
-	if ( optionalOut != nullptr )
+	if (optionalOut != nullptr)
 	{
-		*optionalOut = _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition );
+		*optionalOut = _input.substr(firstLetterPosition + strlen(startWith), _currentPosition - firstLetterPosition - strlen(endWith));
 	}
-	return isPass;
+	return true;
 }
 
 inline const std::string mcf::lexer::read_keyword_or_identifier(void) noexcept
@@ -359,13 +365,14 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 {
 	debug_assert( _currentByte == '#', u8"매크로는 '#'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
 
-	// identifier 조건에 부합하는 키워드만 등록합니다.
-	constexpr const char* MACROS_TYPES[] =
+	// 매크로 시작 문자열에 부합하는 키워드만 등록합니다.
+	constexpr const char* MACRO_START_WITH[] =
 	{
-		"#include",
+		"#include", // macro_iibrary_file_include
+		"#include", // macro_project_file_include
 	};
-	constexpr const size_t MACROS_TYPES_SIZE = array_size( MACROS_TYPES );
-	static_assert(enum_index(token_type::macro_end) - enum_index(token_type::macro_start) - 1 == MACROS_TYPES_SIZE,
+	constexpr const size_t MACRO_START_WITH_SIZE = array_size(MACRO_START_WITH);
+	static_assert(enum_index(token_type::macro_end) - enum_index(token_type::macro_start) - 1 == MACRO_START_WITH_SIZE,
 		"macro token_type count is changed. this array need to be changed as well.");
 
 	token_type tokenType = token_type::invalid;
@@ -373,39 +380,41 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 	const size_t firstLetterPosition = _currentPosition;
 	
 	// 첫 문자('#') 이후로는 알파벳이어야 합니다.
-	while (internal::is_alphabet( _currentByte ))
+	read_next_byte();
+	while (internal::is_alphabet(_currentByte))
 	{
 		read_next_byte();
 	}
 
 	std::string macroType = _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition );
-	for (size_t i = 0; i < MACROS_TYPES_SIZE; i++)
+	for (size_t i = 0; i < MACRO_START_WITH_SIZE; i++)
 	{
-		if (macroType == MACROS_TYPES[i])
+		if (macroType == MACRO_START_WITH[i])
 		{
-			tokenType = enum_at<token_type>( enum_index( token_type::macro_start ) + i + 1 );
+			tokenType = enum_at<token_type>(enum_index(token_type::macro_start) + i + 1);
 			break;
 		}
 	}
 
 	constexpr const size_t MACRO_COUNT_BEGIN = __COUNTER__;
 	std::string target;
-	switch ( tokenType )
+	switch (tokenType)
 	{
-	case token_type::macro_include: __COUNTER__;
+	case token_type::macro_iibrary_file_include: __COUNTER__;
+	case token_type::macro_project_file_include: __COUNTER__;
 		// 공백 문자는 스킵합니다.
 		while (_currentByte == ' ' || _currentByte == '\t')
 		{
 			read_next_byte();
 		}
 
-		if (_currentByte == '<' && read_and_validate_string_with_filter(&target, "<", ">", "\n\r") == true)
+		if (_currentByte == '<' && read_and_validate_string_with_filter(nullptr, "<", ">", "\n\r") == true)
 		{
-			return {tokenType, target, _currentLine, _currentIndex};
+			return { token_type::macro_iibrary_file_include, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 		}
-		else if ( _currentByte == '"' && read_and_validate_string_with_filter(&target, "\"", "\"", "\n\r" ) == true)
+		else if (_currentByte == '"' && read_and_validate_string_with_filter(nullptr, "\"", "\"", "\n\r") == true)
 		{
-			return {tokenType, target, _currentLine, _currentIndex};
+			return { token_type::macro_project_file_include, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 		}
 		debug_break(u8"#include <target> 매크로의 target은 '<' 또는 '\"'로 파싱을 시작해야합니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 
@@ -413,11 +422,11 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 		break;
 
 	default:
-		debug_break( u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte );
+		debug_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 	}
 	constexpr const size_t MACRO_COUNT = __COUNTER__ - MACRO_COUNT_BEGIN - 1;
-	static_assert(enum_index( token_type::macro_end ) - enum_index( token_type::macro_start ) - 1 == MACRO_COUNT,
+	static_assert(enum_index(token_type::macro_end) - enum_index(token_type::macro_start) - 1 == MACRO_COUNT,
 		"macro token_type count is changed. this switch need to be changed as well.");
 
-	return { token_type::invalid, _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition ), _currentLine, _currentIndex };
+	return { token_type::invalid, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }

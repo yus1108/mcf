@@ -44,9 +44,10 @@ namespace mcf
 		keyword_variadic,	// ...
 
 		// 매크로
-		macro_start,	// 실제 값으로 사용되어선 안됩니다!!!
-		macro_include,	// #include <[^<>\n\r]+> 또는 #include "[^<>\n\r]+"
-		macro_end,		// 실제 값으로 사용되어선 안됩니다!!!
+		macro_start,				// 실제 값으로 사용되어선 안됩니다!!!
+		macro_iibrary_file_include,	// #include <[^<>\n\r]+>
+		macro_project_file_include,	// #include "[^<>\n\r]+"
+		macro_end,					// 실제 값으로 사용되어선 안됩니다!!!
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count
