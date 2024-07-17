@@ -72,7 +72,7 @@ namespace UnitTest
 					},
 				},
 				{
-					"int32 foo = -1;",
+					"int32 foo = -1;     ",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
 						{mcf::token_type::identifier, "foo"},
@@ -83,9 +83,10 @@ namespace UnitTest
 					},
 				},
 				{
-					"#include <builtins>",
+					"#include <builtins>// testing comment; int32 boo = -1; //",
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
+						{mcf::token_type::comment, "// testing comment; int32 boo = -1; //"},
 					},
 				},
 			};
@@ -110,6 +111,45 @@ namespace UnitTest
 
 			return true;
 		});
+
+		_names.emplace_back("./test/unittest/texts/test_file_read.txt");
+		_tests.emplace_back([&]() {
+			struct expected_result final
+			{
+				const mcf::token_type   Type;
+				const char*				Literal;
+			};
+
+			const std::vector<expected_result>  expectedResultVector =
+			{
+					{mcf::token_type::keyword_int32, "int32"},
+					{mcf::token_type::identifier, "foo"},
+					{mcf::token_type::assign, "="},
+					{mcf::token_type::integer_32bit, "10"},
+					{mcf::token_type::semicolon, ";"},
+					{mcf::token_type::comment, "// invalid;"},
+					{mcf::token_type::keyword_int32, "int32"},
+					{mcf::token_type::identifier, "boo"},
+					{mcf::token_type::assign, "="},
+					{mcf::token_type::integer_32bit, "5"},
+					{mcf::token_type::semicolon, ";"},
+			};
+			const size_t expectedResultVectorSize = expectedResultVector.size();
+			mcf::lexer lexer(_names.back().c_str(), true);
+			for (size_t i = 0; i < expectedResultVectorSize; i++)
+			{
+				/*const mcf::token token = lexer.read_next_token();
+				const mcf::token_type expectedTokenType = expectedResultVector[i].Type;
+
+				fatal_assert(token.Type == expectedTokenType, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+					token.Line, token.Index, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
+
+				fatal_assert(token.Literal == expectedResultVector[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+					token.Line, token.Index, expectedResultVector[i].Literal, token.Literal.c_str());*/
+			}
+
+			return true;
+			});
 	}
 
 	const bool Lexer::Test(void) const noexcept

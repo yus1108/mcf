@@ -60,7 +60,8 @@ namespace mcf
 					{
 						return std::string();
 					}
-					input += line;
+					// 이전에 읽은 라인이 없다면 새로운 라인을 만들지 않는다. 
+					input += (line.empty() == true) ? line : ("\n" + line);
 				}
 			}
 			return input;
@@ -106,29 +107,29 @@ const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 
 const mcf::token mcf::lexer::read_next_token(void) noexcept
 {
-	if (_currentPosition == _input.size())
-	{ 
-		return { token_type::eof, "\0" };
-	}
-	mcf::token lToken;
-
 	// 공백 문자는 스킵 하도록 합니다.
 	while (_currentByte == ' ' || _currentByte == '\t' || _currentByte == '\n' || _currentByte == '\r')
 	{
-		read_next_byte();
-		if ( _currentByte == '\n' )
+		// EOF 를 맞나면 즉시 종료 루프를 빠져나옵니다.
+		if (_currentByte == 0)
+		{
+			break;
+		}
+		else if ( _currentByte == '\n' )
 		{
 			_currentLine++;
 			_currentIndex = 0;
 		}
+		read_next_byte();
 	}
 
 	constexpr const size_t TOKEN_COUNT_BEGIN = __COUNTER__;
+	mcf::token lToken;
 	switch (_currentByte)
 	{
 	case 0: __COUNTER__;
-		lToken = { token_type::eof, "\0", _currentLine, _currentIndex };
-		break;
+		// 입력의 끝에 도달 하였을때 read_next_byte()가 호출될 경우 에러가 발생하기 때문에 EOF 를 만나면 강제로 종료합니다.
+		return { token_type::eof, "\0", _currentLine, _currentIndex };
 	case '=': __COUNTER__;
 		lToken = { token_type::assign, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -141,9 +142,10 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 	case '*': __COUNTER__;
 		lToken = { token_type::asterisk, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
-	case '/': __COUNTER__;
-		lToken = { token_type::slash, std::string(1, _currentByte), _currentLine, _currentIndex };
-		break;
+	case '/': 
+		__COUNTER__; // count for slash
+		__COUNTER__; // count for comment
+		return read_slash_starting_token();
 	case '<': __COUNTER__;
 		lToken = { token_type::lt, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -227,7 +229,7 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 }
 
 
-inline const char mcf::lexer::get_next_char(void) const noexcept
+inline const char mcf::lexer::get_next_byte(void) const noexcept
 {
 	return _nextPosition < _input.length() ? _input[_nextPosition] : 0;
 }
@@ -243,15 +245,45 @@ inline void mcf::lexer::read_next_byte(void) noexcept
 	_currentIndex += 1;
 }
 
-inline const bool mcf::lexer::read_and_validate_start_with(std::string* optionalOut, const char* startWith) noexcept
+inline const bool mcf::lexer::read_line_if_start_with(std::string* optionalOut, const char* startWith) noexcept
 {
 	const size_t startWithLength = std::strlen(startWith);
 	const size_t firstLetterPosition = _currentPosition;
 
-	for ( size_t i = 0; i < startWithLength; ++i )
+	for (size_t i = 0; i < startWithLength; ++i)
 	{
-		if ( _currentByte != startWith[i] || _currentByte == 0 )
+		if (_currentByte != startWith[i] || _currentByte == 0)
 		{
+			if (optionalOut != nullptr)
+			{
+				*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+			}
+			return false;
+		}
+		read_next_byte();
+	}
+
+	while (_currentByte != 0 && _currentByte != '\r' && _currentByte != '\n')
+	{
+		read_next_byte();
+	}
+	if (optionalOut != nullptr)
+	{
+		*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+	}
+	return true;
+}
+
+inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept
+{
+	const size_t stringToCompareLength = std::strlen(stringToCompare);
+	const size_t firstLetterPosition = _currentPosition;
+
+	for ( size_t i = 0; i < stringToCompareLength; ++i )
+	{
+		if ( _currentByte != stringToCompare[i] || _currentByte == 0 )
+		{
+			read_next_byte();
 			if (optionalOut != nullptr)
 			{
 				*optionalOut = _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition );
@@ -268,20 +300,20 @@ inline const bool mcf::lexer::read_and_validate_start_with(std::string* optional
 	return true;
 }
 
-inline const bool mcf::lexer::read_and_validate_string_with_filter(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept
+inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept
 {
 	const size_t firstLetterPosition = _currentPosition;
 
-	if (read_and_validate_start_with(optionalOut, startWith) == false)
+	if (read_and_validate(optionalOut, startWith) == false)
 	{
 		debug_message(u8"`%s`으로 시작하여야 합니다. 현재 문자=%c, 값=%d", startWith, _currentByte, _currentByte);
 		return false;
 	}
 
 	// endWith 문자열이 나오기 전까지 코드를 읽습니다.
-	while (read_and_validate_start_with(nullptr, endWith) == false)
+	while (read_and_validate(nullptr, endWith) == false)
 	{
-		// 인풋의 끝에 도달 하면 바로 종료
+		// 입력의 끝에 도달 하면 바로 종료
 		if (_currentByte == 0)
 		{
 			debug_message(u8"`%s`으로 끝나기 전에 EOF에 도달하였습니다.", endWith);
@@ -292,12 +324,17 @@ inline const bool mcf::lexer::read_and_validate_string_with_filter(std::string* 
 			return false;
 		}
 
-		// 특정 문자가 들어 오게 되었을 때 강제 종료
-		for ( size_t i = 0; invalidChars[i] != 0; ++i )
+		if (invalidChars == nullptr)
 		{
-			if ( _currentByte == invalidChars[i] )
+			continue;
+		}
+
+		// 특정 문자가 들어 오게 되었을 때 강제 종료
+		for (size_t i = 0; invalidChars[i] != 0; ++i)
+		{
+			if (_currentByte == invalidChars[i])
 			{
-				debug_message( u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte );
+				debug_message(u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte);
 				if (optionalOut != nullptr)
 				{
 					*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
@@ -305,8 +342,6 @@ inline const bool mcf::lexer::read_and_validate_string_with_filter(std::string* 
 				return false;
 			}
 		}
-
-		read_next_byte();
 	}
 
 	if (optionalOut != nullptr)
@@ -344,6 +379,27 @@ inline const std::string mcf::lexer::read_number(void) noexcept
 	return _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
 }
 
+inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
+{
+	debug_assert(_currentByte == '/', u8"이 함수가 호출될때 '/'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+
+	const size_t firstLetterPosition = _currentPosition;
+
+	// 연속되는 문자열이 "//"(comment) 인지 검사합니다.
+#if defined(_DEBUG)
+	std::string debugOutput;
+	if (read_line_if_start_with(&debugOutput, "//") == true)
+#else
+	if (read_line_if_start_with(nullptr, "//") == true)
+#endif
+	{
+		return { token_type::comment, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
+
+	debug_assert(debugOutput == "/", "결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 코드에 문제가 없는지 확인하세요.");
+	return { token_type::slash, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+}
+
 inline const mcf::token mcf::lexer::read_dot_starting_token(void) noexcept
 {
 	debug_assert(_currentByte == '.', u8"이 함수가 호출될때 '.'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
@@ -352,12 +408,19 @@ inline const mcf::token mcf::lexer::read_dot_starting_token(void) noexcept
 
 	// 연속되는 문자열이 "..."(keyword_variadic) 인지 검사합니다.
 	read_next_byte();
-	if (_currentByte == '.' && get_next_char() == '.')
+	while (_currentByte == '.')
 	{
 		read_next_byte();
+	}
+
+	// 연속되는 문자열이 "..."(keyword_variadic) 인지 검사합니다.
+	const std::string variadicCandidate = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+	if (variadicCandidate == "...")
+	{
 		return { token_type::keyword_variadic, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
+	// "..." 보다 '.' 문자가 더 많다면 에러를 발생 시킵니다..
 	return { token_type::invalid, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }
 
@@ -408,11 +471,11 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 			read_next_byte();
 		}
 
-		if (_currentByte == '<' && read_and_validate_string_with_filter(nullptr, "<", ">", "\n\r") == true)
+		if (_currentByte == '<' && read_and_validate(nullptr, "<", ">", "\n\r") == true)
 		{
 			return { token_type::macro_iibrary_file_include, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 		}
-		else if (_currentByte == '"' && read_and_validate_string_with_filter(nullptr, "\"", "\"", "\n\r") == true)
+		else if (_currentByte == '"' && read_and_validate(nullptr, "\"", "\"", "\n\r") == true)
 		{
 			return { token_type::macro_project_file_include, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 		}

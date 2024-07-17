@@ -1,6 +1,9 @@
 ﻿#pragma once
 #include <stack>
 
+#define test             invalid;          test             \
+invalid;
+
 namespace mcf
 {
 	enum class token_type : unsigned char
@@ -49,6 +52,8 @@ namespace mcf
 		macro_project_file_include,	// #include "[^<>\n\r]+"
 		macro_end,					// 실제 값으로 사용되어선 안됩니다!!!
 
+		comment, // //[^\n\r]
+
 		// 이 밑으로는 수정하면 안됩니다.
 		count
 	};
@@ -87,13 +92,15 @@ namespace mcf
 		const mcf::token read_next_token(void) noexcept;
 
 	private:
-		const char get_next_char(void) const noexcept;
+		const char get_next_byte(void) const noexcept;
 
 		void				read_next_byte(void) noexcept;
-		const bool			read_and_validate_start_with(std::string* optionalOut, const char* startWith) noexcept;
-		const bool			read_and_validate_string_with_filter( std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept;
+		const bool			read_line_if_start_with(std::string* optionalOut, const char* startWith) noexcept;
+		const bool			read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept;
+		const bool			read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
+		const mcf::token	read_slash_starting_token(void) noexcept;
 		const mcf::token	read_dot_starting_token(void) noexcept;
 		const mcf::token	read_macro_token(void) noexcept;
 
