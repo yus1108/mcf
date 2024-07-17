@@ -54,6 +54,49 @@ namespace mcf
 				}
 
 				std::string line;
+				std::getline(file, line);
+				if (file.fail() == true)
+				{
+					return std::string();
+				}
+
+				constexpr const unsigned char encodingArray[][5] =
+				{
+					{0xef, 0xbb, 0xbf, 0},
+				};
+				constexpr size_t encodingArraySize = array_size(encodingArray);
+				constexpr size_t MAX_ENCODING_BYTE = 4;
+
+				for (size_t i = 0; i < encodingArraySize; ++i)
+				{
+					bool foundHeader = true;
+					size_t offset = 0;
+
+					const size_t encodingSize = strlen(reinterpret_cast<const char*>(encodingArray[i]));
+					for (size_t j = 0; j <= MAX_ENCODING_BYTE - encodingSize; j++)
+					{
+						foundHeader = true;
+						offset = j;
+						for (; encodingArray[i][offset] != 0; ++offset)
+						{
+							// encodingArray 를 초기화 할 때 unsigned char 로만 초기화 가능한데 char 과 unsigned 를 비교하려면
+							// 타입을 맞춰줘야함.
+							if (line[offset] != static_cast<char>(encodingArray[i][offset]))
+							{
+								foundHeader = false;
+								break;
+							}
+						}
+					}
+
+					if (foundHeader == true)
+					{
+						line.erase(0, encodingSize);
+						break;
+					}
+				}
+
+				input += line;
 				while (std::getline(file, line))
 				{
 					if (file.fail() == true)
@@ -61,7 +104,7 @@ namespace mcf
 						return std::string();
 					}
 					// 이전에 읽은 라인이 없다면 새로운 라인을 만들지 않는다. 
-					input += (line.empty() == true) ? line : ("\n" + line);
+					input += "\n" + line;
 				}
 			}
 			return input;
@@ -145,6 +188,7 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 	case '/': 
 		__COUNTER__; // count for slash
 		__COUNTER__; // count for comment
+		__COUNTER__; // count for comment_block
 		return read_slash_starting_token();
 	case '<': __COUNTER__;
 		lToken = { token_type::lt, std::string(1, _currentByte), _currentLine, _currentIndex };
@@ -283,7 +327,6 @@ inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const 
 	{
 		if ( _currentByte != stringToCompare[i] || _currentByte == 0 )
 		{
-			read_next_byte();
 			if (optionalOut != nullptr)
 			{
 				*optionalOut = _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition );
@@ -300,17 +343,16 @@ inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const 
 	return true;
 }
 
-inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept
+inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept
 {
 	const size_t firstLetterPosition = _currentPosition;
 
 	if (read_and_validate(optionalOut, startWith) == false)
 	{
-		debug_message(u8"`%s`으로 시작하여야 합니다. 현재 문자=%c, 값=%d", startWith, _currentByte, _currentByte);
 		return false;
 	}
 
-	// endWith 문자열이 나오기 전까지 코드를 읽습니다.
+	// endWith 문자열인지 확인합니다.
 	while (read_and_validate(nullptr, endWith) == false)
 	{
 		// 입력의 끝에 도달 하면 바로 종료
@@ -324,15 +366,18 @@ inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const 
 			return false;
 		}
 
-		if (invalidChars == nullptr)
+		// endWith 문자열이 아니고 EOF 도 아니라면 다음 입력을 받습니다.
+		read_next_byte();
+
+		if (invalidCharList == nullptr)
 		{
 			continue;
 		}
 
-		// 특정 문자가 들어 오게 되었을 때 강제 종료
-		for (size_t i = 0; invalidChars[i] != 0; ++i)
+		// 허용하지 않는 문자들이 들어 오게 되었을 때 강제 종료
+		for (size_t i = 0; invalidCharList[i] != 0; ++i)
 		{
-			if (_currentByte == invalidChars[i])
+			if (_currentByte == invalidCharList[i])
 			{
 				debug_message(u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte);
 				if (optionalOut != nullptr)
@@ -383,20 +428,40 @@ inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
 {
 	debug_assert(_currentByte == '/', u8"이 함수가 호출될때 '/'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
+	// 처음 '/'를 읽습니다.
 	const size_t firstLetterPosition = _currentPosition;
+	read_next_byte();
 
 	// 연속되는 문자열이 "//"(comment) 인지 검사합니다.
 #if defined(_DEBUG)
 	std::string debugOutput;
-	if (read_line_if_start_with(&debugOutput, "//") == true)
+	if (read_line_if_start_with(&debugOutput, "/") == true)
 #else
-	if (read_line_if_start_with(nullptr, "//") == true)
+	if (read_line_if_start_with(nullptr, "/") == true)
 #endif
 	{
 		return { token_type::comment, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
-	debug_assert(debugOutput == "/", u8"결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 코드에 문제가 없는지 확인하세요.");
+	// 연속되는 문자열이 "/*[^"*/"]*/"(comment_block) 인지 검사합니다.
+#if defined(_DEBUG)
+	if (read_and_validate(&debugOutput, "*", "*/", nullptr) == true)
+#else
+	if (read_and_validate(&nullptr, "*", "*/", nullptr) == true)
+#endif
+	{
+		return { token_type::comment_block, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
+
+	// 위의 comment_block("/*[^"*/"]*/")의 검사가 실패 하는 경우는 시작 문자열의 '*'스타를 못읽었거나 EOF 로 끝나는 경우 뿐인데 EOF로 인해 실패 하였다면 invalid 한 토큰을 리턴합니다.
+	if (_currentByte == 0)
+	{
+		debug_message(u8"주석에서 예기치 않은 파일의 끝이 나타났습니다.");
+		return { token_type::invalid, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
+
+	debug_assert(debugOutput.empty() == true, u8"결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 현재 파싱된 문자열=`%s` 다음 문자='%c'(%d)",
+		_input.substr(firstLetterPosition, _currentPosition - firstLetterPosition).c_str(), get_next_byte(), get_next_byte());
 	return { token_type::slash, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }
 
@@ -479,7 +544,7 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 		{
 			return { token_type::macro_project_file_include, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 		}
-		debug_break(u8"#include <target> 매크로의 target은 '<' 또는 '\"'로 파싱을 시작해야합니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
+		debug_break(u8"#include <target> 매크로의 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 
 	case token_type::invalid:
 		break;

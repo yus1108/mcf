@@ -52,7 +52,9 @@ namespace mcf
 		macro_project_file_include,	// #include "[^<>\n\r]+"
 		macro_end,					// 실제 값으로 사용되어선 안됩니다!!!
 
-		comment, // //[^\n\r]
+		// 주석
+		comment,		// //[^\n\r]
+		comment_block,	// /*[^"*/"]*/
 
 		// 이 밑으로는 수정하면 안됩니다.
 		count
@@ -97,7 +99,7 @@ namespace mcf
 		void				read_next_byte(void) noexcept;
 		const bool			read_line_if_start_with(std::string* optionalOut, const char* startWith) noexcept;
 		const bool			read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept;
-		const bool			read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidChars) noexcept;
+		const bool			read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
 		const mcf::token	read_slash_starting_token(void) noexcept;

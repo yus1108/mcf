@@ -89,6 +89,20 @@ namespace UnitTest
 						{mcf::token_type::comment, "// testing comment; int32 boo = -1; //"},
 					},
 				},
+				{
+					"#include <builtins>/*// testing comment;*/ int32 boo = -1; // hello world",
+					{
+						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
+						{mcf::token_type::comment_block, "/*// testing comment;*/"},
+						{mcf::token_type::keyword_int32, "int32"},
+						{mcf::token_type::identifier, "boo"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::minus, "-"},
+						{mcf::token_type::integer_32bit, "1"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::comment, "// hello world"},
+					},
+				},
 			};
 			constexpr const size_t testCaseCount = array_size(testCases);
 

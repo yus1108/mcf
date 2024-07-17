@@ -123,6 +123,7 @@ namespace mcf
 			"macro_end",
 
 			"comment",
+			"comment_block",
 		};
 		constexpr const size_t TOKEN_TYPES_SIZE = sizeof(TOKEN_TYPES) / mcf::array_type_size(TOKEN_TYPES);
 		static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token_type count is changed. this VARIABLE need to be changed as well");
@@ -227,7 +228,8 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_variadic: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__; // 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -336,7 +338,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::macro_iibrary_file_include: __COUNTER__;
 	case token_type::macro_project_file_include: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__; // 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
@@ -394,7 +397,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::macro_iibrary_file_include: __COUNTER__;
 		case token_type::macro_project_file_include: __COUNTER__;
 		case token_type::macro_end: __COUNTER__;
-		case token_type::comment: __COUNTER__; // 주석은 파서에서 토큰을 읽으면 안됩니다.
+		case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+		case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 		default:
 			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
@@ -456,7 +460,7 @@ inline void mcf::parser::read_next_token(void) noexcept
 	_currentToken = _nextToken;
 	_nextToken = _lexer.read_next_token();
 	// 읽은 토큰이 주석이라면 주석이 아닐때까지 읽는다.
-	while (_nextToken.Type == token_type::comment)
+	while (_nextToken.Type == token_type::comment || _nextToken.Type == token_type::comment_block)
 	{
 		_nextToken = _lexer.read_next_token();
 	}
@@ -514,7 +518,8 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::macro_iibrary_file_include: __COUNTER__;
 	case token_type::macro_project_file_include: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__; // 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(token.Type)], enum_index(token.Type));

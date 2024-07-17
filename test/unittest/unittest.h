@@ -76,6 +76,7 @@ namespace UnitTest
 		"macro_end",
 
 		"comment",
+		"comment_block",
 	};
 	constexpr const size_t TOKEN_TYPES_SIZE = array_size( TOKEN_TYPES );
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token count not matching!");
