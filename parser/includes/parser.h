@@ -39,6 +39,8 @@ namespace mcf
 				invalid_input_length,
 				fail_read_file,
 				fail_memory_allocation,
+				fail_expression_parsing,
+				fail_statement_parsing,
 				unexpected_next_token,
 				not_registered_statement_token,
 				not_registered_expression_token,
@@ -60,19 +62,21 @@ namespace mcf
 		const size_t				get_error_count(void) noexcept;
 		const mcf::parser::error	get_last_error(void) noexcept;
 
-		void parse_program(mcf::ast::program& outProgram) noexcept;
+		void parse_program(ast::program& outProgram) noexcept;
 
 	private:
-		const mcf::ast::statement*						parse_statement(void) noexcept;
-		const mcf::ast::variable_declaration_statement* parse_variable_declaration_statement(void) noexcept;
-		const mcf::ast::variable_assignment_statement*	parse_variable_assignment_statement(void) noexcept;
+		const mcf::ast::statement*					parse_statement(void) noexcept;
+		const mcf::ast::variable_statement*			parse_variable_declaration_statement(void) noexcept;
+		const mcf::ast::variable_assign_statement*	parse_variable_assignment_statement(void) noexcept;
+		const mcf::ast::enum_statement*				parse_enum_statement(void) noexcept;
 
-		const mcf::ast::expression*				parse_expression(const mcf::parser::precedence precedence) noexcept;
-		const mcf::ast::data_type_expression	parse_data_type_expressions(void) noexcept;
-		const mcf::ast::prefix_expression*		parse_prefix_expression(void) noexcept;
-		const mcf::ast::infix_expression*		parse_infix_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::infix_expression*		parse_call_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::infix_expression*		parse_index_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::expression*							parse_expression(const mcf::parser::precedence precedence) noexcept;
+		const mcf::ast::data_type_expression				parse_data_type_expressions(void) noexcept;
+		const mcf::ast::prefix_expression*					parse_prefix_expression(void) noexcept;
+		const mcf::ast::infix_expression*					parse_infix_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::infix_expression*					parse_call_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::infix_expression*					parse_index_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::enum_block_statements_expression*	parse_enum_block_statements_expression(void) noexcept;
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;

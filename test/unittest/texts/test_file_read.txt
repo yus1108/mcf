@@ -5,3 +5,7 @@ int32 boo = 5;
 // Print is builtin function that prints output to console
 // TODO: command line argument 받는법 필요
 // TODO: return type for main?
+enum PRINT_RESULT : int32
+{
+    NO_ERROR
+};

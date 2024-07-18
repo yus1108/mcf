@@ -30,8 +30,9 @@ namespace mcf
 		{
 			invalid = 0,
 
-			variable_declaration,	// <data_type> identifier [optional: assign <expression>] semicolon
-			variable_assignment,	// identifier assign <expression> semicolon
+			variable,			// <data_type> identifier [optional: assign <expression>] semicolon
+			variable_assign,	// identifier assign <expression> semicolon
+			enum_def,			// keyword_enum <identifier> [optional: colon <data_type>] lbrace !<enum_block> rbrace semicolon
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -57,6 +58,9 @@ namespace mcf
 			prefix,
 			infix,	// <expression> plus|minus|asterisk|slash <expression>
 
+			enum_block, // identifier [optional: assign expression] [optional: comma !<enum_block>]
+			enum_value_increment, // 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
+
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
 		};
@@ -68,16 +72,19 @@ namespace mcf
 			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept override final { return mcf::ast::node_type::expression; }
 		};
 
+		using unique_statement = std::unique_ptr<const mcf::ast::statement>;
+		using statement_array = std::unique_ptr<unique_statement[]>;
+
 		class program final
 		{
 		public:
 			explicit program(void) noexcept = default;
-			explicit program(std::vector<const mcf::ast::statement*> statements) noexcept;
+			explicit program(std::unique_ptr<const mcf::ast::statement>* statements, size_t count) noexcept;
 
 			inline	const size_t				get_statement_count(void) const noexcept { return _count; }
 					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
 
-			const std::string				convert_to_string(const bool isAddNewLineForEachStatement = true) const noexcept;
+			const std::string				convert_to_string(void) const noexcept;
 			const std::vector<mcf::token>	convert_to_tokens(void) const noexcept;
 
 		private:
@@ -112,7 +119,7 @@ namespace mcf
 			inline const mcf::token&  get_token( void ) const noexcept { return _token; }
 
 			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::identifier; }
-			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
+			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
 		private:
 			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::identifier, identifier }
@@ -130,8 +137,8 @@ namespace mcf
 			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
 
 		private:
-			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
-			const bool		 _isConst = false; // token_type::const == true
+			const mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
+			const bool			_isConst = false; // token_type::const == true
 		};
 
 		class prefix_expression final : public expression
@@ -176,11 +183,43 @@ namespace mcf
 			const expression _right;													// <expression>
 		};
 
-		class variable_declaration_statement final : public statement
+		class enum_value_increment final : public expression
 		{
 		public:
-			explicit variable_declaration_statement(void) noexcept = default;
-			explicit variable_declaration_statement(const mcf::ast::data_type_expression& dataType,
+			using unique_expression = std::unique_ptr<const mcf::ast::expression>;
+
+		public:
+			explicit enum_value_increment(void) noexcept = default;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_value_increment; }
+			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return std::string(); }
+		};
+
+		class enum_block_statements_expression final : public expression
+		{
+		public:
+			using unique_expression = std::unique_ptr<const mcf::ast::expression>;
+
+		public:
+			explicit enum_block_statements_expression(void) noexcept = default;
+			explicit enum_block_statements_expression(std::vector<mcf::ast::identifier_expression >& names, unique_expression* values) noexcept;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
+			virtual const std::string						convert_to_string(void) const noexcept override final;
+
+		private:
+			using expression_array = std::unique_ptr<unique_expression[]>;
+			using name_vector		= std::vector<mcf::ast::identifier_expression>;
+
+			name_vector			_names;
+			expression_array	_values;
+		};
+
+		class variable_statement final : public statement
+		{
+		public:
+			explicit variable_statement(void) noexcept = default;
+			explicit variable_statement(const mcf::ast::data_type_expression& dataType,
 													const mcf::ast::identifier_expression& name,
 													const mcf::ast::expression* initExpression) noexcept;
 
@@ -188,7 +227,7 @@ namespace mcf
 			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
 			inline const mcf::ast::expression*	get_init_expression(void) const noexcept { return _initExpression.get(); }
 
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_declaration; }
+			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
@@ -197,21 +236,42 @@ namespace mcf
 			const std::unique_ptr<const mcf::ast::expression>	_initExpression;
 		};
 
-		class variable_assignment_statement final : public statement
+		class variable_assign_statement final : public statement
 		{
 		public:
-			explicit variable_assignment_statement(void) noexcept = default;
-			explicit variable_assignment_statement(const mcf::ast::identifier_expression& name, const mcf::ast::expression* assignExpression) noexcept;
+			explicit variable_assign_statement(void) noexcept = default;
+			explicit variable_assign_statement(const mcf::ast::identifier_expression& name, const mcf::ast::expression* assignExpression) noexcept;
 
 			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
-			inline const mcf::ast::expression*	get_assign_expression(void) const noexcept { return _assignExpression.get(); }
+			inline const mcf::ast::expression*	get_assign_expression(void) const noexcept { return _assignedExpression.get(); }
 
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assignment; }
+			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assign; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
 			const mcf::ast::identifier_expression				_name;
-			const std::unique_ptr<const mcf::ast::expression>	_assignExpression;
+			const std::unique_ptr<const mcf::ast::expression>	_assignedExpression;
+		};
+
+		class enum_statement final : public statement
+		{
+		public:
+			explicit enum_statement(void) noexcept = default;
+			explicit enum_statement(const mcf::ast::data_type_expression& dataType,
+									const mcf::ast::identifier_expression& name,
+									const mcf::ast::enum_block_statements_expression* values) noexcept;
+
+			inline const std::string& get_name(void) const noexcept { return _name.get_token().Literal; }
+
+			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::enum_def; }
+			virtual const std::string						convert_to_string(void) const noexcept override final;
+
+		private:
+			using block_statement = std::unique_ptr<const mcf::ast::enum_block_statements_expression>;
+			const mcf::ast::data_type_expression	_dataType;
+			// optional TODO: default size를 uint32 타입 추가 후 수정
+			const mcf::ast::identifier_expression	_name;
+			const block_statement					_values;
 		};
 	}
 }

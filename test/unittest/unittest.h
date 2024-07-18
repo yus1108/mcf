@@ -90,8 +90,9 @@ namespace UnitTest
 	{
 		"invalid",
 
-		"variable_declaration",
-		"variable_assignment",
+		"variable",
+		"variable_assign",
+		"enum_def",
 	};
 	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
 	static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
@@ -105,6 +106,8 @@ namespace UnitTest
 		"data_type",
 		"prefix",
 		"infix",
+		"enum_block",
+		"enum_value_increment",
 	};
 	constexpr const size_t EXPRESSION_TYPES_SIZE = array_size( EXPRESSION_TYPES );
 	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
@@ -118,6 +121,8 @@ namespace UnitTest
 		"invalid_input_length",
 		"fail_read_file",
 		"fail_memory_allocation",
+		"fail_expression_parsing",
+		"fail_statement_parsing",
 		"unexpected_next_token",
 		"not_registered_statement_token",
 		"not_registered_expression_token",

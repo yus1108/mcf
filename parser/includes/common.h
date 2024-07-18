@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #define unused(variable) variable
 #define array_size(value) sizeof(value) / mcf::array_type_size(value)

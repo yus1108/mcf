@@ -45,17 +45,22 @@ UnitTest::Parser::Parser(void) noexcept
 
 	_names.emplace_back("test_convert_to_string");
 	_tests.emplace_back([&]() {
+		constexpr size_t CAPACITY_START = __COUNTER__;
+		__COUNTER__;
 		mcf::ast::data_type_expression dataType(false, { mcf::token_type::integer_32bit, "int32" });
 		mcf::ast::identifier_expression name({ mcf::token_type::identifier, "myVar" });
 		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
-		mcf::ast::variable_declaration_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_declaration_statement(dataType, name, rightExpression);
-		std::vector<const mcf::ast::statement*> statements =
-		{
-			variableDeclarationStatement,
-		};
+		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, name, rightExpression);
+		constexpr size_t CAPACITY = __COUNTER__ - CAPACITY_START - 1;
 
-		mcf::ast::program program(statements);
-		fatal_assert(program.convert_to_string() == "int32 myVar = anotherVar;\n", u8"program의 string 변환이 틀렸습니다. 실제값=`%s`", program.convert_to_string().c_str());
+		mcf::ast::statement_array statementArray = std::make_unique<mcf::ast::unique_statement[]>(CAPACITY);
+		size_t count = 0;
+		{
+			statementArray[count++] = mcf::ast::unique_statement(variableDeclarationStatement);
+		}
+
+		mcf::ast::program program(statementArray.release(), CAPACITY);
+		fatal_assert(program.convert_to_string() == "int32 myVar = anotherVar;", u8"program의 string 변환이 틀렸습니다. 실제값=`%s`", program.convert_to_string().c_str());
 
 		return true;
 		});
@@ -74,9 +79,9 @@ UnitTest::Parser::Parser(void) noexcept
 		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 		const mcf::ast::statement* statement = program.get_statement_at(0);
 
-		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
+		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable, u8"statement의 statement type이 variable가 아닙니다. statement=%s",
 			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
-		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_statement*>(statement)->get_init_expression();
 
 		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"init expression의 expression type이 identifier가 아닙니다. expression_type=%s",
 			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
@@ -101,9 +106,9 @@ UnitTest::Parser::Parser(void) noexcept
 		fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 		const mcf::ast::statement* statement = program.get_statement_at(0);
 
-		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
+		fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable, u8"statement의 statement type이 variable가 아닙니다. statement=%s",
 			STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
-		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+		const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_statement*>(statement)->get_init_expression();
 
 		fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::literal, u8"init expression의 expression type이 literal가 아닙니다. expression_type=%s",
 			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
@@ -148,9 +153,9 @@ UnitTest::Parser::Parser(void) noexcept
 			fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 			const mcf::ast::statement* statement = program.get_statement_at(0);
 
-			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
+			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable, u8"statement의 statement type이 variable가 아닙니다. statement=%s",
 				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
-			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_statement*>(statement)->get_init_expression();
 
 			fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::prefix, u8"init expression의 expression type이 prefix가 아닙니다. expression_type=%s",
 				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
@@ -183,6 +188,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())], mcf::enum_index(targetExpression->get_expression_type()));
@@ -228,9 +235,9 @@ UnitTest::Parser::Parser(void) noexcept
 			fatal_assert(program.get_statement_count() == 1, u8"program._statements 안에 1개의 명령문을 가지고 있어야 합니다. 결과값=%zu", program.get_statement_count());
 			const mcf::ast::statement* statement = program.get_statement_at(0);
 
-			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration, u8"statement의 statement type이 variable_declaration가 아닙니다. statement=%s",
+			fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable, u8"statement의 statement type이 variable가 아닙니다. statement=%s",
 				STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
-			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_declaration_statement*>(statement)->get_init_expression();
+			const mcf::ast::expression* initExpression = static_cast<const mcf::ast::variable_statement*>(statement)->get_init_expression();
 
 			fatal_assert(initExpression->get_expression_type() == mcf::ast::expression_type::infix, u8"init expression의 expression type이 infix가 아닙니다. expression_type=%s",
 				EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
@@ -255,6 +262,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. left expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index(leftExpression->get_expression_type())], mcf::enum_index(leftExpression->get_expression_type()));
@@ -284,6 +293,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. right expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index(rightExpression->get_expression_type())], mcf::enum_index(rightExpression->get_expression_type()));
@@ -421,7 +432,7 @@ UnitTest::Parser::Parser(void) noexcept
 				return false;
 			}
 
-			const std::string actual = program.convert_to_string(false);
+			const std::string actual = program.convert_to_string();
 			fatal_assert(actual == testCases[i].Expected, "expected=`%s`, actual=`%s`", testCases[i].Expected.c_str(), actual.c_str());
 		}
 
@@ -447,18 +458,56 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf;
 		using namespace mcf::ast;
 
-		auto generate_variable_declaration = [&](token_type t1, const char* l1, token_type t2, const char* l2, token_type t3, const char* l3) -> statement* {
-			return new variable_declaration_statement(data_type_expression(false, { t1, l1 }), identifier_expression({ t2, l2 }), new literal_expession({ t3, l3 }));
+		auto generate_variable_declaration = [&](token_type t1, const char* l1, token_type t2, const char* l2, token_type t3, const char* l3) -> mcf::ast::statement* {
+			return new variable_statement(data_type_expression(false, { t1, l1 }), identifier_expression({ t2, l2 }), new literal_expession({ t3, l3 }));
 			};
 
-		std::vector<const mcf::ast::statement*> statements =
+		auto build_enum_statement = [&](const char* l1, std::initializer_list<const char*> names)
+			{
+				auto build_block_statements = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
+					auto build_block_statement_name_vector = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
+						std::vector<identifier_expression> nameVector;
+						const char* const* pointer = names.begin();
+						for (size_t i = 0; i < names.size(); i++)
+						{
+							nameVector.emplace_back(token{ token_type::identifier, pointer[i]});
+						}
+						return nameVector;
+						};
+					auto build_block_statement_increment_values = [](size_t length) -> enum_block_statements_expression::unique_expression* {
+						enum_block_statements_expression::unique_expression* values = new enum_block_statements_expression::unique_expression[length];
+						for (size_t i = 0; i < length; i++)
+						{
+							values[i] = std::unique_ptr<const mcf::ast::expression>(new enum_value_increment());
+						}
+						return values;
+						};
+					auto nameVector = build_block_statement_name_vector(names);
+					return new enum_block_statements_expression(nameVector, build_block_statement_increment_values(names.size()));
+					};
+				return new enum_statement(data_type_expression(false, { token_type::keyword_int32, "int32" }), identifier_expression({ token_type::identifier, l1 }), build_block_statements(names));
+			};
+
+		mcf::ast::statement* statements[] =
 		{
+			// int32 foo = 10; 
 			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "foo", token_type::integer_32bit, "10"),
-			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),
+			// int32 boo = 5;							
+			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),	
+			// enum PRINT_RESULT : int32{ NO_ERROR, };
+			build_enum_statement("PRINT_RESULT", {"NO_ERROR"}),
 		};
-		program expectedProgram(statements);
+		size_t statementSize = array_size(statements);
+
+		mcf::ast::statement_array statementArray = std::make_unique<mcf::ast::unique_statement[]>(statementSize);
+		for (size_t i = 0; i < statementSize; i++)
+		{
+			statementArray[i] = mcf::ast::unique_statement(statements[i]);
+		}
+
+		program expectedProgram(statementArray.release(), statementSize);
 		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
-			actualProgram.convert_to_string(false).c_str(), expectedProgram.convert_to_string(false).c_str());
+			actualProgram.convert_to_string().c_str(), expectedProgram.convert_to_string().c_str());
 
 		return true;
 		});
@@ -547,11 +596,10 @@ bool UnitTest::Parser::check_parser_errors(mcf::parser& parser) noexcept
 
 bool UnitTest::Parser::test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept
 {
-	fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable_declaration,
-		u8"statement가 variable_declaration이 아닙니다. 결과값=%s",
+	fatal_assert(statement->get_statement_type() == mcf::ast::statement_type::variable, u8"statement가 variable이 아닙니다. 결과값=%s",
 		STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 
-	const mcf::ast::variable_declaration_statement* variableDeclaration = static_cast<const mcf::ast::variable_declaration_statement*>(statement);
+	const mcf::ast::variable_statement* variableDeclaration = static_cast<const mcf::ast::variable_statement*>(statement);
 	fatal_assert(variableDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s",
 		TOKEN_TYPES[enum_index(expectedDataType)], TOKEN_TYPES[enum_index(variableDeclaration->get_type())]);
 	fatal_assert(variableDeclaration->get_name() == expectedName, u8"변수 선언 이름이 '%s'가 아닙니다. 실제값=%s", expectedName.c_str(), variableDeclaration->get_name().c_str());
