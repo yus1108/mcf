@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "ast.h"
 
 const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
@@ -61,6 +61,18 @@ const std::string mcf::ast::program::convert_to_string(const bool isAddNewLineFo
 	}
 
 	return buffer;
+}
+
+const std::vector<mcf::token> mcf::ast::program::convert_to_tokens(void) const noexcept
+{
+	std::vector<token> tokens;
+	for (size_t i = 0; i < _count; i++)
+	{
+		// TODO: #14 assert for _statements[i] == nullptr
+		// TODO: node::convert_to_tokens() 구현 필요
+		//tokens.emplace_back(_statements->convert_to_tokens());
+	}
+	return tokens;
 }
 
 const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept

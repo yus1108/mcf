@@ -48,9 +48,9 @@ namespace mcf
 		{
 			invalid = 0,
 
-			literal,	// integer_32bit
+			literal,	// integer_32bit, string_utf8
 			identifier, // identifier
-			data_type,	// keyword_int32
+			data_type,	// keyword_int32, keyword_utf8, keyword_void
 
 			// plus|minus <literal>
 			// plus|minus <identifier>
@@ -77,7 +77,8 @@ namespace mcf
 			inline	const size_t				get_statement_count(void) const noexcept { return _count; }
 					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
 
-			const std::string convert_to_string(const bool isAddNewLineForEachStatement = true) const noexcept;
+			const std::string				convert_to_string(const bool isAddNewLineForEachStatement = true) const noexcept;
+			const std::vector<mcf::token>	convert_to_tokens(void) const noexcept;
 
 		private:
 			using unique_statement = std::unique_ptr <const mcf::ast::statement>;
@@ -121,15 +122,16 @@ namespace mcf
 		{
 		public:
 			explicit data_type_expression(void) noexcept = default;
-			explicit data_type_expression(const mcf::token& token) noexcept : _token(token) {}
+			explicit data_type_expression(const bool isConst, const mcf::token& token) noexcept : _token(token), _isConst(isConst) {}
 
 			inline const mcf::token_type get_type(void) const noexcept { return _token.Type; }
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::data_type; }
-			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
+			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
 
 		private:
 			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
+			const bool		 _isConst = false; // token_type::const == true
 		};
 
 		class prefix_expression final : public expression
@@ -149,7 +151,7 @@ namespace mcf
 			using expression = std::unique_ptr<const mcf::ast::expression>;
 
 			const mcf::token _prefixOperator = { token_type::invalid, std::string() };	// { prefix_operator, literal }
-			const expression _targetExpression;									// <expression>
+			const expression _targetExpression;											// <expression>
 		};
 
 		class infix_expression final : public expression
