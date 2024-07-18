@@ -76,7 +76,7 @@ namespace UnitTest
 					},
 				},
 				{
-					"int32 foo = 5 + 5 - 8 * 4 / 2;",
+					"int32 foo = 5 + 5 - 8 * 4 / 2;/      ",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
 						{mcf::token_type::identifier, "foo"},
@@ -91,6 +91,7 @@ namespace UnitTest
 						{mcf::token_type::slash, "/"},
 						{mcf::token_type::integer_32bit, "2"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::slash, "/"},
 					},
 				},
 				{
@@ -123,6 +124,44 @@ namespace UnitTest
 						{mcf::token_type::integer_32bit, "1"},
 						{mcf::token_type::semicolon, ";"},
 						{mcf::token_type::comment, "// hello world"},
+					},
+				},
+				{
+					"const utf8 str[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
+					{
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_utf8, "utf8"},
+						{mcf::token_type::identifier, "str"},
+						{mcf::token_type::lbracket, "["},
+						{mcf::token_type::rbracket, "]"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::string_utf8, "\"Hello, World!\""},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::comment, "// default string literal is static array of utf8 in mcf"},
+					},
+				},
+				{
+					"/",
+					{
+						{mcf::token_type::slash, "/"},
+					},
+				},
+				{
+					"//",
+					{
+						{mcf::token_type::comment, "//"},
+					},
+				},
+				{
+					"const /* utf8  */ int32 comment_block_test = 5;",
+					{
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::comment_block, "/* utf8  */"},
+						{mcf::token_type::keyword_int32, "int32"},
+						{mcf::token_type::identifier, "comment_block_test"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::integer_32bit, "5"},
+						{mcf::token_type::semicolon, ";"},
 					},
 				},
 			};

@@ -35,7 +35,8 @@ namespace UnitTest
 
 		// 식별자 + 리터럴
 		"identifier",
-		"integer",
+		"integer_32bit",
+		"string_utf8",
 
 		// 연산자
 		"assign",

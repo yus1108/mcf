@@ -177,6 +177,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 	case 0: __COUNTER__;
 		// 입력의 끝에 도달 하였을때 read_next_byte()가 호출될 경우 에러가 발생하기 때문에 EOF 를 만나면 강제로 종료합니다.
 		return { token_type::eof, "\0", _currentLine, _currentIndex };
+	case '"': __COUNTER__;
+		return read_string_utf8();
 	case '=': __COUNTER__;
 		lToken = { token_type::assign, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -237,7 +239,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		__COUNTER__; // count for macro_iibrary_file_include
 		__COUNTER__; // count for macro_project_file_include
 		return read_macro_token();
-	default:
+	default: 
+		// 토큰 리터럴의 시작 문자가 문자열 그룹 패턴에 속한 경우 default 에서 처리합니다.
 		// keyword + identifier 는 첫 시작이 '_' 이거나 알파벳 이어야만 합니다.
 		if (internal::is_alphabet(_currentByte) || _currentByte == '_')
 		{
@@ -328,6 +331,8 @@ inline const bool mcf::lexer::read_line_if_start_with(std::string* optionalOut, 
 
 inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept
 {
+	debug_assert(stringToCompare != nullptr, u8"stringToCompare가 null일 수 없습니다.");
+
 	const size_t stringToCompareLength = std::strlen(stringToCompare);
 	const size_t firstLetterPosition = _currentPosition;
 
@@ -353,11 +358,23 @@ inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const 
 
 inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept
 {
+	debug_assert(startWith != nullptr || endWith != nullptr, u8"startWith와 endWith 둘다 null이면 안됩니다.");
+	debug_assert(endWith != nullptr || (endWith == nullptr && invalidCharList != nullptr), u8"endWith가 null인 경우 invalidCharList는 null이면 안됩니다.");
+
 	const size_t firstLetterPosition = _currentPosition;
 
-	if (read_and_validate(optionalOut, startWith) == false)
+	if (startWith != nullptr && read_and_validate(optionalOut, startWith) == false)
 	{
 		return false;
+	}
+
+	if (endWith == nullptr)
+	{
+		if (optionalOut != nullptr)
+		{
+			*optionalOut = _input.substr(firstLetterPosition + strlen(startWith), _currentPosition - firstLetterPosition - strlen(endWith));
+		}
+		return true;
 	}
 
 	// endWith 문자열인지 확인합니다.
@@ -432,6 +449,24 @@ inline const std::string mcf::lexer::read_number(void) noexcept
 	return _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
 }
 
+const mcf::token mcf::lexer::read_string_utf8(void) noexcept
+{
+	debug_assert(_currentByte == '"', u8"이 함수가 호출될때 '\"'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+
+	// 처음 '"'를 읽습니다.
+	const size_t firstLetterPosition = _currentPosition;
+	read_next_byte();
+
+	// 연속되는 문자열이 `"[^"\n\r]*"`(string_utf8) 인지 검사합니다.
+	if (read_and_validate(nullptr, nullptr, "\"", "\n\r") == true)
+	{
+		// TODO: #24 valid utf8 문자열인지 확인 필요, 아닌 경우 invalid 토큰을 보냅고 토큰 생성 실패 시킵니다.
+		return { token_type::string_utf8, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
+
+	return { token_type::invalid, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+}
+
 inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
 {
 	debug_assert(_currentByte == '/', u8"이 함수가 호출될때 '/'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
@@ -440,36 +475,27 @@ inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
 	const size_t firstLetterPosition = _currentPosition;
 	read_next_byte();
 
-	// 연속되는 문자열이 "//"(comment) 인지 검사합니다.
-#if defined(_DEBUG)
-	std::string debugOutput;
-	if (read_line_if_start_with(&debugOutput, "/") == true)
-#else
+	// 연속되는 문자열이 `//`(comment) 인지 검사합니다.
 	if (read_line_if_start_with(nullptr, "/") == true)
-#endif
 	{
 		return { token_type::comment, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
-	// 연속되는 문자열이 "/*[^"*/"]*/"(comment_block) 인지 검사합니다.
-#if defined(_DEBUG)
-	if (read_and_validate(&debugOutput, "*", "*/", nullptr) == true)
-#else
-	if (read_and_validate(&nullptr, "*", "*/", nullptr) == true)
-#endif
+	// 연속되는 문자열이 `/*[^"*/"]*/`(comment_block) 인지 검사합니다.
+	if (read_and_validate(nullptr, "*", "*/", nullptr) == true)
 	{
 		return { token_type::comment_block, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
-	// 위의 comment_block("/*[^"*/"]*/")의 검사가 실패 하는 경우는 시작 문자열의 '*'스타를 못읽었거나 EOF 로 끝나는 경우 뿐인데 EOF로 인해 실패 하였다면 invalid 한 토큰을 리턴합니다.
-	if (_currentByte == 0)
+	std::string tokenLiteral = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
+	// 위의 comment_block(`/*[^"*/"]*/`)의 검사가 실패 하는 경우는 시작 문자열의 '*'스타를 못읽었거나 EOF 로 끝나는 경우 뿐이므로
+	// 문자열이 "/*"로 시작 하는 상태에서 EOF로 인해 실패 하였다면 invalid 한 토큰을 리턴합니다.
+	if ((tokenLiteral.rfind("/*", 0) == 0) && _currentByte == 0)
 	{
 		debug_message(u8"주석에서 예기치 않은 파일의 끝이 나타났습니다.");
 		return { token_type::invalid, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
-	debug_assert(debugOutput.empty() == true, u8"결과 값이 '/'가 아닌데 token_type::slash를 반환 하려 하고 있습니다! 현재 파싱된 문자열=`%s` 다음 문자='%c'(%d)",
-		_input.substr(firstLetterPosition, _currentPosition - firstLetterPosition).c_str(), get_next_byte(), get_next_byte());
 	return { token_type::slash, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }
 

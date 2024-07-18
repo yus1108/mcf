@@ -82,7 +82,8 @@ namespace mcf
 
 			// 식별자 + 리터럴
 			"identifier",
-			"integer",
+			"integer_32bit",
+			"string_utf8",
 
 			// 연산자
 			"assign",
@@ -214,6 +215,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		break;
 
 	case token_type::integer_32bit: __COUNTER__;
+	case token_type::string_utf8: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::plus: __COUNTER__;
 	case token_type::minus: __COUNTER__;
@@ -310,6 +312,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		break;
 	
 	case token_type::integer_32bit: __COUNTER__;
+	case token_type::string_utf8: __COUNTER__;
 		expression = std::make_unique<ast::literal_expession>(_currentToken);
 		break;
 
@@ -395,6 +398,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::eof: __COUNTER__;
 		case token_type::identifier: __COUNTER__;
 		case token_type::integer_32bit: __COUNTER__;
+		case token_type::string_utf8: __COUNTER__;
 		case token_type::assign: __COUNTER__;
 		case token_type::rparen: __COUNTER__;
 		case token_type::lbrace: __COUNTER__;
@@ -519,6 +523,7 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::eof: __COUNTER__;
 	case token_type::identifier: __COUNTER__;
 	case token_type::integer_32bit: __COUNTER__;
+	case token_type::string_utf8: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::ampersand: __COUNTER__;
 	case token_type::rparen: __COUNTER__;

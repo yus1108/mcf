@@ -14,6 +14,7 @@ namespace mcf
 		// 식별자 + 리터럴
 		identifier,		// [_a-zA-Z]+[_a-zA-Z0-9]*
 		integer_32bit,	// [0-9]+
+		string_utf8,	// "[^"\n\r]*"
 
 		// 연산자
 		assign,		// =
@@ -106,6 +107,7 @@ namespace mcf
 		const bool			read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
+		const mcf::token	read_string_utf8(void) noexcept;
 		const mcf::token	read_slash_starting_token(void) noexcept;
 		const mcf::token	read_dot_starting_token(void) noexcept;
 		const mcf::token	read_macro_token(void) noexcept;
