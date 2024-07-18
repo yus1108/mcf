@@ -495,7 +495,7 @@ UnitTest::Parser::Parser(void) noexcept
 			}
 
 			const std::vector<mcf::token> actual = program.convert_to_tokens();
-			fatal_assert(actual.size() == testCases[i].Expected.size(), "실제 토큰의 갯수와 테스트 케이스의 토큰 갯수가 맞지 않습니다. expected=`%zu`, actual=`%zu`",
+			fatal_assert(actual.size() == testCases[i].Expected.size(), u8"실제 토큰의 갯수와 테스트 케이스의 토큰 갯수가 맞지 않습니다. expected=`%zu`, actual=`%zu`",
 				testCases[i].Expected.size(), actual.size());
 			for (size_t j = 0; j < testCases[i].Expected.size(); j++)
 			{
