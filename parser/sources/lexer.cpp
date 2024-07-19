@@ -18,10 +18,14 @@ namespace mcf
 				// TODO: #7 decimal 타입 추가 필요
 				"const",
 				"void",
-				"uint8",
-				"uint32",
 				"int8",
+				"int16",
 				"int32",
+				"int64",
+				"uint8",
+				"uint16",
+				"uint32",
+				"uint64",
 				"utf8",
 				"enum",
 				"unused",
@@ -250,10 +254,14 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			__COUNTER__; // count for identifier
 			__COUNTER__; // count for keyword_const
 			__COUNTER__; // count for keyword_void
-			__COUNTER__; // count for keyword_uint8
-			__COUNTER__; // count for keyword_uint32
 			__COUNTER__; // count for keyword_int8
+			__COUNTER__; // count for keyword_int16
 			__COUNTER__; // count for keyword_int32
+			__COUNTER__; // count for keyword_int64
+			__COUNTER__; // count for keyword_uint8
+			__COUNTER__; // count for keyword_uint16
+			__COUNTER__; // count for keyword_uint32
+			__COUNTER__; // count for keyword_uint64
 			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
 			__COUNTER__; // count for keyword_unused
@@ -266,64 +274,11 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		}
 		else if (internal::is_digit(_currentByte))
 		{
-			__COUNTER__; // count for integer_8bit
-			__COUNTER__; // count for integer_32bit
-			__COUNTER__; // count for unsigned_integer_8bit
-			__COUNTER__; // count for unsigned_integer_32bit
-			token.Literal = read_number();
-			// TODO: default type은 int32 이나 추후 int64가 추가되면 int64로 변경
-			token.Type = token_type::integer_32bit;
-			// 리터럴 식별자가 있는지 확인
-			if (internal::is_alphabet(_currentByte) || _currentByte == '_')
-			{
-				std::string literalTypeIdentifier = read_keyword_or_identifier();
-				debug_assert(literalTypeIdentifier.empty() == false, "리터럴 타입 읽기에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
-				token.Literal += literalTypeIdentifier;
-				for (std::string::iterator curr = literalTypeIdentifier.begin(); curr != literalTypeIdentifier.end(); ++curr)
-				{
-					*curr = static_cast<char>(tolower(static_cast<int>(*curr)));
-				}
-
-				if (literalTypeIdentifier.size() == 1 && (literalTypeIdentifier == "i"))
-				{
-					token.Type = token_type::integer_32bit;
-				}
-				else if (literalTypeIdentifier.size() == 2 && (literalTypeIdentifier == "i8"))
-				{
-					token.Type = token_type::integer_8bit;
-				}
-				else if (literalTypeIdentifier.size() == 3 && (literalTypeIdentifier == "i32"))
-				{
-					token.Type = token_type::integer_32bit;
-				}
-				else if (literalTypeIdentifier.size() == 2 && (literalTypeIdentifier == "ui"))
-				{
-					token.Type = token_type::unsigned_integer_32bit;
-				}
-				else if (literalTypeIdentifier.size() == 3 && (literalTypeIdentifier == "ui8"))
-				{
-					token.Type = token_type::unsigned_integer_8bit;
-				}
-				else if (literalTypeIdentifier.size() == 4 && (literalTypeIdentifier == "ui32"))
-				{
-					token.Type = token_type::unsigned_integer_32bit;
-				}
-				else
-				{
-					token.Type = token_type::invalid;
-					debug_message(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
-				}
-			}
-			token.Line = _currentLine;
-			token.Index = _currentIndex;
-			// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
-			// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
-			return token;
+			__COUNTER__; // count for integer
+			return read_numeric_literal();
 		}
 		else
 		{
-			__COUNTER__; // count for numberic_literal_start
-			__COUNTER__; // count for numberic_literal_end
 			__COUNTER__; // count for keyword_identifier_start
 			__COUNTER__; // count for keyword_identifier_end
 			__COUNTER__; // count for macro_start
@@ -656,56 +611,11 @@ inline const mcf::token mcf::lexer::read_numeric_literal(void) noexcept
 	mcf::token token;
 
 	token.Literal = read_number();
-	token.Type = token_type::integer_32bit; // TODO: default type은 int32 이나 추후 int64가 추가되면 int64로 변경
+	token.Type = token_type::integer; // 타입이 명시되지 않은 정수 리터럴의 기본 값은 64bit integer 입니다.
 
-	// 리터럴 식별자가 있는지 확인
-	if (internal::is_alphabet(_currentByte) || _currentByte == '_')
-	{
-		std::string literalTypeIdentifier = read_keyword_or_identifier();
-		debug_assert(literalTypeIdentifier.empty() == false, "리터럴 타입 읽기에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
-		token.Literal += literalTypeIdentifier;
-		for (std::string::iterator curr = literalTypeIdentifier.begin(); curr != literalTypeIdentifier.end(); ++curr)
-		{
-			*curr = static_cast<char>(tolower(static_cast<int>(*curr)));
-		}
-
-		constexpr const size_t NUMERIC_LITERAL_COUNT_START = __COUNTER__;
-		if (literalTypeIdentifier.size() == 1 && (literalTypeIdentifier == "i"))
-		{
-			token.Type = token_type::integer_32bit; // integer type literal의 default value는 카운트에서 제외
-		}
-		else if (literalTypeIdentifier.size() == 2 && (literalTypeIdentifier == "i8"))
-		{
-			token.Type = token_type::integer_8bit; __COUNTER__;
-		}
-		else if (literalTypeIdentifier.size() == 3 && (literalTypeIdentifier == "i32"))
-		{
-			token.Type = token_type::integer_32bit; __COUNTER__;
-		}
-		else if (literalTypeIdentifier.size() == 2 && (literalTypeIdentifier == "ui"))
-		{
-			token.Type = token_type::unsigned_integer_32bit; // unsigned integer type literal의 default value는 카운트에서 제외
-		}
-		else if (literalTypeIdentifier.size() == 3 && (literalTypeIdentifier == "ui8"))
-		{
-			token.Type = token_type::unsigned_integer_8bit; __COUNTER__;
-		}
-		else if (literalTypeIdentifier.size() == 4 && (literalTypeIdentifier == "ui32"))
-		{
-			token.Type = token_type::unsigned_integer_32bit; __COUNTER__;
-		}
-		else
-		{
-			token.Type = token_type::invalid;
-			debug_message(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
-		}
-		constexpr const size_t NUMERIC_LITERAL_COUNT = __COUNTER__ - NUMERIC_LITERAL_COUNT_START - 1;
-		static_assert(enum_index(mcf::token_type::numberic_literal_end) - enum_index(mcf::token_type::numberic_literal_start) - 1 == NUMERIC_LITERAL_COUNT,
-			"identifier keyword token_type count is changed. this array need to be changed as well.");
-	}
-	token.Line = _currentLine;
-	token.Index = _currentIndex;
 	// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
 	// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
+	token.Line = _currentLine;
+	token.Index = _currentIndex;
 	return token;
 }

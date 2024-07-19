@@ -35,12 +35,7 @@ namespace UnitTest
 
 		// 식별자 + 리터럴
 		"identifier",
-		"numberic_literal_start",
-		"integer_8bit",
-		"integer_32bit",
-		"unsigned_integer_8bit",
-		"unsigned_integer_32bit",
-		"numberic_literal_end",
+		"integer",
 		"string_utf8",
 
 		// 연산자
@@ -70,10 +65,14 @@ namespace UnitTest
 		"keyword_identifier_start",
 		"keyword_const",
 		"keyword_void",
-		"keyword_uint8",
-		"keyword_uint32",
 		"keyword_int8",
+		"keyword_int16",
 		"keyword_int32",
+		"keyword_int64",
+		"keyword_uint8",
+		"keyword_uint16",
+		"keyword_uint32",
+		"keyword_uint64",
 		"keyword_utf8",
 		"keyword_enum",
 		"keyword_unused",
@@ -142,20 +141,32 @@ namespace UnitTest
 	const mcf::token token_const = { mcf::token_type::keyword_const, "const" };
 	const mcf::token token_void = { mcf::token_type::keyword_void, "void" };
 	const mcf::token token_int8 = { mcf::token_type::keyword_int8, "int8" };
+	const mcf::token token_int16 = { mcf::token_type::keyword_int16, "int16" };
 	const mcf::token token_int32 = { mcf::token_type::keyword_int32, "int32" };
+	const mcf::token token_int64 = { mcf::token_type::keyword_int64, "int64" };
 	const mcf::token token_uint8 = { mcf::token_type::keyword_uint8, "uint8" };
+	const mcf::token token_uint16 = { mcf::token_type::keyword_uint16, "uint16" };
 	const mcf::token token_uint32 = { mcf::token_type::keyword_uint32, "uint32" };
+	const mcf::token token_uint64 = { mcf::token_type::keyword_uint64, "uint64" };
 	const mcf::token token_utf8 = { mcf::token_type::keyword_utf8, "utf8" };
 
 	const mcf::ast::data_type_expression type_int8(false, token_int8);
+	const mcf::ast::data_type_expression type_int16(false, token_int16);
 	const mcf::ast::data_type_expression type_int32(false, token_int32);
+	const mcf::ast::data_type_expression type_int64(false, token_int64);
 	const mcf::ast::data_type_expression type_uint8(false, token_uint8);
+	const mcf::ast::data_type_expression type_uint16(false, token_uint16);
 	const mcf::ast::data_type_expression type_uint32(false, token_uint32);
+	const mcf::ast::data_type_expression type_uint64(false, token_uint64);
 
 	const mcf::ast::data_type_expression type_const_int8(true, token_int8);
+	const mcf::ast::data_type_expression type_const_int16(true, token_int16);
 	const mcf::ast::data_type_expression type_const_int32(true, token_int32);
+	const mcf::ast::data_type_expression type_const_int64(true, token_int64);
 	const mcf::ast::data_type_expression type_const_uint8(true, token_uint8);
+	const mcf::ast::data_type_expression type_const_uint16(true, token_uint16);
 	const mcf::ast::data_type_expression type_const_uint32(true, token_uint32);
+	const mcf::ast::data_type_expression type_const_uint64(true, token_uint64);
 
 	inline const mcf::ast::identifier_expression Identifier(const char* const value)
 	{

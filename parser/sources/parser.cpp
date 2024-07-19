@@ -82,12 +82,7 @@ namespace mcf
 
 			// 식별자 + 리터럴
 			"identifier",
-			"numberic_literal_start",
-			"integer_8bit",
-			"integer_32bit",
-			"unsigned_integer_8bit",
-			"unsigned_integer_32bit",
-			"numberic_literal_end",
+			"integer",
 			"string_utf8",
 
 			// 연산자
@@ -117,10 +112,14 @@ namespace mcf
 			"keyword_identifier_start",
 			"keyword_const",
 			"keyword_void",
-			"keyword_uint8",
-			"keyword_uint32",
 			"keyword_int8",
+			"keyword_int16",
 			"keyword_int32",
+			"keyword_int64",
+			"keyword_uint8",
+			"keyword_uint16",
+			"keyword_uint32",
+			"keyword_uint64",
 			"keyword_utf8",
 			"keyword_enum",
 			"keyword_unused",
@@ -209,10 +208,14 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	// !<declaration> 관련 키워드인 경우
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int16: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_int64: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
+	case token_type::keyword_uint16: __COUNTER__;
+	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
 		break;
@@ -237,12 +240,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::semicolon: __COUNTER__;
 		break;
 
-	case token_type::numberic_literal_start: __COUNTER__;
-	case token_type::integer_8bit: __COUNTER__;
-	case token_type::integer_32bit: __COUNTER__;
-	case token_type::unsigned_integer_8bit: __COUNTER__;
-	case token_type::unsigned_integer_32bit: __COUNTER__;
-	case token_type::numberic_literal_end: __COUNTER__;
+	case token_type::integer: __COUNTER__;
 	case token_type::string_utf8: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::plus: __COUNTER__;
@@ -408,10 +406,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		expression = std::make_unique<ast::identifier_expression>(_currentToken);
 		break;
 	
-	case token_type::integer_8bit: __COUNTER__;
-	case token_type::integer_32bit: __COUNTER__;
-	case token_type::unsigned_integer_8bit: __COUNTER__;
-	case token_type::unsigned_integer_32bit: __COUNTER__;
+	case token_type::integer: __COUNTER__;
 	case token_type::string_utf8: __COUNTER__;
 		expression = std::make_unique<ast::literal_expession>(_currentToken);
 		break;
@@ -423,10 +418,14 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int16: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_int64: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
+	case token_type::keyword_uint16: __COUNTER__;
+	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		expression = std::make_unique<ast::data_type_expression>(parse_data_type_expressions());
 		break;
@@ -445,8 +444,6 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 
 	case token_type::eof: __COUNTER__;
 	case token_type::assign: __COUNTER__;
-	case token_type::numberic_literal_start: __COUNTER__;
-	case token_type::numberic_literal_end: __COUNTER__;
 	case token_type::asterisk: __COUNTER__;
 	case token_type::slash: __COUNTER__;
 	case token_type::lt: __COUNTER__;
@@ -508,13 +505,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 
 		case token_type::eof: __COUNTER__;
 		case token_type::identifier: __COUNTER__;
-		case token_type::numberic_literal_start: __COUNTER__;
-		case token_type::integer_8bit: __COUNTER__;
-		case token_type::integer_32bit: __COUNTER__;
-		case token_type::unsigned_integer_8bit: __COUNTER__;
-		case token_type::unsigned_integer_32bit: __COUNTER__;
+		case token_type::integer: __COUNTER__;
 		case token_type::string_utf8: __COUNTER__;
-		case token_type::numberic_literal_end: __COUNTER__;
 		case token_type::assign: __COUNTER__;
 		case token_type::rparen: __COUNTER__;
 		case token_type::lbrace: __COUNTER__;
@@ -526,10 +518,14 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_identifier_start: __COUNTER__;
 		case token_type::keyword_const: __COUNTER__;
 		case token_type::keyword_void: __COUNTER__;
-		case token_type::keyword_uint8: __COUNTER__;
-		case token_type::keyword_uint32: __COUNTER__;
 		case token_type::keyword_int8: __COUNTER__;
+		case token_type::keyword_int16: __COUNTER__;
 		case token_type::keyword_int32: __COUNTER__;
+		case token_type::keyword_int64: __COUNTER__;
+		case token_type::keyword_uint8: __COUNTER__;
+		case token_type::keyword_uint16: __COUNTER__;
+		case token_type::keyword_uint32: __COUNTER__;
+		case token_type::keyword_uint64: __COUNTER__;
 		case token_type::keyword_utf8: __COUNTER__;
 		case token_type::keyword_enum: __COUNTER__;
 		case token_type::keyword_unused: __COUNTER__;
@@ -717,21 +713,20 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	// !<declaration> 관련 키워드인 경우
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int16: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_int64: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
+	case token_type::keyword_uint16: __COUNTER__;
+	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		return true;
 
 	case token_type::eof: __COUNTER__;
 	case token_type::identifier: __COUNTER__;
-	case token_type::numberic_literal_start: __COUNTER__;
-	case token_type::integer_8bit: __COUNTER__;
-	case token_type::integer_32bit: __COUNTER__;
-	case token_type::unsigned_integer_8bit: __COUNTER__;
-	case token_type::unsigned_integer_32bit: __COUNTER__;
-	case token_type::numberic_literal_end: __COUNTER__;
+	case token_type::integer: __COUNTER__;
 	case token_type::string_utf8: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::plus: __COUNTER__;
@@ -794,12 +789,7 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 
 	case token_type::eof: __COUNTER__;
 	case token_type::identifier: __COUNTER__;
-	case token_type::numberic_literal_start: __COUNTER__;
-	case token_type::integer_8bit: __COUNTER__;
-	case token_type::integer_32bit: __COUNTER__;
-	case token_type::unsigned_integer_8bit: __COUNTER__;
-	case token_type::unsigned_integer_32bit: __COUNTER__;
-	case token_type::numberic_literal_end: __COUNTER__;
+	case token_type::integer: __COUNTER__;
 	case token_type::string_utf8: __COUNTER__;
 	case token_type::assign: __COUNTER__;
 	case token_type::ampersand: __COUNTER__;
@@ -813,10 +803,14 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int16: __COUNTER__;
 	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_int64: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
+	case token_type::keyword_uint16: __COUNTER__;
+	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_unused: __COUNTER__;

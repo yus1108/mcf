@@ -47,7 +47,7 @@ UnitTest::Parser::Parser(void) noexcept
 	_tests.emplace_back([&]() {
 		constexpr size_t CAPACITY_START = __COUNTER__;
 		__COUNTER__;
-		mcf::ast::data_type_expression dataType(false, { mcf::token_type::integer_32bit, "int32" });
+		mcf::ast::data_type_expression dataType(false, { mcf::token_type::integer, "int32" });
 		mcf::ast::identifier_expression name({ mcf::token_type::identifier, "myVar" });
 		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
 		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, name, rightExpression);
@@ -132,11 +132,11 @@ UnitTest::Parser::Parser(void) noexcept
 			unique_ptr<const expression>	ExpectedTargetExpression;
 		} testCases[] =
 		{
-			{"int32 foo = -5;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer_32bit, "5" })},
-			// TODO: {"int32 foo = !5;", { token_type::not, "!" }, make_unique<const literal_expession>(token{ token_type::integer_32bit, "5" })},
-			{"int32 foo = -15;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer_32bit, "15" })},
-			{"int32 foo = +5;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer_32bit, "5" })},
-			{"int32 foo = +15;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer_32bit, "15" })},
+			{"int32 foo = -5;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
+			// TODO: {"int32 foo = !5;", { token_type::not, "!" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
+			{"int32 foo = -15;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer, "15" })},
+			{"int32 foo = +5;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
+			{"int32 foo = +15;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer, "15" })},
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);
 
@@ -211,14 +211,14 @@ UnitTest::Parser::Parser(void) noexcept
 			const mcf::token	ExpectedRightToken;
 		} testCases[] =
 		{
-			{"int32 foo = 5 + 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::plus, "+" }, { mcf::token_type::integer_32bit, "5" }},
-			{"int32 foo = 5 - 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::minus, "-" }, { mcf::token_type::integer_32bit, "5" }},
-			{"int32 foo = 5 * 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::asterisk, "*" }, { mcf::token_type::integer_32bit, "5" }},
-			{"int32 foo = 5 / 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::slash, "/" }, { mcf::token_type::integer_32bit, "5" }},
-			//TODO: {"int32 foo = 5 > 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::greater, ">" }, { mcf::token_type::integer_32bit, "5" }},
-			//TODO: {"int32 foo = 5 < 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::less, "<" }, { mcf::token_type::integer_32bit, "5" }},
-			//TODO: {"int32 foo = 5 == 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer_32bit, "5" }},
-			//TODO: {"int32 foo = 5 != 5;", { mcf::token_type::integer_32bit, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer_32bit, "5" }},
+			{"int32 foo = 5 + 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::plus, "+" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 - 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::minus, "-" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 * 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::asterisk, "*" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 / 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::slash, "/" }, { mcf::token_type::integer, "5" }},
+			//TODO: {"int32 foo = 5 > 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::greater, ">" }, { mcf::token_type::integer, "5" }},
+			//TODO: {"int32 foo = 5 < 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::less, "<" }, { mcf::token_type::integer, "5" }},
+			//TODO: {"int32 foo = 5 == 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
+			//TODO: {"int32 foo = 5 != 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);
 
@@ -488,17 +488,14 @@ UnitTest::Parser::Parser(void) noexcept
 				return new enum_statement(enumDataType, Identifier(enumName), BuildBlockStatement(valueNames));
 			};
 
-		//auto NewUint8 = [](uint8_t value) -> literal_expession* { return new literal_expession({ token_type::unsigned_integer_8bit, std::to_string(value) }); };
-		//auto NewUint32 = [](uint32_t value) -> literal_expession* { return new literal_expession({ token_type::unsigned_integer_32bit, std::to_string(value) }); };
-		//auto NewInt8 = [](int8_t value) -> literal_expession* { return new literal_expession({ token_type::integer_8bit, std::to_string(value) }); };
-		auto NewInt32 = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer_32bit, std::to_string(value) }); };
+		auto newInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
 
 		mcf::ast::statement* statements[] =
 		{
 			// int32 foo = 10; 
-			LiteralVariableStatement(type_int32, "foo", NewInt32(10)),
+			LiteralVariableStatement(type_int32, "foo", newInt(10)),
 			// int32 boo = 5;							
-			LiteralVariableStatement(type_int32, "boo", NewInt32(5)),
+			LiteralVariableStatement(type_int32, "boo", newInt(5)),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement(type_uint8, "PRINT_RESULT", {"NO_ERROR"}),
 		};
@@ -532,7 +529,7 @@ UnitTest::Parser::Parser(void) noexcept
 					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "test"},
 					{mcf::token_type::assign, "="},
-					{mcf::token_type::integer_32bit, "10"},
+					{mcf::token_type::integer, "10"},
 				},
 			},
 		};
