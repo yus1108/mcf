@@ -204,6 +204,7 @@ namespace UnitTest
 	private:
 		static bool check_parser_errors(mcf::parser& parser) noexcept;
 		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
+		static bool test_expression(const mcf::ast::expression* actual, const mcf::ast::expression* expected) noexcept;
 		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
 		static bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken) noexcept;
 

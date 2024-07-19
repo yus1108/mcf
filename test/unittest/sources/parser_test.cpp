@@ -165,39 +165,7 @@ UnitTest::Parser::Parser(void) noexcept
 				convert_to_string(testCases[i].ExpectedPrefixToken).c_str(), convert_to_string(prefixExpression->get_prefix_operator_token()).c_str());
 
 			const mcf::ast::expression* targetExpression = prefixExpression->get_target_expression();
-
-			constexpr const size_t TARGET_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
-			switch (targetExpression->get_expression_type())
-			{
-			case mcf::ast::expression_type::literal: __COUNTER__;
-				fatal_assert(testCases[i].ExpectedTargetExpression->get_expression_type() == mcf::ast::expression_type::literal,
-					u8"targetExpression의 expression type은 literal여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
-				if (test_literal(targetExpression, static_cast<const mcf::ast::literal_expession*>(testCases[i].ExpectedTargetExpression.get())->get_token()) == false)
-				{
-					return false;
-				}
-				break;
-			case mcf::ast::expression_type::identifier: __COUNTER__;
-				fatal_assert(testCases[i].ExpectedTargetExpression->get_expression_type() == mcf::ast::expression_type::identifier,
-					u8"targetExpression의 expression type은 identifier여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
-				if (test_identifier(targetExpression, static_cast<const mcf::ast::identifier_expression*>(testCases[i].ExpectedTargetExpression.get())->get_token()) == false)
-				{
-					return false;
-				}
-				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
-			default:
-				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)",
-					EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())], mcf::enum_index(targetExpression->get_expression_type()));
-			}
-			constexpr const size_t TARGET_EXPRESSION_TYPE_COUNT = __COUNTER__ - TARGET_EXPRESSION_TYPE_COUNT_BEGIN;
-			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == TARGET_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
+			fatal_assert(test_expression(targetExpression, testCases[i].ExpectedTargetExpression.get()), u8"target epxression 파싱에 실패 하였습니다.");
 		}
 
 		return true;
@@ -246,67 +214,47 @@ UnitTest::Parser::Parser(void) noexcept
 			const mcf::ast::infix_expression* infixExpression = static_cast<const mcf::ast::infix_expression*>(initExpression);
 
 			const mcf::ast::expression* leftExpression = infixExpression->get_left_expression();
-			constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 			switch (leftExpression->get_expression_type())
 			{
-			case mcf::ast::expression_type::literal: __COUNTER__;
+			case mcf::ast::expression_type::literal:
 				if (test_literal(leftExpression, testCases[i].ExpectedLeftToken) == false)
 				{
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::identifier: __COUNTER__;
+			case mcf::ast::expression_type::identifier:
 				if (test_identifier(leftExpression, testCases[i].ExpectedLeftToken) == false)
 				{
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. left expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index(leftExpression->get_expression_type())], mcf::enum_index(leftExpression->get_expression_type()));
 			}
-			constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;
-			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == LEFT_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
 
 			fatal_assert(infixExpression->get_infix_operator_token() == testCases[i].ExpectedInfixToken, u8"infix operator token이 %s와 다릅니다. token=%s",
 				convert_to_string(testCases[i].ExpectedInfixToken).c_str(), convert_to_string(infixExpression->get_infix_operator_token()).c_str());
 
 			const mcf::ast::expression* rightExpression = infixExpression->get_left_expression();
-			constexpr const size_t RIGHT_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 			switch (rightExpression->get_expression_type())
 			{
-			case mcf::ast::expression_type::literal: __COUNTER__;
+			case mcf::ast::expression_type::literal:
 				if (test_literal(rightExpression, testCases[i].ExpectedLeftToken) == false)
 				{
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::identifier: __COUNTER__;
+			case mcf::ast::expression_type::identifier:
 				if (test_identifier(rightExpression, testCases[i].ExpectedLeftToken) == false)
 				{
 					return false;
 				}
 				break;
-			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
-			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
 				fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. right expression_type=%s(%zu)",
 					EXPRESSION_TYPES[mcf::enum_index(rightExpression->get_expression_type())], mcf::enum_index(rightExpression->get_expression_type()));
 			}
-			constexpr const size_t RIGHT_EXPRESSION_TYPE_COUNT = __COUNTER__ - RIGHT_EXPRESSION_TYPE_COUNT_BEGIN;
-			static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == RIGHT_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
 		}
 
 		return true;
@@ -612,6 +560,44 @@ bool UnitTest::Parser::test_variable_declaration_statement(const mcf::ast::state
 		TOKEN_TYPES[enum_index(expectedDataType)], TOKEN_TYPES[enum_index(variableDeclaration->get_type())]);
 	fatal_assert(variableDeclaration->get_name() == expectedName, u8"변수 선언 이름이 '%s'가 아닙니다. 실제값=%s", expectedName.c_str(), variableDeclaration->get_name().c_str());
 	// TODO: #11 initialization 도 구현 필요
+
+	return true;
+}
+
+bool UnitTest::Parser::test_expression(const mcf::ast::expression* actual, const mcf::ast::expression* expected) noexcept
+{
+	constexpr const size_t TARGET_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (actual->get_expression_type())
+	{
+	case mcf::ast::expression_type::literal: __COUNTER__;
+		fatal_assert(expected->get_expression_type() == mcf::ast::expression_type::literal,
+			u8"targetExpression의 expression type은 literal여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(actual->get_expression_type())]);
+		if (test_literal(actual, static_cast<const mcf::ast::literal_expession*>(expected)->get_token()) == false)
+		{
+			return false;
+		}
+		break;
+	case mcf::ast::expression_type::identifier: __COUNTER__;
+		fatal_assert(expected->get_expression_type() == mcf::ast::expression_type::identifier,
+			u8"targetExpression의 expression type은 identifier여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(actual->get_expression_type())]);
+		if (test_identifier(actual, static_cast<const mcf::ast::identifier_expression*>(expected)->get_token()) == false)
+		{
+			return false;
+		}
+		break;
+	case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
+	default:
+		fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)",
+			EXPRESSION_TYPES[mcf::enum_index(actual->get_expression_type())], mcf::enum_index(actual->get_expression_type()));
+	}
+	constexpr const size_t TARGET_EXPRESSION_TYPE_COUNT = __COUNTER__ - TARGET_EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == TARGET_EXPRESSION_TYPE_COUNT, "expression_type count is changed. this SWITCH need to be changed as well.");
 
 	return true;
 }
