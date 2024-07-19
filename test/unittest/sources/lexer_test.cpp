@@ -110,7 +110,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 6.
 					"int32 foo = 5 + 5 - 8 * 4 / 2;/      ",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
@@ -130,7 +130,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 7.
 					"int32 foo = -1;     ",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
@@ -142,7 +142,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 8.
 					"#include <builtins>// testing comment; int32 boo = -1; //",
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
@@ -150,7 +150,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 9.
 					"#include <builtins>/*// testing comment;*/ int32 boo = -1; // hello world",
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
@@ -165,7 +165,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 10.
 					"const utf8 str[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
 					{
 						{mcf::token_type::keyword_const, "const"},
@@ -180,21 +180,21 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 11.
 					"/",
 					{
 						{mcf::token_type::slash, "/"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 12.
 					"//",
 					{
 						{mcf::token_type::comment, "//"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 13.
 					"const /* utf8  */ int32 comment_block_test = 5;",
 					{
 						{mcf::token_type::keyword_const, "const"},
