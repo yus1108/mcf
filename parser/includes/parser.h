@@ -75,7 +75,7 @@ namespace mcf
 		const mcf::ast::prefix_expression*					parse_prefix_expression(void) noexcept;
 		const mcf::ast::infix_expression*					parse_infix_expression(const mcf::ast::expression* left) noexcept;
 		const mcf::ast::infix_expression*					parse_call_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::infix_expression*					parse_index_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::index_expression*					parse_index_expression(const mcf::ast::expression* left) noexcept;
 		const mcf::ast::enum_block_statements_expression*	parse_enum_block_statements_expression(void) noexcept;
 
 		void		read_next_token(void) noexcept;

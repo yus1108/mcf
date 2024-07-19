@@ -122,3 +122,9 @@ const std::string mcf::ast::enum_statement::convert_to_string(void) const noexce
 {
 	return "enum " + _name.convert_to_string() + " : " + _dataType.convert_to_string() + " { " + _values->convert_to_string() + " };";
 }
+
+const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
+{
+	// TODO: #14 assert for _left == nullptr
+	return _left->convert_to_string() + "[" + _index->convert_to_string() + "]";
+}

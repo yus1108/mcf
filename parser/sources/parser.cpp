@@ -603,11 +603,30 @@ const mcf::ast::infix_expression* mcf::parser::parse_call_expression(const mcf::
 	return nullptr;
 }
 
-const mcf::ast::infix_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
+const mcf::ast::index_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
 {
-	unused(left);
-	parsing_fail_message(error::id::not_registered_infix_expression_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
-	return nullptr;
+	debug_assert(_currentToken.Type == token_type::lbracket, u8"이 함수가 호출될때 현재 토큰은 'lbracket' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
+		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
+
+	std::unique_ptr<const ast::expression> leftExpression(left);
+
+	read_next_token();
+	if (_currentToken.Type == token_type::lbracket)
+	{
+		read_next_token();
+		return new(std::nothrow) ast::index_expression(leftExpression.release(), new(std::nothrow) ast::unknown_index_expression());
+	}
+
+	const token infixOperatorToken = _currentToken;
+	const precedence precedence = get_current_infix_expression_token_precedence();
+	read_next_token();
+	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence));
+	if (rightExpression.get() == nullptr)
+	{
+		parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+		return nullptr;
+	}
+	return new(std::nothrow) ast::index_expression(leftExpression.release(), rightExpression.release());
 }
 
 const mcf::ast::enum_block_statements_expression* mcf::parser::parse_enum_block_statements_expression(void) noexcept

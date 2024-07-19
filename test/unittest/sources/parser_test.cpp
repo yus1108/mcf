@@ -188,6 +188,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
@@ -262,6 +264,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:
@@ -293,6 +297,8 @@ UnitTest::Parser::Parser(void) noexcept
 			case mcf::ast::expression_type::data_type: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::prefix: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
+			case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
 			case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 			default:

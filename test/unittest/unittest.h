@@ -113,8 +113,10 @@ namespace UnitTest
 		"data_type",
 		"prefix",
 		"infix",
-		"enum_block",
+		"index_unknown",
+		"index",
 		"enum_value_increment",
+		"enum_block",
 	};
 	constexpr const size_t EXPRESSION_TYPES_SIZE = array_size( EXPRESSION_TYPES );
 	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");

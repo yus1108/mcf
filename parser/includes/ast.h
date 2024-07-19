@@ -57,9 +57,11 @@ namespace mcf
 			// plus|minus <identifier>
 			prefix,
 			infix,	// <expression> plus|minus|asterisk|slash <expression>
+			index_unknown,	// 평가기에서 index expression 을 평가할때 []인지 확인 하기 위해 사용되는 타입입니다.
+			index,			// <expression> lbracket [optional: <expression>] rbracket
 
-			enum_block, // identifier [optional: assign expression] [optional: comma !<enum_block>]
 			enum_value_increment, // 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
+			enum_block, // identifier [optional: assign expression] [optional: comma !<enum_block>]
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -183,11 +185,35 @@ namespace mcf
 			const expression _right;													// <expression>
 		};
 
-		class enum_value_increment final : public expression
+		class unknown_index_expression final : public expression
 		{
 		public:
-			using unique_expression = std::unique_ptr<const mcf::ast::expression>;
+			explicit unknown_index_expression(void) noexcept = default;
 
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::index_unknown; }
+			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return std::string(); }
+		};
+
+		class index_expression final : public expression
+		{
+		public:
+			explicit index_expression(void) noexcept = default;
+			explicit index_expression(const mcf::ast::expression* left, const mcf::ast::expression* index) noexcept
+				: _left(left), _index(index) {}
+
+			inline const mcf::ast::expression* get_left_expression(void) const noexcept { return _left.get(); }
+			inline const mcf::ast::expression* get_index_expression(void) const noexcept { return _index.get(); }
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::index; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			const std::unique_ptr<const mcf::ast::expression> _left;	// <expression>
+			const std::unique_ptr<const mcf::ast::expression> _index;	// <expression>
+		};
+
+		class enum_value_increment final : public expression
+		{
 		public:
 			explicit enum_value_increment(void) noexcept = default;
 
