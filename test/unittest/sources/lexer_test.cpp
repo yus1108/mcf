@@ -47,7 +47,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 1. 식별자 키워드
+				{ // 2. 식별자 키워드
 					"const void int8 int16 int32 int64 uint8 uint16 uint32 uint64 utf8 enum unused",
 					{
 						token_const,
@@ -66,14 +66,14 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 2. '.' 으로 시작하는 토큰
+				{ // 3. '.' 으로 시작하는 토큰
 					"...",
 					{
 						{mcf::token_type::keyword_variadic, "..."},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 3. 매크로
+				{ // 4. 매크로
 					"#include <hello, world!>\n#include \"custom_file.hmcf\"",
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <hello, world!>"},
@@ -81,7 +81,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 4. 주석
+				{ // 5. 주석
 					u8"// 한줄 주석입니다.\n/* 여러 줄을 주석\n 처리\n 할수 있습니다. */",
 					{
 						{mcf::token_type::comment, u8"// 한줄 주석입니다."},
@@ -89,22 +89,71 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 5.
-					"int32 foo = 5;enum PRINT_RESULT : int32{NO_ERROR}; const PRINT_RESULT Print(const utf8 format[], ...) const;",
+				{ // 6. 변수 관련 토큰
+					"int32 foo = 1;uint8 boo = -7;",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
 						{mcf::token_type::identifier, "foo"},
 						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "5"},
+						{mcf::token_type::integer, "1"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_uint8, "uint8"},
+						{mcf::token_type::identifier, "boo"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::minus, "-"},
+						{mcf::token_type::integer, "7"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 7. enum 관련 토큰
+					"enum PRINT_RESULT : uint8{NO_ERROR};enum PRINT_RESULT2 : int8{INVALID,ERROR1=1,ERROR2};enum PRINT_RESULT3 : int8{INVALID=0,ERROR1,ERROR2,COUNT,};",
+					{
 						{mcf::token_type::keyword_enum, "enum"},
 						{mcf::token_type::identifier, "PRINT_RESULT"},
 						{mcf::token_type::colon, ":"},
-						{mcf::token_type::keyword_int32, "int32"},
+						{mcf::token_type::keyword_uint8, "uint8"},
 						{mcf::token_type::lbrace, "{"},
 						{mcf::token_type::identifier, "NO_ERROR"},
 						{mcf::token_type::rbrace, "}"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_enum, "enum"},
+						{mcf::token_type::identifier, "PRINT_RESULT2"},
+						{mcf::token_type::colon, ":"},
+						{mcf::token_type::keyword_int8, "int8"},
+						{mcf::token_type::lbrace, "{"},
+						{mcf::token_type::identifier, "INVALID"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "ERROR1"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::integer, "1"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "ERROR2"},
+						{mcf::token_type::rbrace, "}"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_enum, "enum"},
+						{mcf::token_type::identifier, "PRINT_RESULT3"},
+						{mcf::token_type::colon, ":"},
+						{mcf::token_type::keyword_int8, "int8"},
+						{mcf::token_type::lbrace, "{"},
+						{mcf::token_type::identifier, "INVALID"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::integer, "0"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "ERROR1"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "ERROR2"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "COUNT"},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::rbrace, "}"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 8. 함수 전방 선언 관련 토큰
+					"const PRINT_RESULT Print(const utf8 format[], ...) const;",
+					{
 						{mcf::token_type::keyword_const, "const"},
 						{mcf::token_type::identifier, "PRINT_RESULT"},
 						{mcf::token_type::identifier, "Print"},
@@ -122,62 +171,44 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 6.
-					"int32 foo = 5 + 5 - 8 * 4 / 2;/      ",
-					{
-						{mcf::token_type::keyword_int32, "int32"},
-						{mcf::token_type::identifier, "foo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "5"},
-						{mcf::token_type::plus, "+"},
-						{mcf::token_type::integer, "5"},
-						{mcf::token_type::minus, "-"},
-						{mcf::token_type::integer, "8"},
-						{mcf::token_type::asterisk, "*"},
-						{mcf::token_type::integer, "4"},
-						{mcf::token_type::slash, "/"},
-						{mcf::token_type::integer, "2"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::slash, "/"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
-				{ // 7.
-					"int32 foo = -1;     ",
-					{
-						{mcf::token_type::keyword_int32, "int32"},
-						{mcf::token_type::identifier, "foo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::minus, "-"},
-						{mcf::token_type::integer, "1"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
-				{ // 8.
-					"#include <builtins>// testing comment; int32 boo = -1; //",
-					{
-						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
-						{mcf::token_type::comment, "// testing comment; int32 boo = -1; //"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
 				{ // 9.
-					"#include <builtins>/*// testing comment;*/ int32 boo = -1; // hello world",
+					"#include <builtins> // include vector, string, print",
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
-						{mcf::token_type::comment_block, "/*// testing comment;*/"},
-						{mcf::token_type::keyword_int32, "int32"},
-						{mcf::token_type::identifier, "boo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::minus, "-"},
-						{mcf::token_type::integer, "1"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::comment, "// hello world"},
+						{mcf::token_type::comment, "// include vector, string, print"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{ // 10.
+					"void main(void) { const utf8 str[] = \"Hello, World!\"; /* default string literal is static array of utf8 in mcf */ Print(\"%s\\n\", str); }",
+					{
+						{mcf::token_type::keyword_void, "void"},
+						{mcf::token_type::identifier, "main"},
+						{mcf::token_type::lparen, "("},
+						{mcf::token_type::keyword_void, "void"},
+						{mcf::token_type::rparen, ")"},
+						{mcf::token_type::lbrace, "{"},
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_utf8, "utf8"},
+						{mcf::token_type::identifier, "str"},
+						{mcf::token_type::lbracket, "["},
+						{mcf::token_type::rbracket, "]"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::string_utf8, "\"Hello, World!\""},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::comment_block, "/* default string literal is static array of utf8 in mcf */"},
+						{mcf::token_type::identifier, "Print"},
+						{mcf::token_type::lparen, "("},
+						{mcf::token_type::string_utf8, "\"%s\\n\""},
+						{mcf::token_type::comma, ","},
+						{mcf::token_type::identifier, "str"},
+						{mcf::token_type::rparen, ")"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::rbrace, "}"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 11.
 					"const utf8 str[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
 					{
 						{mcf::token_type::keyword_const, "const"},
@@ -192,21 +223,21 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 11.
+				{ // 12.
 					"/",
 					{
 						{mcf::token_type::slash, "/"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 12.
+				{ // 13.
 					"//",
 					{
 						{mcf::token_type::comment, "//"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 13.
+				{ // 14.
 					"const /* utf8  */ int32 comment_block_test = 5;",
 					{
 						{mcf::token_type::keyword_const, "const"},
