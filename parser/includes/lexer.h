@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <stack>
+#include <unordered_map>
 
 #define test             invalid;          test             \
 invalid;
@@ -55,6 +56,11 @@ namespace mcf
 		keyword_unused,				// unused
 		keyword_identifier_end,		// 실제 값으로 사용되어선 안됩니다!!!
 
+		custom_keyword_start,	// 실제 값으로 사용되어선 안됩니다!!!
+		custom_enum_type,		// 커스텀 열거형 타입
+		custom_enum_value,		// 커스텀 열거형 값
+		custom_keyword_end,		// 실제 값으로 사용되어선 안됩니다!!!
+
 		// '.' 으로 시작하는 토큰
 		keyword_variadic,	// ...
 
@@ -84,7 +90,7 @@ namespace mcf
 	// 주의: thread-safe 하지 않은 클래스입니다.
 	class lexer final {
 	public:
-		enum class error_token : unsigned char 
+		enum class error_token : unsigned char
 		{
 			invalid = 0,
 
@@ -92,6 +98,7 @@ namespace mcf
 			invalid_input_length,
 			fail_read_file,
 			fail_memory_allocation,
+			registering_duplicated_symbol_name,
 
 			count,
 		};
@@ -103,7 +110,8 @@ namespace mcf
 		const mcf::lexer::error_token	get_last_error_token(void) noexcept;
 		const std::string				get_name(void) const noexcept { return _name; }
 
-		const mcf::token read_next_token(void) noexcept;
+		const mcf::token		read_next_token(void) noexcept;
+		const mcf::token_type	register_custom_enum_type(std::string name) noexcept;
 
 	private:
 		const char get_next_byte(void) const noexcept;
@@ -120,7 +128,11 @@ namespace mcf
 		const mcf::token	read_macro_token(void) noexcept; 
 		const mcf::token	read_numeric_literal(void) noexcept; 
 
+		const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept;
+
 	private:
+		std::unordered_map<std::string, token_type> _customKeywordMap;
+
 		std::stack<lexer::error_token>	_tokens;
 		const std::string				_input;
 		const std::string				_name;

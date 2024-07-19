@@ -283,20 +283,19 @@ namespace mcf
 		{
 		public:
 			explicit enum_statement(void) noexcept = default;
-			explicit enum_statement(const mcf::ast::data_type_expression& dataType,
-									const mcf::ast::identifier_expression& name,
+			explicit enum_statement(const mcf::ast::data_type_expression& name, 
+									const mcf::ast::data_type_expression& dataType,
 									const mcf::ast::enum_block_statements_expression* values) noexcept;
 
-			inline const std::string& get_name(void) const noexcept { return _name.get_token().Literal; }
+			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::enum_def; }
 			virtual const std::string						convert_to_string(void) const noexcept override final;
 
 		private:
 			using block_statement = std::unique_ptr<const mcf::ast::enum_block_statements_expression>;
+			const mcf::ast::data_type_expression	_name;
 			const mcf::ast::data_type_expression	_dataType;
-			// optional TODO: default size를 uint32 타입 추가 후 수정
-			const mcf::ast::identifier_expression	_name;
 			const block_statement					_values;
 		};
 	}

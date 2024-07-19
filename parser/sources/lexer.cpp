@@ -8,42 +8,6 @@ namespace mcf
 {
 	namespace internal 
 	{
-		inline static const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept
-		{
-			// identifier 조건에 부합하는 키워드만 등록합니다.
-			constexpr const char* IDENTIFIER_KEYWORDS[] =
-			{
-				// TODO: #5 uint32 타입 추가 필요
-				// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
-				// TODO: #7 decimal 타입 추가 필요
-				"const",
-				"void",
-				"int8",
-				"int16",
-				"int32",
-				"int64",
-				"uint8",
-				"uint16",
-				"uint32",
-				"uint64",
-				"utf8",
-				"enum",
-				"unused",
-			};
-			constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
-			static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE, 
-				"identifier keyword token_type count is changed. this array need to be changed as well.");
-
-			for (size_t i = 0; i < KEYWORDS_SIZE; i++)
-			{
-				if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
-				{
-					return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
-				}
-			}
-			return mcf::token_type::identifier;
-		}
-
 		inline static constexpr const bool is_alphabet(const char byte) noexcept
 		{
 			return ('a' <= byte && byte <= 'z') || ('A' <= byte && byte <= 'Z');
@@ -265,9 +229,11 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
 			__COUNTER__; // count for keyword_unused
+			__COUNTER__; // count for custom_enum_type
+			__COUNTER__; // count for custom_enum_value
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			token.Literal = read_keyword_or_identifier(); 
-			token.Type = internal::determine_keyword_or_identifier(token.Literal);
+			token.Type = determine_keyword_or_identifier(token.Literal);
 			token.Line = _currentLine;
 			token.Index = _currentIndex;
 			return token; 
@@ -281,6 +247,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		{
 			__COUNTER__; // count for keyword_identifier_start
 			__COUNTER__; // count for keyword_identifier_end
+			__COUNTER__; // count for custom_keyword_start
+			__COUNTER__; // count for custom_keyword_end
 			__COUNTER__; // count for macro_start
 			__COUNTER__; // count for macro_end
 			token = { token_type::invalid, std::string(1, _currentByte), _currentLine, _currentIndex };
@@ -294,6 +262,18 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 	return token;
 }
 
+const mcf::token_type mcf::lexer::register_custom_enum_type(std::string name) noexcept
+{
+	if (determine_keyword_or_identifier(name) != token_type::identifier)
+	{
+		_tokens.push(error_token::registering_duplicated_symbol_name);
+		return token_type::invalid;
+	}
+
+	mcf::token_type tokenType = token_type::custom_enum_type;
+	_customKeywordMap[name] = tokenType;
+	return tokenType;
+}
 
 inline const char mcf::lexer::get_next_byte(void) const noexcept
 {
@@ -618,4 +598,44 @@ inline const mcf::token mcf::lexer::read_numeric_literal(void) noexcept
 	token.Line = _currentLine;
 	token.Index = _currentIndex;
 	return token;
+}
+
+const mcf::token_type mcf::lexer::determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept
+{
+	// identifier 조건에 부합하는 키워드만 등록합니다.
+	constexpr const char* IDENTIFIER_KEYWORDS[] =
+	{
+		// TODO: #5 uint32 타입 추가 필요
+		// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
+		// TODO: #7 decimal 타입 추가 필요
+		"const",
+		"void",
+		"int8",
+		"int16",
+		"int32",
+		"int64",
+		"uint8",
+		"uint16",
+		"uint32",
+		"uint64",
+		"utf8",
+		"enum",
+		"unused",
+	};
+	constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
+	static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE,
+		"identifier keyword token_type count is changed. this array need to be changed as well.");
+
+	// 기본 제공 키워드 검색
+	for (size_t i = 0; i < KEYWORDS_SIZE; i++)
+	{
+		if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
+		{
+			return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
+		}
+	}
+
+	// 커스텀 키워드도 컴색 하고 없는 경우 identifier 반환
+	auto iter = _customKeywordMap.find(tokenLiteral);
+	return iter == _customKeywordMap.end() ? mcf::token_type::identifier : iter->second;
 }

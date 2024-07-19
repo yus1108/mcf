@@ -45,6 +45,7 @@ namespace mcf
 				not_registered_statement_token,
 				not_registered_expression_token,
 				not_registered_infix_expression_token,
+				registering_duplicated_symbol_name,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				count,
@@ -88,6 +89,8 @@ namespace mcf
 		const mcf::parser::precedence get_current_infix_expression_token_precedence(void) noexcept;
 
 		const bool check_last_lexer_error(void) noexcept;
+
+		const bool register_custom_enum_type(mcf::token& inOutToken) noexcept;
 
 	private:
 		std::stack<mcf::parser::error>	_errors;

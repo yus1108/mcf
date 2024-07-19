@@ -416,7 +416,7 @@ UnitTest::Parser::Parser(void) noexcept
 			return new variable_statement(type, Identifier(name), literalExpression);
 			};
 
-		auto EnumStatement = [](data_type_expression enumDataType, const char* enumName, std::initializer_list<const char*> valueNames)
+		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames)
 			{
 				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
 					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
@@ -439,7 +439,7 @@ UnitTest::Parser::Parser(void) noexcept
 					auto nameVector = EnumValueNames(names);
 					return new enum_block_statements_expression(nameVector, EnumIncrementValues(names.size()));
 					};
-				return new enum_statement(enumDataType, Identifier(enumName), BuildBlockStatement(valueNames));
+				return new enum_statement(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), enumDataType, BuildBlockStatement(valueNames));
 			};
 
 		auto newInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
@@ -451,7 +451,7 @@ UnitTest::Parser::Parser(void) noexcept
 			// int32 boo = 5;							
 			LiteralVariableStatement(type_int32, "boo", newInt(5)),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
-			EnumStatement(type_uint8, "PRINT_RESULT", {"NO_ERROR"}),
+			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 		};
 		size_t statementSize = array_size(statements);
 

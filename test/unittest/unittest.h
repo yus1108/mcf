@@ -78,6 +78,11 @@ namespace UnitTest
 		"keyword_unused",
 		"keyword_identifier_end",
 
+		"custom_keyword_start",
+		"custom_enum_type",
+		"custom_enum_value",
+		"custom_keyword_end",
+
 		// '.' 으로 시작하는 토큰
 		"keyword_variadic",
 
@@ -136,6 +141,7 @@ namespace UnitTest
 		"not_registered_statement_token",
 		"not_registered_expression_token",
 		"not_registered_infix_expression_token",
+		"registering_duplicated_symbol_name",
 	};
 	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
 	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");

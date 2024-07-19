@@ -112,9 +112,11 @@ const std::string mcf::ast::variable_assign_statement::convert_to_string(void) c
 	return buffer;
 }
 
-mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& dataType, const mcf::ast::identifier_expression& name, const mcf::ast::enum_block_statements_expression* values) noexcept
-	: _dataType(dataType)
-	, _name(name)
+mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& name, 
+											const mcf::ast::data_type_expression& dataType, 
+											const mcf::ast::enum_block_statements_expression* values) noexcept
+	: _name(name)
+	, _dataType(dataType)
 	, _values(values)
 {}
 

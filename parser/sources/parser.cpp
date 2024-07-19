@@ -125,6 +125,11 @@ namespace mcf
 			"keyword_unused",
 			"keyword_identifier_end",
 
+			"custom_keyword_start",
+			"custom_enum_type",
+			"custom_enum_value",
+			"custom_keyword_end",
+
 			// '.' 으로 시작하는 토큰
 			"keyword_variadic",
 
@@ -217,6 +222,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::custom_enum_type: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
 		break;
 
@@ -261,6 +267,9 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_unused: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
+	case token_type::custom_keyword_start: __COUNTER__;
+	case token_type::custom_enum_value: __COUNTER__;
+	case token_type::custom_keyword_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
 	case token_type::macro_end: __COUNTER__;
@@ -350,7 +359,10 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
-	ast::identifier_expression name(_currentToken);
+
+	// 열거형 타입을 등록하고 데이터 타입으로 받는다.
+	register_custom_enum_type(_currentToken);
+	const ast::data_type_expression& name = parse_data_type_expressions();
 
 	bool isUseDefaultDataType = true;
 	if (read_next_token_if(token_type::colon) == true)
@@ -393,7 +405,7 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		return nullptr;
 	}
 
-	return new(std::nothrow) ast::enum_statement(dataType, name, values.release());
+	return new(std::nothrow) ast::enum_statement(name, dataType, values.release());
 }
 
 const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
@@ -427,6 +439,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::custom_enum_type: __COUNTER__;
 		expression = std::make_unique<ast::data_type_expression>(parse_data_type_expressions());
 		break;
 
@@ -460,6 +473,9 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
+	case token_type::custom_keyword_start: __COUNTER__;
+	case token_type::custom_enum_value: __COUNTER__;
+	case token_type::custom_keyword_end: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
 	case token_type::macro_iibrary_file_include: __COUNTER__;
 	case token_type::macro_project_file_include: __COUNTER__;
@@ -531,6 +547,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_unused: __COUNTER__;
 		case token_type::keyword_identifier_end: __COUNTER__;
 		case token_type::keyword_variadic: __COUNTER__;
+		case token_type::custom_keyword_start: __COUNTER__;
+		case token_type::custom_enum_type: __COUNTER__;
+		case token_type::custom_enum_value: __COUNTER__;
+		case token_type::custom_keyword_end: __COUNTER__;
 		case token_type::macro_start: __COUNTER__;
 		case token_type::macro_iibrary_file_include: __COUNTER__;
 		case token_type::macro_project_file_include: __COUNTER__;
@@ -741,6 +761,7 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::keyword_uint32: __COUNTER__;
 	case token_type::keyword_uint64: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::custom_enum_type: __COUNTER__;
 		return true;
 
 	case token_type::eof: __COUNTER__;
@@ -769,6 +790,9 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::keyword_unused: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
+	case token_type::custom_keyword_start: __COUNTER__;
+	case token_type::custom_enum_value: __COUNTER__;
+	case token_type::custom_keyword_end: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
 	case token_type::macro_iibrary_file_include: __COUNTER__;
 	case token_type::macro_project_file_include: __COUNTER__;
@@ -835,6 +859,10 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::keyword_unused: __COUNTER__;
 	case token_type::keyword_identifier_end: __COUNTER__;
 	case token_type::keyword_variadic: __COUNTER__;
+	case token_type::custom_keyword_start: __COUNTER__;
+	case token_type::custom_enum_type: __COUNTER__;
+	case token_type::custom_enum_value: __COUNTER__;
+	case token_type::custom_keyword_end: __COUNTER__;
 	case token_type::macro_start: __COUNTER__;
 	case token_type::macro_iibrary_file_include: __COUNTER__;
 	case token_type::macro_project_file_include: __COUNTER__;
@@ -884,6 +912,10 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 		parsing_fail_message(error::id::fail_memory_allocation, token(), u8"메모리 할당에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
 		break;
 
+	case lexer::error_token::registering_duplicated_symbol_name: __COUNTER__;
+		parsing_fail_message(error::id::registering_duplicated_symbol_name, token(), u8"심볼이 중복되는 타입이 등록 되었습니다. file path=%s", _lexer.get_name().c_str());
+		break;
+
 	default:
 		parsing_fail_message(error::id::invalid_lexer_error_token, token(), u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. parser::error::id=invalid_lexer_error_token");
 		break;
@@ -893,4 +925,13 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 
 	check_last_lexer_error();
 	return false;
+}
+
+const bool mcf::parser::register_custom_enum_type(mcf::token& inOutToken) noexcept
+{
+	debug_assert(inOutToken.Type == token_type::identifier, "identifier 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
+	inOutToken.Type = _lexer.register_custom_enum_type(inOutToken.Literal);
+	parsing_fail_assert(inOutToken.Type == token_type::custom_enum_type, error::id::registering_duplicated_symbol_name, inOutToken, 
+		"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", inOutToken.Literal.c_str());
+	return true;
 }
