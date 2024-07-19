@@ -19,6 +19,7 @@ namespace mcf
 				"const",
 				"void",
 				"int32",
+				"uint32",
 				"utf8",
 				"enum",
 				"unused",
@@ -248,6 +249,7 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			__COUNTER__; // count for keyword_const
 			__COUNTER__; // count for keyword_void
 			__COUNTER__; // count for keyword_int32
+			__COUNTER__; // count for keyword_uint32
 			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
 			__COUNTER__; // count for keyword_unused

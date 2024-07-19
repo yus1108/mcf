@@ -462,7 +462,7 @@ UnitTest::Parser::Parser(void) noexcept
 			return new variable_statement(data_type_expression(false, { t1, l1 }), identifier_expression({ t2, l2 }), new literal_expession({ t3, l3 }));
 			};
 
-		auto build_enum_statement = [&](const char* l1, std::initializer_list<const char*> names)
+		auto build_enum_statement = [](data_type_expression enumDataType, const char* enumName, std::initializer_list<const char*> valueNames)
 			{
 				auto build_block_statements = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
 					auto build_block_statement_name_vector = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
@@ -485,7 +485,7 @@ UnitTest::Parser::Parser(void) noexcept
 					auto nameVector = build_block_statement_name_vector(names);
 					return new enum_block_statements_expression(nameVector, build_block_statement_increment_values(names.size()));
 					};
-				return new enum_statement(data_type_expression(false, { token_type::keyword_int32, "int32" }), identifier_expression({ token_type::identifier, l1 }), build_block_statements(names));
+				return new enum_statement(enumDataType, identifier_expression({ token_type::identifier, enumName }), build_block_statements(valueNames));
 			};
 
 		mcf::ast::statement* statements[] =
@@ -495,7 +495,7 @@ UnitTest::Parser::Parser(void) noexcept
 			// int32 boo = 5;							
 			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),	
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
-			build_enum_statement("PRINT_RESULT", {"NO_ERROR"}),
+			build_enum_statement(data_type_expression(false, { token_type::keyword_uint32, "uint32" }), "PRINT_RESULT", {"NO_ERROR"}),
 		};
 		size_t statementSize = array_size(statements);
 

@@ -43,6 +43,7 @@ namespace mcf
 		keyword_const,				// const
 		keyword_void,				// void
 		keyword_int32,				// int32
+		keyword_uint32,				// int32
 		keyword_utf8,				// utf8
 		keyword_enum,				// enum
 		keyword_unused,				// unused

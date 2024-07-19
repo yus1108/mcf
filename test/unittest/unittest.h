@@ -66,6 +66,7 @@ namespace UnitTest
 		"keyword_const",
 		"keyword_void",
 		"keyword_int32",
+		"keyword_uint32",
 		"keyword_utf8",
 		"keyword_enum",
 		"keyword_unused",
