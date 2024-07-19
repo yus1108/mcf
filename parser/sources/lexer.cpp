@@ -18,8 +18,10 @@ namespace mcf
 				// TODO: #7 decimal 타입 추가 필요
 				"const",
 				"void",
-				"int32",
+				"uint8",
 				"uint32",
+				"int8",
+				"int32",
 				"utf8",
 				"enum",
 				"unused",
@@ -248,8 +250,10 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			__COUNTER__; // count for identifier
 			__COUNTER__; // count for keyword_const
 			__COUNTER__; // count for keyword_void
-			__COUNTER__; // count for keyword_int32
+			__COUNTER__; // count for keyword_uint8
 			__COUNTER__; // count for keyword_uint32
+			__COUNTER__; // count for keyword_int8
+			__COUNTER__; // count for keyword_int32
 			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
 			__COUNTER__; // count for keyword_unused

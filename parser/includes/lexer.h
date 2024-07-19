@@ -42,8 +42,10 @@ namespace mcf
 		keyword_identifier_start,	// 실제 값으로 사용되어선 안됩니다!!!
 		keyword_const,				// const
 		keyword_void,				// void
+		keyword_uint8,				// uint8
+		keyword_uint32,				// uint32
+		keyword_int8,				// int8
 		keyword_int32,				// int32
-		keyword_uint32,				// int32
 		keyword_utf8,				// utf8
 		keyword_enum,				// enum
 		keyword_unused,				// unused

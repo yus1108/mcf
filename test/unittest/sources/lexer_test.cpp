@@ -20,7 +20,7 @@ namespace UnitTest
 			const struct test_case
 			{
 				const std::string                   Input;
-				const std::vector<expected_result>  ExpectedResultVector;
+				const std::vector<expected_result>  ExpectedResults;
 			} testCases[] =
 			{
 				{
@@ -41,6 +41,7 @@ namespace UnitTest
 						{mcf::token_type::rbracket, "]"},
 						{mcf::token_type::comma, ","},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -73,6 +74,7 @@ namespace UnitTest
 						{mcf::token_type::rparen, ")"},
 						{mcf::token_type::keyword_const, "const"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -92,6 +94,7 @@ namespace UnitTest
 						{mcf::token_type::integer_32bit, "2"},
 						{mcf::token_type::semicolon, ";"},
 						{mcf::token_type::slash, "/"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -103,6 +106,7 @@ namespace UnitTest
 						{mcf::token_type::minus, "-"},
 						{mcf::token_type::integer_32bit, "1"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -110,6 +114,7 @@ namespace UnitTest
 					{
 						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
 						{mcf::token_type::comment, "// testing comment; int32 boo = -1; //"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -124,6 +129,7 @@ namespace UnitTest
 						{mcf::token_type::integer_32bit, "1"},
 						{mcf::token_type::semicolon, ";"},
 						{mcf::token_type::comment, "// hello world"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -138,18 +144,21 @@ namespace UnitTest
 						{mcf::token_type::string_utf8, "\"Hello, World!\""},
 						{mcf::token_type::semicolon, ";"},
 						{mcf::token_type::comment, "// default string literal is static array of utf8 in mcf"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
 					"/",
 					{
 						{mcf::token_type::slash, "/"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
 					"//",
 					{
 						{mcf::token_type::comment, "//"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 				{
@@ -162,6 +171,7 @@ namespace UnitTest
 						{mcf::token_type::assign, "="},
 						{mcf::token_type::integer_32bit, "5"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
 					},
 				},
 			};
@@ -169,18 +179,27 @@ namespace UnitTest
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
-				const size_t vectorSize = testCases[i].ExpectedResultVector.size();
+				const size_t expectedResultSize = testCases[i].ExpectedResults.size();
 				mcf::lexer lexer(testCases[i].Input, false);
-				for (size_t j = 0; j < vectorSize; j++)
+
+				std::vector<mcf::token>  actualTokens;
+				mcf::token token = lexer.read_next_token();
+				actualTokens.emplace_back(token);
+				while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 				{
-					const mcf::token token = lexer.read_next_token();
-					const mcf::token_type expectedTokenType = testCases[i].ExpectedResultVector[j].Type;
+					token = lexer.read_next_token();
+					actualTokens.emplace_back(token);
+				}
+				const size_t actualTokenCount = actualTokens.size();
+				fatal_assert(expectedResultSize == actualTokenCount, "기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
-					fatal_assert(token.Type == expectedTokenType, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-						i, j, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
+				for (size_t j = 0; j < expectedResultSize; j++)
+				{
+					fatal_assert(actualTokens[j].Type == testCases[i].ExpectedResults[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+						i, j, TOKEN_TYPES[enum_index(testCases[i].ExpectedResults[j].Type)], TOKEN_TYPES[enum_index(actualTokens[j].Type)]);
 
-					fatal_assert(token.Literal == testCases[i].ExpectedResultVector[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-						i, j, testCases[i].ExpectedResultVector[j].Literal, token.Literal.c_str());
+					fatal_assert(actualTokens[j].Literal == testCases[i].ExpectedResults[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+						i, j, testCases[i].ExpectedResults[j].Literal, actualTokens[j].Literal.c_str());
 				}
 			}
 
@@ -195,7 +214,7 @@ namespace UnitTest
 				const char*				Literal;
 			};
 
-			const std::vector<expected_result>  expectedResultVector =
+			const std::vector<expected_result>  expectedResults =
 			{
 					{mcf::token_type::keyword_int32, "int32"},
 					{mcf::token_type::identifier, "foo"},
@@ -209,19 +228,42 @@ namespace UnitTest
 					{mcf::token_type::assign, "="},
 					{mcf::token_type::integer_32bit, "5"},
 					{mcf::token_type::semicolon, ";"},
+					{mcf::token_type::comment, u8"// unused parameters must be set as unused"},
+					{mcf::token_type::comment, u8"// Print is builtin function that prints output to console"},
+					{mcf::token_type::comment, u8"// TODO: command line argument 받는법 필요"},
+					{mcf::token_type::comment, u8"// TODO: return type for main?"},
+					{mcf::token_type::keyword_enum, u8"enum"},
+					{mcf::token_type::identifier, "PRINT_RESULT"},
+					{mcf::token_type::colon, ":"},
+					{mcf::token_type::keyword_uint8, "uint8"},
+					{mcf::token_type::lbrace, "{"},
+					{mcf::token_type::identifier, "NO_ERROR"},
+					{mcf::token_type::rbrace, "}"},
+					{mcf::token_type::semicolon, ";"},
+					{mcf::token_type::eof, "\0"},
 			};
-			const size_t expectedResultVectorSize = expectedResultVector.size();
+			const size_t expectedResultSize = expectedResults.size();
+
 			mcf::lexer lexer(_names.back().c_str(), true);
-			for (size_t i = 0; i < expectedResultVectorSize; i++)
+
+			std::vector<mcf::token>  actualTokens;
+			mcf::token token = lexer.read_next_token();
+			actualTokens.emplace_back(token);
+			while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 			{
-				const mcf::token token = lexer.read_next_token();
-				const mcf::token_type expectedTokenType = expectedResultVector[i].Type;
+				token = lexer.read_next_token();
+				actualTokens.emplace_back(token);
+			}
+			const size_t actualTokenCount = actualTokens.size();
+			fatal_assert(expectedResultSize == actualTokenCount, "기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
-				fatal_assert(token.Type == expectedTokenType, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-					token.Line, token.Index, TOKEN_TYPES[enum_index(expectedTokenType)], TOKEN_TYPES[enum_index(token.Type)]);
+			for (size_t i = 0; i < actualTokenCount; i++)
+			{
+				fatal_assert(actualTokens[i].Type == expectedResults[i].Type, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+					actualTokens[i].Line, actualTokens[i].Index, TOKEN_TYPES[enum_index(expectedResults[i].Type)], TOKEN_TYPES[enum_index(actualTokens[i].Type)]);
 
-				fatal_assert(token.Literal == expectedResultVector[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-					token.Line, token.Index, expectedResultVector[i].Literal, token.Literal.c_str());
+				fatal_assert(actualTokens[i].Literal == expectedResults[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+					actualTokens[i].Line, actualTokens[i].Index, expectedResults[i].Literal, actualTokens[i].Literal.c_str());
 			}
 
 			return true;

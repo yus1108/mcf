@@ -112,8 +112,10 @@ namespace mcf
 			"keyword_identifier_start",
 			"keyword_const",
 			"keyword_void",
-			"keyword_int32",
+			"keyword_uint8",
 			"keyword_uint32",
+			"keyword_int8",
+			"keyword_int32",
 			"keyword_utf8",
 			"keyword_enum",
 			"keyword_unused",
@@ -202,8 +204,10 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	// !<declaration> 관련 키워드인 경우
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
 	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_variable_declaration_statement());
 		break;
@@ -406,8 +410,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
 	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		expression = std::make_unique<ast::data_type_expression>(parse_data_type_expressions());
 		break;
@@ -500,8 +506,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_identifier_start: __COUNTER__;
 		case token_type::keyword_const: __COUNTER__;
 		case token_type::keyword_void: __COUNTER__;
-		case token_type::keyword_int32: __COUNTER__;
+		case token_type::keyword_uint8: __COUNTER__;
 		case token_type::keyword_uint32: __COUNTER__;
+		case token_type::keyword_int8: __COUNTER__;
+		case token_type::keyword_int32: __COUNTER__;
 		case token_type::keyword_utf8: __COUNTER__;
 		case token_type::keyword_enum: __COUNTER__;
 		case token_type::keyword_unused: __COUNTER__;
@@ -689,8 +697,10 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	// !<declaration> 관련 키워드인 경우
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
 	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 		return true;
 
@@ -773,8 +783,10 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::keyword_identifier_start: __COUNTER__;
 	case token_type::keyword_const: __COUNTER__;
 	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
+	case token_type::keyword_uint8: __COUNTER__;
 	case token_type::keyword_uint32: __COUNTER__;
+	case token_type::keyword_int8: __COUNTER__;
+	case token_type::keyword_int32: __COUNTER__;
 	case token_type::keyword_utf8: __COUNTER__;
 	case token_type::keyword_enum: __COUNTER__;
 	case token_type::keyword_unused: __COUNTER__;

@@ -65,8 +65,10 @@ namespace UnitTest
 		"keyword_identifier_start",
 		"keyword_const",
 		"keyword_void",
-		"keyword_int32",
+		"keyword_uint8",
 		"keyword_uint32",
+		"keyword_int8",
+		"keyword_int32",
 		"keyword_utf8",
 		"keyword_enum",
 		"keyword_unused",
@@ -131,6 +133,21 @@ namespace UnitTest
 	};
 	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
 	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");
+
+	const mcf::ast::data_type_expression type_uint8(false, { mcf::token_type::keyword_uint8, "uint8" });
+	const mcf::ast::data_type_expression type_uint32(false, { mcf::token_type::keyword_uint32, "uint32" });
+	const mcf::ast::data_type_expression type_int8(false, { mcf::token_type::keyword_int8, "int8" });
+	const mcf::ast::data_type_expression type_int32(false, { mcf::token_type::keyword_int32, "int32" });
+
+	const mcf::ast::data_type_expression type_const_uint8(true, { mcf::token_type::keyword_uint8, "uint8" });
+	const mcf::ast::data_type_expression type_const_uint32(true, { mcf::token_type::keyword_uint32, "uint32" });
+	const mcf::ast::data_type_expression type_const_int8(true, { mcf::token_type::keyword_int8, "int8" });
+	const mcf::ast::data_type_expression type_const_int32(true, { mcf::token_type::keyword_int32, "int32" });
+
+	inline const mcf::ast::identifier_expression Identifier(const char* const value)
+	{
+		return mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
+	}
 
 	const std::string convert_to_string( const mcf::token& token );
 

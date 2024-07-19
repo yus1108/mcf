@@ -458,14 +458,14 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf;
 		using namespace mcf::ast;
 
-		auto generate_variable_declaration = [&](token_type t1, const char* l1, token_type t2, const char* l2, token_type t3, const char* l3) -> mcf::ast::statement* {
-			return new variable_statement(data_type_expression(false, { t1, l1 }), identifier_expression({ t2, l2 }), new literal_expession({ t3, l3 }));
+		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> mcf::ast::statement* {
+			return new variable_statement(type, Identifier(name), literalExpression);
 			};
 
-		auto build_enum_statement = [](data_type_expression enumDataType, const char* enumName, std::initializer_list<const char*> valueNames)
+		auto EnumStatement = [](data_type_expression enumDataType, const char* enumName, std::initializer_list<const char*> valueNames)
 			{
-				auto build_block_statements = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
-					auto build_block_statement_name_vector = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
+				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
+					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
 						std::vector<identifier_expression> nameVector;
 						const char* const* pointer = names.begin();
 						for (size_t i = 0; i < names.size(); i++)
@@ -474,7 +474,7 @@ UnitTest::Parser::Parser(void) noexcept
 						}
 						return nameVector;
 						};
-					auto build_block_statement_increment_values = [](size_t length) -> enum_block_statements_expression::unique_expression* {
+					auto EnumIncrementValues = [](size_t length) -> enum_block_statements_expression::unique_expression* {
 						enum_block_statements_expression::unique_expression* values = new enum_block_statements_expression::unique_expression[length];
 						for (size_t i = 0; i < length; i++)
 						{
@@ -482,20 +482,25 @@ UnitTest::Parser::Parser(void) noexcept
 						}
 						return values;
 						};
-					auto nameVector = build_block_statement_name_vector(names);
-					return new enum_block_statements_expression(nameVector, build_block_statement_increment_values(names.size()));
+					auto nameVector = EnumValueNames(names);
+					return new enum_block_statements_expression(nameVector, EnumIncrementValues(names.size()));
 					};
-				return new enum_statement(enumDataType, identifier_expression({ token_type::identifier, enumName }), build_block_statements(valueNames));
+				return new enum_statement(enumDataType, Identifier(enumName), BuildBlockStatement(valueNames));
 			};
+
+		//auto NewUint8 = [](uint8_t value) -> literal_expession* { return new literal_expession({ token_type::unsigned_integer_8bit, std::to_string(value) }); };
+		//auto NewUint32 = [](uint32_t value) -> literal_expession* { return new literal_expession({ token_type::unsigned_integer_32bit, std::to_string(value) }); };
+		//auto NewInt8 = [](int8_t value) -> literal_expession* { return new literal_expession({ token_type::integer_8bit, std::to_string(value) }); };
+		auto NewInt32 = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer_32bit, std::to_string(value) }); };
 
 		mcf::ast::statement* statements[] =
 		{
 			// int32 foo = 10; 
-			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "foo", token_type::integer_32bit, "10"),
+			LiteralVariableStatement(type_int32, "foo", NewInt32(10)),
 			// int32 boo = 5;							
-			generate_variable_declaration(token_type::keyword_int32, "int32", token_type::identifier, "boo", token_type::integer_32bit, "5"),	
+			LiteralVariableStatement(type_int32, "boo", NewInt32(5)),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
-			build_enum_statement(data_type_expression(false, { token_type::keyword_uint32, "uint32" }), "PRINT_RESULT", {"NO_ERROR"}),
+			EnumStatement(type_uint8, "PRINT_RESULT", {"NO_ERROR"}),
 		};
 		size_t statementSize = array_size(statements);
 
