@@ -12,9 +12,14 @@ namespace mcf
 		eof,		// \0
 
 		// 식별자 + 리터럴
-		identifier,		// [_a-zA-Z]+[_a-zA-Z0-9]*
-		integer_32bit,	// [0-9]+
-		string_utf8,	// "[^"\n\r]*"
+		identifier,				// [_a-zA-Z]+[_a-zA-Z0-9]*
+		numberic_literal_start, // 실제 값으로 사용되어선 안됩니다!!!
+		integer_8bit,			// [0-9]+i8
+		integer_32bit,			// [0-9]+i32
+		unsigned_integer_8bit,	// [0-9]+ui8
+		unsigned_integer_32bit,	// [0-9]+ui32
+		numberic_literal_end,	// 실제 값으로 사용되어선 안됩니다!!!
+		string_utf8,			// "[^"\n\r]*"
 
 		// 연산자
 		assign,		// =
@@ -34,9 +39,9 @@ namespace mcf
 		rbracket,	// ]
 
 		// 구분자
+		colon,		// :
 		semicolon,	// ;
 		comma,		// ,
-		colon,		// :
 
 		// 식별자 키워드
 		keyword_identifier_start,	// 실제 값으로 사용되어선 안됩니다!!!
@@ -113,7 +118,8 @@ namespace mcf
 		const mcf::token	read_string_utf8(void) noexcept;
 		const mcf::token	read_slash_starting_token(void) noexcept;
 		const mcf::token	read_dot_starting_token(void) noexcept;
-		const mcf::token	read_macro_token(void) noexcept;
+		const mcf::token	read_macro_token(void) noexcept; 
+		const mcf::token	read_numeric_literal(void) noexcept; 
 
 	private:
 		std::stack<lexer::error_token>	_tokens;

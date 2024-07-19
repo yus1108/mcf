@@ -11,20 +11,14 @@ namespace UnitTest
 	{
 		_names.emplace_back("test_generated_tokens_by_lexer");
 		_tests.emplace_back([&]() {
-			struct expected_result final
-			{
-				const mcf::token_type   Type;
-				const char* Literal;
-			};
-
 			const struct test_case
 			{
 				const std::string                   Input;
-				const std::vector<expected_result>  ExpectedResults;
+				const std::vector<mcf::token>  ExpectedResults;
 			} testCases[] =
 			{
-				{
-					"=+-*/<>(){}[],;",
+				{ // 0. 연산자, 구분자, 및 블록 지정자
+					"=+-*/<>(){}[]:;,",
 					{
 						{mcf::token_type::assign, "="},
 						{mcf::token_type::plus, "+"},
@@ -39,12 +33,51 @@ namespace UnitTest
 						{mcf::token_type::rbrace, "}"},
 						{mcf::token_type::lbracket, "["},
 						{mcf::token_type::rbracket, "]"},
-						{mcf::token_type::comma, ","},
+						{mcf::token_type::colon, ":"},
 						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::comma, ","},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{
+				{ // 1. 식별자 키워드
+					"const void int8 int32 uint8 uint32 utf8 enum unused",
+					{
+						token_const,
+						token_void,
+						token_int8,
+						token_int32,
+						token_uint8,
+						token_uint32,
+						token_utf8,
+						{mcf::token_type::keyword_enum, "enum"},
+						{mcf::token_type::keyword_unused, "unused"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 2. '.' 으로 시작하는 토큰
+					"...",
+					{
+						{mcf::token_type::keyword_variadic, "..."},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 3. 매크로
+					"#include <hello, world!>\n#include \"custom_file.hmcf\"",
+					{
+						{mcf::token_type::macro_iibrary_file_include, "#include <hello, world!>"},
+						{mcf::token_type::macro_project_file_include, "#include \"custom_file.hmcf\""},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 4. 주석
+					u8"// 한줄 주석입니다.\n/* 여러 줄을 주석\n 처리\n 할수 있습니다. */",
+					{
+						{mcf::token_type::comment, u8"// 한줄 주석입니다."},
+						{mcf::token_type::comment_block, u8"/* 여러 줄을 주석\n 처리\n 할수 있습니다. */"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 5.
 					"int32 foo = 5;enum PRINT_RESULT : int32{NO_ERROR}; const PRINT_RESULT Print(const utf8 format[], ...) const;",
 					{
 						{mcf::token_type::keyword_int32, "int32"},
@@ -199,7 +232,7 @@ namespace UnitTest
 						i, j, TOKEN_TYPES[enum_index(testCases[i].ExpectedResults[j].Type)], TOKEN_TYPES[enum_index(actualTokens[j].Type)]);
 
 					fatal_assert(actualTokens[j].Literal == testCases[i].ExpectedResults[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-						i, j, testCases[i].ExpectedResults[j].Literal, actualTokens[j].Literal.c_str());
+						i, j, testCases[i].ExpectedResults[j].Literal.c_str(), actualTokens[j].Literal.c_str());
 				}
 			}
 
