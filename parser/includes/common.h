@@ -28,7 +28,7 @@ namespace mcf
 	}
 
 	template<typename T>
-	const T enum_at(const size_t index)
+	constexpr const T enum_at(const size_t index)
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
 		return index < mcf::enum_count<T>() ? static_cast<T>(index) : T::invalid;

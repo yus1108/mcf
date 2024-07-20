@@ -229,6 +229,8 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 			__COUNTER__; // count for keyword_utf8
 			__COUNTER__; // count for keyword_enum
 			__COUNTER__; // count for keyword_unused
+			__COUNTER__; // count for keyword_in
+			__COUNTER__; // count for keyword_out
 			__COUNTER__; // count for custom_enum_type
 			__COUNTER__; // count for custom_enum_value
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
@@ -621,6 +623,8 @@ const mcf::token_type mcf::lexer::determine_keyword_or_identifier(const std::str
 		"utf8",
 		"enum",
 		"unused",
+		"in",
+		"out",
 	};
 	constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
 	static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE,

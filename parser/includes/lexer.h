@@ -54,6 +54,8 @@ namespace mcf
 		keyword_utf8,				// utf8
 		keyword_enum,				// enum
 		keyword_unused,				// unused
+		keyword_in,					// in
+		keyword_out,				// out
 		keyword_identifier_end,		// 실제 값으로 사용되어선 안됩니다!!!
 
 		custom_keyword_start,	// 실제 값으로 사용되어선 안됩니다!!!

@@ -32,6 +32,7 @@ namespace mcf
 
 			variable,			// <data_type> identifier [optional: assign <expression>] semicolon
 			variable_assign,	// identifier assign <expression> semicolon
+			function,
 			enum_def,			// keyword_enum <identifier> [optional: colon <data_type>] lbrace !<enum_block> rbrace semicolon
 
 			// 이 밑으로는 수정하면 안됩니다.
@@ -56,12 +57,26 @@ namespace mcf
 			// plus|minus <literal>
 			// plus|minus <identifier>
 			prefix,
-			infix,	// <expression> plus|minus|asterisk|slash <expression>
+			infix,			// <expression> plus|minus|asterisk|slash <expression>
 			index_unknown,	// 평가기에서 index expression 을 평가할때 []인지 확인 하기 위해 사용되는 타입입니다.
 			index,			// <expression> lbracket [optional: <expression>] rbracket
+			
+			// unused|in|out <data_type> <identifier>
+			function_parameter,
+			// [optional: unused] function_parameter_variadic
+			function_parameter_variadic,
+			// <function_parameter>
+			// <function_parameter_variadic>
+			// <function_parameter> comma <function_parameter>
+			// <function_parameter_list> comma <function_parameter_variadic>
+			function_parameter_list,
+			// [variable] [optional: !<function_block>]
+			// [variable_assign] [optional: !<function_block>]
+			// [function_call] [optional: !<function_block>]
+			function_block_,
 
-			enum_value_increment, // 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
-			enum_block, // identifier [optional: assign expression] [optional: comma !<enum_block>]
+			enum_value_increment,	// 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
+			enum_block,				// identifier [optional: assign expression] [optional: comma !<enum_block>]
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -75,6 +90,7 @@ namespace mcf
 		};
 
 		using unique_statement = std::unique_ptr<const mcf::ast::statement>;
+		using unique_expression = std::unique_ptr<const mcf::ast::expression>;
 		using statement_array = std::unique_ptr<unique_statement[]>;
 
 		class program final
@@ -118,8 +134,6 @@ namespace mcf
 			explicit identifier_expression(void) noexcept = default;
 			explicit identifier_expression(const mcf::token& token) noexcept : _token(token) {}
 
-			inline const mcf::token&  get_token( void ) const noexcept { return _token; }
-
 			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::identifier; }
 			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
@@ -139,8 +153,8 @@ namespace mcf
 			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
 
 		private:
-			const mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
-			const bool			_isConst = false; // token_type::const == true
+			mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
+			bool		_isConst = false; // token_type::const == true
 		};
 
 		class prefix_expression final : public expression
@@ -208,8 +222,55 @@ namespace mcf
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			const std::unique_ptr<const mcf::ast::expression> _left;	// <expression>
-			const std::unique_ptr<const mcf::ast::expression> _index;	// <expression>
+			const unique_expression _left;	// <expression>
+			const unique_expression _index;	// <expression>
+		};
+
+		class function_parameter_expression final : public expression
+		{
+		public:
+			explicit function_parameter_expression(void) noexcept = default;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			token_type				_for;
+			data_type_expression	_type;
+			identifier_expression	_name;
+		};
+
+		class function_parameter_variadic_expression final : public expression
+		{
+		public:
+			explicit function_parameter_variadic_expression(void) noexcept = default;
+			explicit function_parameter_variadic_expression(const mcf::token_type& dataFor) noexcept;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_variadic; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+			token_type				_for;
+		};
+
+		class function_parameter_list_expression final : public expression
+		{
+		public:
+			explicit function_parameter_list_expression(void) noexcept = default;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_list; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			std::vector<unique_expression> _list;
+		};
+
+		class function_block_statements_expression final : public expression
+		{
+		public:
+			explicit function_block_statements_expression(void) noexcept = default;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
 		};
 
 		class enum_value_increment final : public expression
@@ -220,7 +281,7 @@ namespace mcf
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_value_increment; }
 			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return std::string(); }
 		};
-
+		
 		class enum_block_statements_expression final : public expression
 		{
 		public:
@@ -246,19 +307,19 @@ namespace mcf
 		public:
 			explicit variable_statement(void) noexcept = default;
 			explicit variable_statement(const mcf::ast::data_type_expression& dataType,
-													const mcf::ast::identifier_expression& name,
-													const mcf::ast::expression* initExpression) noexcept;
+										const mcf::ast::expression* name,
+										const mcf::ast::expression* initExpression) noexcept;
 
-			inline const mcf::token_type		get_type(void) const noexcept { return _dataType.get_type(); }
-			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
-			inline const mcf::ast::expression*	get_init_expression(void) const noexcept { return _initExpression.get(); }
+			inline	const mcf::token_type		get_type(void) const noexcept { return _dataType.get_type(); }
+					const std::string			get_name(void) const noexcept;
+			inline	const mcf::ast::expression*	get_init_expression(void) const noexcept { return _initExpression.get(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
 			const mcf::ast::data_type_expression				_dataType;
-			const mcf::ast::identifier_expression				_name;
+			const std::unique_ptr<const mcf::ast::expression>	_name;
 			const std::unique_ptr<const mcf::ast::expression>	_initExpression;
 		};
 
@@ -266,17 +327,32 @@ namespace mcf
 		{
 		public:
 			explicit variable_assign_statement(void) noexcept = default;
-			explicit variable_assign_statement(const mcf::ast::identifier_expression& name, const mcf::ast::expression* assignExpression) noexcept;
+			explicit variable_assign_statement(const mcf::ast::expression* name, const mcf::ast::expression* assignExpression) noexcept;
 
-			inline const std::string&			get_name(void) const noexcept { return _name.get_token().Literal; }
+					const std::string			get_name(void) const noexcept;
 			inline const mcf::ast::expression*	get_assign_expression(void) const noexcept { return _assignedExpression.get(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assign; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			const mcf::ast::identifier_expression				_name;
+			const std::unique_ptr<const mcf::ast::expression>	_name;
 			const std::unique_ptr<const mcf::ast::expression>	_assignedExpression;
+		};
+
+		class function_statement final : public statement
+		{
+		public:
+			explicit function_statement(void) noexcept = default;
+
+			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			unique_expression		_returnType;
+			identifier_expression	_name;
+			unique_expression		_parameters;
+			unique_expression		_statementsBlock;
 		};
 
 		class enum_statement final : public statement
@@ -290,7 +366,7 @@ namespace mcf
 			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::enum_def; }
-			virtual const std::string						convert_to_string(void) const noexcept override final;
+					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
 			using block_statement = std::unique_ptr<const mcf::ast::enum_block_statements_expression>;

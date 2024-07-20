@@ -9,3 +9,4 @@ enum PRINT_RESULT : uint8
 {
     NO_ERROR
 };
+const PRINT_RESULT Print(in const utf8 format[], ...) const;

@@ -48,9 +48,8 @@ UnitTest::Parser::Parser(void) noexcept
 		constexpr size_t CAPACITY_START = __COUNTER__;
 		__COUNTER__;
 		mcf::ast::data_type_expression dataType(false, { mcf::token_type::integer, "int32" });
-		mcf::ast::identifier_expression name({ mcf::token_type::identifier, "myVar" });
 		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
-		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, name, rightExpression);
+		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, NewIdentifier("myVar"), rightExpression);
 		constexpr size_t CAPACITY = __COUNTER__ - CAPACITY_START - 1;
 
 		mcf::ast::statement_array statementArray = std::make_unique<mcf::ast::unique_statement[]>(CAPACITY);
@@ -87,7 +86,7 @@ UnitTest::Parser::Parser(void) noexcept
 			EXPRESSION_TYPES[mcf::enum_index(initExpression->get_expression_type())]);
 
 		const mcf::ast::identifier_expression* identifier = static_cast<const mcf::ast::identifier_expression*>(initExpression);
-		fatal_assert(identifier->get_token().Literal == "bar", u8"identifier의 literal값이 `bar`가 아닙니다. identifier.literal=`%s`", identifier->get_token().Literal.c_str());
+		fatal_assert(identifier->convert_to_string() == "bar", u8"identifier의 literal값이 `bar`가 아닙니다. identifier.literal=`%s`", identifier->convert_to_string().c_str());
 
 		return true;
 		});
@@ -223,7 +222,7 @@ UnitTest::Parser::Parser(void) noexcept
 				}
 				break;
 			case mcf::ast::expression_type::identifier:
-				if (test_identifier(leftExpression, testCases[i].ExpectedLeftToken) == false)
+				if (test_identifier(leftExpression, testCases[i].ExpectedLeftToken.Literal) == false)
 				{
 					return false;
 				}
@@ -246,7 +245,7 @@ UnitTest::Parser::Parser(void) noexcept
 				}
 				break;
 			case mcf::ast::expression_type::identifier:
-				if (test_identifier(rightExpression, testCases[i].ExpectedLeftToken) == false)
+				if (test_identifier(rightExpression, testCases[i].ExpectedLeftToken.Literal) == false)
 				{
 					return false;
 				}
@@ -413,7 +412,7 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf::ast;
 
 		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> mcf::ast::statement* {
-			return new variable_statement(type, Identifier(name), literalExpression);
+			return new variable_statement(type, NewIdentifier(name), literalExpression);
 			};
 
 		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames)
@@ -580,7 +579,7 @@ bool UnitTest::Parser::test_expression(const mcf::ast::expression* actual, const
 	case mcf::ast::expression_type::identifier: __COUNTER__;
 		fatal_assert(expected->get_expression_type() == mcf::ast::expression_type::identifier,
 			u8"targetExpression의 expression type은 identifier여야 합니다. expression_type=%s", EXPRESSION_TYPES[mcf::enum_index(actual->get_expression_type())]);
-		if (test_identifier(actual, static_cast<const mcf::ast::identifier_expression*>(expected)->get_token()) == false)
+		if (test_identifier(actual, static_cast<const mcf::ast::identifier_expression*>(expected)->convert_to_string()) == false)
 		{
 			return false;
 		}
@@ -590,6 +589,10 @@ bool UnitTest::Parser::test_expression(const mcf::ast::expression* actual, const
 	case mcf::ast::expression_type::infix: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::index_unknown: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::index: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_parameter: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_parameter_variadic: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_parameter_list: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_block_: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 	default:
@@ -613,13 +616,13 @@ bool UnitTest::Parser::test_literal(const mcf::ast::expression* expression, cons
 	return true;
 }
 
-bool UnitTest::Parser::test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken) noexcept
+bool UnitTest::Parser::test_identifier(const mcf::ast::expression* targetExpression, const std::string expectedValue) noexcept
 {
 	fatal_assert(targetExpression->get_expression_type() == mcf::ast::expression_type::identifier, u8"expression의 expression type이 identifier이 아닙니다. expression_type=%s",
 		EXPRESSION_TYPES[mcf::enum_index(targetExpression->get_expression_type())]);
 	const mcf::ast::identifier_expression* identifierExpression = static_cast<const mcf::ast::identifier_expression*>(targetExpression);
 
-	fatal_assert(identifierExpression->get_token() == expectedToken, u8"identifierExpression의 token이 %s이 아닙니다. expression_type=%s",
-		convert_to_string(expectedToken).c_str(), convert_to_string(identifierExpression->get_token()).c_str());
+	fatal_assert((identifierExpression->get_expression_type() == mcf::ast::expression_type::identifier) && (identifierExpression->convert_to_string() == expectedValue),
+		u8"identifierExpression의 value가 %s이 아닙니다. value=%s", expectedValue.c_str(), EXPRESSION_TYPES[mcf::enum_index(identifierExpression->get_expression_type())]);
 	return true;
 }

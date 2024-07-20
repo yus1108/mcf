@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <stack>
+#include <initializer_list>
 
 namespace mcf
 {
@@ -67,22 +68,28 @@ namespace mcf
 
 	private:
 		const mcf::ast::statement*					parse_statement(void) noexcept;
-		const mcf::ast::variable_statement*			parse_variable_declaration_statement(void) noexcept;
-		const mcf::ast::variable_assign_statement*	parse_variable_assignment_statement(void) noexcept;
+		const mcf::ast::statement*					parse_declaration_statement(void) noexcept;
+		const mcf::ast::variable_assign_statement*	parse_variable_assign_statement(void) noexcept;
 		const mcf::ast::enum_statement*				parse_enum_statement(void) noexcept;
 
-		const mcf::ast::expression*							parse_expression(const mcf::parser::precedence precedence) noexcept;
-		const mcf::ast::data_type_expression				parse_data_type_expressions(void) noexcept;
-		const mcf::ast::prefix_expression*					parse_prefix_expression(void) noexcept;
-		const mcf::ast::infix_expression*					parse_infix_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::infix_expression*					parse_call_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::index_expression*					parse_index_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::enum_block_statements_expression*	parse_enum_block_statements_expression(void) noexcept;
+		const mcf::ast::expression*								parse_expression(const mcf::parser::precedence precedence) noexcept;
+		const mcf::ast::data_type_expression*					parse_data_type_expressions(void) noexcept;
+		const mcf::ast::prefix_expression*						parse_prefix_expression(void) noexcept;
+		const mcf::ast::infix_expression*						parse_infix_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::infix_expression*						parse_call_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::index_expression*						parse_index_expression(const mcf::ast::expression* left) noexcept;
+		const mcf::ast::expression*								parse_function_parameters(void) noexcept;
+		const mcf::ast::function_block_statements_expression*	parse_function_block_statements_expressions(void) noexcept;
+		const mcf::ast::enum_block_statements_expression*		parse_enum_block_statements_expression(void) noexcept;
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
+		const bool	read_next_token_if_any(std::initializer_list<token_type> list) noexcept;
 
 		const bool	is_token_data_type(const mcf::token& token) const noexcept;
+
+		constexpr const std::initializer_list<mcf::token_type> get_data_type_list(void) const noexcept;
+
 
 		const mcf::parser::precedence get_infix_expression_token_precedence(const mcf::token& token) noexcept;
 		const mcf::parser::precedence get_next_infix_expression_token_precedence( void ) noexcept;

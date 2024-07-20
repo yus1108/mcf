@@ -76,6 +76,8 @@ namespace UnitTest
 		"keyword_utf8",
 		"keyword_enum",
 		"keyword_unused",
+		"keyword_in",
+		"keyword_out",
 		"keyword_identifier_end",
 
 		"custom_keyword_start",
@@ -104,6 +106,7 @@ namespace UnitTest
 
 		"variable",
 		"variable_assign",
+		"function",
 		"enum_def",
 	};
 	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
@@ -120,6 +123,10 @@ namespace UnitTest
 		"infix",
 		"index_unknown",
 		"index",
+		"function_parameter",
+		"function_parameter_variadic",
+		"function_parameter_list",
+		"function_block_",
 		"enum_value_increment",
 		"enum_block",
 	};
@@ -181,6 +188,11 @@ namespace UnitTest
 		return mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
 	}
 
+	inline const mcf::ast::identifier_expression* NewIdentifier(const char* const value)
+	{
+		return new mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
+	}
+
 	const std::string convert_to_string( const mcf::token& token );
 
 	class UnitTest
@@ -212,7 +224,7 @@ namespace UnitTest
 		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
 		static bool test_expression(const mcf::ast::expression* actual, const mcf::ast::expression* expected) noexcept;
 		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
-		static bool test_identifier(const mcf::ast::expression* targetExpression, const mcf::token& expectedToken) noexcept;
+		static bool test_identifier(const mcf::ast::expression* targetExpression, const std::string expectedValue) noexcept;
 
 	private:
 		std::vector<std::string>			_names;

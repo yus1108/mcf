@@ -9,6 +9,7 @@
 
 // add headers that you want to pre-compile here
 #include <fstream>
+#include <initializer_list>
 #include <memory>
 #include <new>
 #include <stack>
