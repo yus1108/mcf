@@ -52,13 +52,13 @@ UnitTest::Parser::Parser(void) noexcept
 		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, NewIdentifier("myVar"), rightExpression);
 		constexpr size_t CAPACITY = __COUNTER__ - CAPACITY_START - 1;
 
-		mcf::ast::statement_array statementArray = std::make_unique<mcf::ast::unique_statement[]>(CAPACITY);
-		size_t count = 0;
+		mcf::ast::statement_array statementArray;
+		statementArray.reserve(CAPACITY);
 		{
-			statementArray[count++] = mcf::ast::unique_statement(variableDeclarationStatement);
+			statementArray.emplace_back(mcf::ast::unique_statement(variableDeclarationStatement));
 		}
 
-		mcf::ast::program program(statementArray.release(), CAPACITY);
+		mcf::ast::program program(std::move(statementArray));
 		fatal_assert(program.convert_to_string() == "int32 myVar = anotherVar;", u8"program의 string 변환이 틀렸습니다. 실제값=`%s`", program.convert_to_string().c_str());
 
 		return true;
@@ -427,13 +427,14 @@ UnitTest::Parser::Parser(void) noexcept
 						}
 						return nameVector;
 						};
-					auto EnumIncrementValues = [](size_t length) -> enum_block_expression::unique_expression* {
-						enum_block_expression::unique_expression* values = new enum_block_expression::unique_expression[length];
+					auto EnumIncrementValues = [](size_t length) -> expression_array {
+						expression_array values;
+						values.reserve(length);
 						for (size_t i = 0; i < length; i++)
 						{
-							values[i] = std::unique_ptr<const mcf::ast::expression>(new enum_value_increment());
+							values.emplace_back(new enum_value_increment());
 						}
-						return values;
+						return std::move(values);
 						};
 					auto nameVector = EnumValueNames(names);
 					return new enum_block_expression(nameVector, EnumIncrementValues(names.size()));
@@ -458,7 +459,7 @@ UnitTest::Parser::Parser(void) noexcept
 					list.emplace_back(*curr);
 				}
 			}
-			function_parameter_list_expression* parameterList = new function_parameter_list_expression(list);
+			function_parameter_list_expression* parameterList = new function_parameter_list_expression(std::move(list));
 
 			if (block.size() != 0)
 			{
@@ -484,20 +485,22 @@ UnitTest::Parser::Parser(void) noexcept
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
-			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print", 
+			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print",
 				{
 					UnknownIndex(Parameter(token_type::keyword_in, newDataType(false, token_utf8), "format")), Variadic(token_type::invalid)
 				}, {}),
+			new macro_include_statement({token_type::macro_iibrary_file_include, "#include <builtins>"}),
 		};
 		size_t statementSize = array_size(statements);
 
-		mcf::ast::statement_array statementArray = std::make_unique<mcf::ast::unique_statement[]>(statementSize);
+		mcf::ast::statement_array statementArray;;
+		statementArray.reserve(statementSize);
 		for (size_t i = 0; i < statementSize; i++)
 		{
-			statementArray[i] = mcf::ast::unique_statement(statements[i]);
+			statementArray.emplace_back(mcf::ast::unique_statement(statements[i]));
 		}
 
-		program expectedProgram(statementArray.release(), statementSize);
+		program expectedProgram(std::move(statementArray));
 		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
 			actualProgram.convert_to_string().c_str(), expectedProgram.convert_to_string().c_str());
 

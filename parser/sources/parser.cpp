@@ -179,23 +179,11 @@ const mcf::parser::error mcf::parser::get_last_error(void) noexcept
 
 void mcf::parser::parse_program(ast::program& outProgram) noexcept
 {
-	size_t capacity = 100;
-	ast::statement_array statements = std::make_unique<ast::unique_statement[]>(capacity);
-	size_t count = 0;
+	ast::statement_array statements;
 	while (_currentToken.Type != mcf::token_type::eof)
 	{
-		if (count >= capacity)
-		{
-			capacity *= 2;
-			ast::statement_array temp = std::make_unique<ast::unique_statement[]>(capacity);
-			for (size_t i = 0; i < count; i++)
-			{
-				temp[i] = ast::unique_statement(statements[i].release());
-			}
-			statements.reset(temp.release());
-		}
-		statements[count] = std::unique_ptr<const mcf::ast::statement>(parse_statement());
-		if (statements[count++].get() == nullptr)
+		statements.emplace_back(std::unique_ptr<const mcf::ast::statement>(parse_statement()));
+		if (statements.back().get() == nullptr)
 		{
 			parsing_fail_message(error::id::fail_statement_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		}
@@ -203,7 +191,7 @@ void mcf::parser::parse_program(ast::program& outProgram) noexcept
 		// read next token
 		read_next_token();
 	}
-	outProgram = ast::program(statements.release(), count);
+	outProgram = ast::program(std::move(statements));
 }
 
 inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
@@ -237,11 +225,11 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		break;
 
 	case token_type::macro_iibrary_file_include: __COUNTER__;
-		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		statement = std::make_unique<const ast::macro_include_statement>(_currentToken);
 		break;
 
 	case token_type::macro_project_file_include: __COUNTER__;
-		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		statement = std::make_unique<const ast::macro_include_statement>(_currentToken);
 		break;
 
 	case token_type::eof: __COUNTER__;
@@ -812,7 +800,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 	debug_assert(_nextToken.Type == token_type::rparen, u8"이 함수가 끝날때 현재 토큰은 'rparen' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) ast::function_parameter_list_expression(list);
+	return new(std::nothrow) ast::function_parameter_list_expression(std::move(list));
 }
 
 const mcf::ast::function_block_expression* mcf::parser::parse_function_block_expression(void) noexcept
@@ -823,17 +811,13 @@ const mcf::ast::function_block_expression* mcf::parser::parse_function_block_exp
 
 const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(void) noexcept
 {
-	using unique_expression = std::unique_ptr <const mcf::ast::expression>;
 	using name_vector = std::vector<mcf::ast::identifier_expression>;
-	using expression_array = std::unique_ptr<unique_expression[]>;
 
 	debug_assert(_currentToken.Type == token_type::lbrace, u8"이 함수가 호출될때 현재 토큰은 'lbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
 	name_vector	names;
-	size_t capacity = 100;
-	size_t size = 0;
-	expression_array values = std::make_unique<unique_expression[]>(capacity);
+	ast::expression_array values;
 
 	while (read_next_token_if(token_type::identifier) == true)
 	{
@@ -843,18 +827,8 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 		if (read_next_token_if(token_type::assign))
 		{
 			read_next_token();
-			if (size >= capacity)
-			{
-				capacity *= 2;
-				expression_array temp = std::make_unique<unique_expression[]>(capacity);
-				for (size_t i = 0; i < size; i++)
-				{
-					temp[i] = unique_expression(values[i].release());
-				}
-				values.reset(temp.release());
-			}
-			values[size] = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::precedence::lowest));
-			if (values[size++].get() == nullptr)
+			values.emplace_back(parse_expression(mcf::parser::precedence::lowest));
+			if (values.back().get() == nullptr)
 			{
 				parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 				return nullptr;
@@ -862,18 +836,8 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 		}
 		else
 		{
-			if (size >= capacity)
-			{
-				capacity *= 2;
-				expression_array temp = std::make_unique<unique_expression[]>(capacity);
-				for (size_t i = 0; i < size; i++)
-				{
-					temp[i] = unique_expression(values[i].release());
-				}
-				values.reset(temp.release());
-			}
-			values[size] = std::unique_ptr<const mcf::ast::expression>(new(std::nothrow) mcf::ast::enum_value_increment());
-			if (values[size++].get() == nullptr)
+			values.emplace_back(new(std::nothrow) mcf::ast::enum_value_increment());
+			if (values.back().get() == nullptr)
 			{
 				parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 				return nullptr;
@@ -892,7 +856,7 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 	debug_assert(_nextToken.Type == token_type::rbrace, u8"이 함수가 끝날때 현재 토큰은 'rbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) mcf::ast::enum_block_expression(names, values.release());
+	return new(std::nothrow) mcf::ast::enum_block_expression(names, std::move(values));
 }
 
 inline void mcf::parser::read_next_token(void) noexcept

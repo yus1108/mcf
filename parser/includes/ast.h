@@ -91,26 +91,23 @@ namespace mcf
 
 		using unique_statement = std::unique_ptr<const mcf::ast::statement>;
 		using unique_expression = std::unique_ptr<const mcf::ast::expression>;
-		using statement_array = std::unique_ptr<unique_statement[]>;
+		using expression_array = std::vector<unique_expression>;
+		using statement_array = std::vector<unique_statement>;
 
 		class program final
 		{
 		public:
 			explicit program(void) noexcept = default;
-			explicit program(std::unique_ptr<const mcf::ast::statement>* statements, size_t count) noexcept;
+			explicit program(statement_array&& statements) noexcept;
 
-			inline	const size_t				get_statement_count(void) const noexcept { return _count; }
+			inline	const size_t				get_statement_count(void) const noexcept { return _statements.size(); }
 					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
 
 			const std::string				convert_to_string(void) const noexcept;
 			const std::vector<mcf::token>	convert_to_tokens(void) const noexcept;
 
 		private:
-			using unique_statement = std::unique_ptr <const mcf::ast::statement>;
-			using statement_array = std::unique_ptr<unique_statement[]>;
-
 			statement_array	_statements;
-			size_t			_count = 0;
 		};
 
 		class literal_expession final : public expression
@@ -257,13 +254,13 @@ namespace mcf
 		{
 		public:
 			explicit function_parameter_list_expression(void) noexcept = default;
-			explicit function_parameter_list_expression(std::vector<unique_expression>& list) noexcept;
+			explicit function_parameter_list_expression(expression_array&& list) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_list; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			std::vector<unique_expression> _list;
+			expression_array _list;
 		};
 		using unique_function_parameter_list = std::unique_ptr<const mcf::ast::function_parameter_list_expression>;
 
@@ -271,9 +268,13 @@ namespace mcf
 		{
 		public:
 			explicit function_block_expression(void) noexcept = default;
+			explicit function_block_expression(statement_array&& statements) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			statement_array _statements;
 		};
 		using unique_function_block = std::unique_ptr<const mcf::ast::function_block_expression>;
 
@@ -293,17 +294,30 @@ namespace mcf
 
 		public:
 			explicit enum_block_expression(void) noexcept = default;
-			explicit enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, unique_expression* values) noexcept;
+			explicit enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, expression_array&& values) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
 			virtual const std::string						convert_to_string(void) const noexcept override final;
 
 		private:
-			using expression_array = std::unique_ptr<unique_expression[]>;
 			using name_vector		= std::vector<mcf::ast::identifier_expression>;
 
 			name_vector			_names;
 			expression_array	_values;
+		};
+
+		class macro_include_statement final : public statement
+		{
+		public:
+			explicit macro_include_statement(void) noexcept = default;
+			explicit macro_include_statement(mcf::token token) noexcept;
+
+			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
+			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
+
+		private:
+			token		_token;
+			std::string _path;
 		};
 
 		class variable_statement final : public statement

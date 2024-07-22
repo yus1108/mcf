@@ -1,10 +1,15 @@
 ﻿#include "pch.h"
 #include "ast.h"
 
-mcf::ast::program::program(std::unique_ptr<const mcf::ast::statement>* statements, size_t count) noexcept
-	: _statements(statements)
-	, _count(count)
-{}
+mcf::ast::program::program(statement_array&& statements) noexcept
+{
+	const size_t size = statements.size();
+	_statements.reserve(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		_statements.emplace_back(statements[i].release());
+	}
+}
 
 const mcf::ast::statement* mcf::ast::program::get_statement_at(const size_t index) const noexcept
 {
@@ -13,9 +18,10 @@ const mcf::ast::statement* mcf::ast::program::get_statement_at(const size_t inde
 
 const std::string mcf::ast::program::convert_to_string(void) const noexcept
 {
+	const size_t size = _statements.size();
 	std::string buffer;
 
-	for (size_t i = 0; i < _count; i++)
+	for (size_t i = 0; i < size; i++)
 	{
 		// TODO: #14 assert for _statements[i] == nullptr
 		buffer += _statements[i]->convert_to_string();
@@ -26,8 +32,10 @@ const std::string mcf::ast::program::convert_to_string(void) const noexcept
 
 const std::vector<mcf::token> mcf::ast::program::convert_to_tokens(void) const noexcept
 {
+	const size_t size = _statements.size();
 	std::vector<token> tokens;
-	for (size_t i = 0; i < _count; i++)
+
+	for (size_t i = 0; i < size; i++)
 	{
 		// TODO: #14 assert for _statements[i] == nullptr
 		// TODO: node::convert_to_tokens() 구현 필요
@@ -86,7 +94,7 @@ const std::string mcf::ast::function_parameter_variadic_expression::convert_to_s
 	return buffer;
 }
 
-mcf::ast::function_parameter_list_expression::function_parameter_list_expression(std::vector<unique_expression>& list) noexcept
+mcf::ast::function_parameter_list_expression::function_parameter_list_expression(expression_array&& list) noexcept
 {
 	const size_t size = list.size();
 	_list.reserve(size);
@@ -107,16 +115,32 @@ const std::string mcf::ast::function_parameter_list_expression::convert_to_strin
 	return buffer;
 }
 
+mcf::ast::function_block_expression::function_block_expression(statement_array&& statements) noexcept
+{
+	const size_t size = statements.size();
+	_statements.reserve(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		_statements.emplace_back(statements[i].release());
+	}
+}
+
 const std::string mcf::ast::function_block_expression::convert_to_string(void) const noexcept
 {
 	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
 	return std::string();
 }
 
-mcf::ast::enum_block_expression::enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, unique_expression* values) noexcept
+mcf::ast::enum_block_expression::enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, expression_array&& values) noexcept
 	: _names(names)
-	, _values(values)
-{}
+{
+	const size_t size = values.size();
+	_values.reserve(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		_values.emplace_back(values[i].release());
+	}
+}
 
 const std::string mcf::ast::enum_block_expression::convert_to_string(void) const noexcept
 {
@@ -133,6 +157,11 @@ const std::string mcf::ast::enum_block_expression::convert_to_string(void) const
 	buffer.erase(buffer.size() - 1);
 	return buffer;
 }
+
+mcf::ast::macro_include_statement::macro_include_statement(mcf::token token) noexcept
+	: _token(token)
+	, _path(token.Literal.substr(sizeof("#include <")))
+{}
 
 mcf::ast::variable_statement::variable_statement(	
 	const mcf::ast::data_type_expression& dataType, 
