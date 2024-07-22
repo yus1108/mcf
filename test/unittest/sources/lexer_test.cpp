@@ -329,7 +329,6 @@ namespace UnitTest
 					{mcf::token_type::comma, ","},
 					{mcf::token_type::keyword_variadic, "..."},
 					{mcf::token_type::rparen, ")"},
-					{mcf::token_type::keyword_const, "const"},
 					{mcf::token_type::semicolon, ";"},
 					{mcf::token_type::eof, "\0"},
 			};

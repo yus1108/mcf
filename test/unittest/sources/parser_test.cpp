@@ -417,7 +417,7 @@ UnitTest::Parser::Parser(void) noexcept
 
 		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames)
 			{
-				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> enum_block_statements_expression* {
+				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> enum_block_expression* {
 					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
 						std::vector<identifier_expression> nameVector;
 						const char* const* pointer = names.begin();
@@ -427,8 +427,8 @@ UnitTest::Parser::Parser(void) noexcept
 						}
 						return nameVector;
 						};
-					auto EnumIncrementValues = [](size_t length) -> enum_block_statements_expression::unique_expression* {
-						enum_block_statements_expression::unique_expression* values = new enum_block_statements_expression::unique_expression[length];
+					auto EnumIncrementValues = [](size_t length) -> enum_block_expression::unique_expression* {
+						enum_block_expression::unique_expression* values = new enum_block_expression::unique_expression[length];
 						for (size_t i = 0; i < length; i++)
 						{
 							values[i] = std::unique_ptr<const mcf::ast::expression>(new enum_value_increment());
@@ -436,11 +436,43 @@ UnitTest::Parser::Parser(void) noexcept
 						return values;
 						};
 					auto nameVector = EnumValueNames(names);
-					return new enum_block_statements_expression(nameVector, EnumIncrementValues(names.size()));
+					return new enum_block_expression(nameVector, EnumIncrementValues(names.size()));
 					};
 				return new enum_statement(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), enumDataType, BuildBlockStatement(valueNames));
 			};
 
+		auto EnumDataType = [](bool isConst, const char* const typeName) -> data_type_expression* { return new data_type_expression(isConst, { token_type::custom_enum_type, typeName }); };
+
+		auto UnknownIndex = [](const expression* left) -> index_expression* { return new index_expression(left, new unknown_index_expression()); };
+		auto Parameter = [](token_type dataFor, const data_type_expression* dataType, const char* const dataName) -> function_parameter_expression* {
+			return new function_parameter_expression(dataFor, dataType, new identifier_expression({ token_type::identifier, dataName }));
+			};
+		auto Variadic = [](token_type dataFor) -> function_parameter_variadic_expression* { return new function_parameter_variadic_expression(dataFor); };
+
+		auto FunctionStatement = [](expression* returnType, const char* const name, std::initializer_list<expression*> parameters, std::initializer_list<expression*> block) -> function_statement* {
+			std::vector<unique_expression> list;
+			if (parameters.size() != 0)
+			{
+				for (expression* const * curr = parameters.begin(); curr != parameters.end(); curr++)
+				{
+					list.emplace_back(*curr);
+				}
+			}
+			function_parameter_list_expression* parameterList = new function_parameter_list_expression(list);
+
+			if (block.size() != 0)
+			{
+				for (expression* const* curr = block.begin(); curr != block.end(); curr++)
+				{
+					//list.emplace_back(*curr);
+				}
+			}
+			function_block_expression* statementBlock = block.size() != 0 ? new function_block_expression() : nullptr;
+
+			return new function_statement(returnType, identifier_expression({ token_type::identifier, name }), parameterList, statementBlock); 
+			};
+
+		auto newDataType = [](bool isConst, token token) -> const data_type_expression* { return new data_type_expression(isConst, token); };
 		auto newInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
 
 		mcf::ast::statement* statements[] =
@@ -451,6 +483,11 @@ UnitTest::Parser::Parser(void) noexcept
 			LiteralVariableStatement(type_int32, "boo", newInt(5)),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
+			// const PRINT_RESULT Print(in const utf8 format[], ...);
+			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print", 
+				{
+					UnknownIndex(Parameter(token_type::keyword_in, newDataType(false, token_utf8), "format")), Variadic(token_type::invalid)
+				}, {}),
 		};
 		size_t statementSize = array_size(statements);
 

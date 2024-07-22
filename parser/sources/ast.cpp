@@ -41,13 +41,84 @@ const std::string mcf::ast::prefix_expression::convert_to_string(void) const noe
 	return "(" + _prefixOperator.Literal + _targetExpression->convert_to_string() + ")";
 }
 
-mcf::ast::enum_block_statements_expression::enum_block_statements_expression(std::vector<mcf::ast::identifier_expression >& names, unique_expression* values) noexcept
-	: _names(names)
-	, _values(values)
+const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
 {
+	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
 }
 
-const std::string mcf::ast::enum_block_statements_expression::convert_to_string(void) const noexcept
+const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
+{
+	// TODO: #14 assert for _left == nullptr
+	return _left->convert_to_string() + "[" + _index->convert_to_string() + "]";
+}
+
+mcf::ast::function_parameter_expression::function_parameter_expression(token_type dataFor, const mcf::ast::expression* dataType, const mcf::ast::expression* name) noexcept
+	: _for(dataFor)
+	, _type(dataType)
+	, _name(name)
+{}
+
+const std::string mcf::ast::function_parameter_expression::convert_to_string(void) const noexcept
+{
+	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
+	return std::string();
+}
+
+mcf::ast::function_parameter_variadic_expression::function_parameter_variadic_expression(const mcf::token_type& dataFor) noexcept
+	: _for(dataFor)
+{}
+
+const std::string mcf::ast::function_parameter_variadic_expression::convert_to_string(void) const noexcept
+{
+	std::string buffer;
+	switch (_for)
+	{
+	case token_type::keyword_in:
+		buffer += "in ";
+		break;
+	case token_type::invalid:
+		break;
+	default:
+		debug_message("variadic은 토큰타입이 invalid거나 in이어야 합니다.");
+		break;
+	}
+	buffer += "...";
+	return buffer;
+}
+
+mcf::ast::function_parameter_list_expression::function_parameter_list_expression(std::vector<unique_expression>& list) noexcept
+{
+	const size_t size = list.size();
+	_list.reserve(size);
+	for (size_t i = 0; i < size; i++)
+	{
+		_list.emplace_back(list[i].release());
+	}
+}
+
+const std::string mcf::ast::function_parameter_list_expression::convert_to_string(void) const noexcept
+{
+	std::string buffer;
+	const size_t size = _list.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		buffer += i == 0 ? "" : ", " + _list[i]->convert_to_string();
+	}
+	return buffer;
+}
+
+const std::string mcf::ast::function_block_expression::convert_to_string(void) const noexcept
+{
+	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
+	return std::string();
+}
+
+mcf::ast::enum_block_expression::enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, unique_expression* values) noexcept
+	: _names(names)
+	, _values(values)
+{}
+
+const std::string mcf::ast::enum_block_expression::convert_to_string(void) const noexcept
 {
 	std::string buffer;
 
@@ -101,11 +172,6 @@ const std::string mcf::ast::variable_statement::convert_to_string(void) const no
 	return buffer;
 }
 
-const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
-{
-	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
-}
-
 mcf::ast::variable_assign_statement::variable_assign_statement(const mcf::ast::expression* name, const mcf::ast::expression* assignExpression) noexcept
 	: _name(name)
 	, _assignedExpression(assignExpression)
@@ -138,9 +204,37 @@ const std::string mcf::ast::variable_assign_statement::convert_to_string(void) c
 	return buffer;
 }
 
-mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& name, 
-											const mcf::ast::data_type_expression& dataType, 
-											const mcf::ast::enum_block_statements_expression* values) noexcept
+mcf::ast::function_statement::function_statement(	const mcf::ast::expression* returnType, identifier_expression name, 
+													const mcf::ast::function_parameter_list_expression* parameters, 
+													const mcf::ast::function_block_expression* statementsBlock) noexcept
+	: _returnType(returnType)
+	, _name(name)
+	, _parameters(parameters)
+	, _statementsBlock(statementsBlock)
+{}
+
+const std::string mcf::ast::function_statement::convert_to_string(void) const noexcept
+{
+	std::string buffer;
+
+	buffer = _returnType->convert_to_string();
+	buffer += " " + _name.convert_to_string();
+	buffer += "(" + _parameters->convert_to_string() + ")";
+	if (_statementsBlock.get() == nullptr)
+	{
+		buffer += ";";
+	}
+	else
+	{
+		buffer += "{" + _statementsBlock->convert_to_string() + "}";
+	}
+
+	return buffer;
+}
+
+mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name,
+	const mcf::ast::data_type_expression& dataType,
+	const mcf::ast::enum_block_expression* values) noexcept
 	: _name(name)
 	, _dataType(dataType)
 	, _values(values)
@@ -149,43 +243,4 @@ mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& 
 const std::string mcf::ast::enum_statement::convert_to_string(void) const noexcept
 {
 	return "enum " + _name.convert_to_string() + " : " + _dataType.convert_to_string() + " { " + _values->convert_to_string() + " };";
-}
-
-const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
-{
-	// TODO: #14 assert for _left == nullptr
-	return _left->convert_to_string() + "[" + _index->convert_to_string() + "]";
-}
-
-const std::string mcf::ast::function_parameter_list_expression::convert_to_string(void) const noexcept
-{
-	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
-	return std::string();
-}
-
-const std::string mcf::ast::function_block_statements_expression::convert_to_string(void) const noexcept
-{
-	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
-	return std::string();
-}
-
-const std::string mcf::ast::function_statement::convert_to_string(void) const noexcept
-{
-	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
-	return std::string();
-}
-
-const std::string mcf::ast::function_parameter_expression::convert_to_string(void) const noexcept
-{
-	debug_message(u8"#18 기본적인 평가기 개발 구현 필요");
-	return std::string();
-}
-
-mcf::ast::function_parameter_variadic_expression::function_parameter_variadic_expression(const mcf::token_type& dataFor) noexcept
-	: _for(dataFor)
-{}
-
-const std::string mcf::ast::function_parameter_variadic_expression::convert_to_string(void) const noexcept
-{
-	return std::string();
 }

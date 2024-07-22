@@ -229,7 +229,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		break;
 
 	case token_type::identifier: __COUNTER__;
-		statement = std::unique_ptr<const ast::statement>(parse_variable_assign_statement());
+		statement = std::unique_ptr<const ast::statement>(parse_call_or_assign_statement());
 		break;
 
 	case token_type::keyword_enum: __COUNTER__;
@@ -337,7 +337,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		}
 		statementType = ast::statement_type::function;
 
-		parse_function_parameters();
+		ast::unique_function_parameter_list parameters(parse_function_parameters());
 
 		if (read_next_token_if(token_type::rparen) == false)
 		{
@@ -346,15 +346,10 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 
-		// optional
-		if (read_next_token_if(token_type::keyword_const) == true)
-		{
-			
-		}
-
+		ast::unique_function_block statementsBlock;
 		if (read_next_token_if(token_type::lbrace) == true)
 		{
-			parse_function_block_statements_expressions();
+			statementsBlock.reset(parse_function_block_expression());
 
 			if (read_next_token_if(token_type::rbrace) == false)
 			{
@@ -370,7 +365,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 
-		return new(std::nothrow) ast::function_statement();
+		return new(std::nothrow) ast::function_statement(dataType.release(), *static_cast<const ast::identifier_expression*>(name.release()), parameters.release(), statementsBlock.release());
 	}
 
 	if (statementType == ast::statement_type::function)
@@ -404,12 +399,32 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 	return new(std::nothrow) mcf::ast::variable_statement(*static_cast<const ast::data_type_expression*>(dataType.get()), name.release(), rightExpression.release());
 }
 
-const mcf::ast::variable_assign_statement* mcf::parser::parse_variable_assign_statement(void) noexcept
+const mcf::ast::variable_assign_statement* mcf::parser::parse_call_or_assign_statement(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::identifier, u8"이 함수가 호출될때 현재 토큰은 식별자 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	std::unique_ptr<ast::identifier_expression>	name(new ast::identifier_expression(_currentToken));
+	ast::unique_expression name(new ast::identifier_expression(_currentToken));
+
+	// 함수 호출인지 체크
+	if (read_next_token_if(token_type::lparen))
+	{
+
+		if (read_next_token_if(token_type::rparen) == false)
+		{
+			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `assign`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+			return nullptr;
+		}
+
+		return nullptr;
+	}
+
+	// 배열 타입인지 체크 (함수만 가능)
+	while (read_next_token_if(token_type::lbracket))
+	{
+		name.reset(parse_index_expression(name.release()));
+	}
 
 	if (read_next_token_if(token_type::assign) == false)
 	{
@@ -470,7 +485,7 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		return nullptr;
 	}
 
-	std::unique_ptr<const ast::enum_block_statements_expression> values(parse_enum_block_statements_expression());
+	std::unique_ptr<const ast::enum_block_expression> values(parse_enum_block_expression());
 	if (values.get() == nullptr)
 	{
 		return nullptr;
@@ -716,71 +731,96 @@ const mcf::ast::index_expression* mcf::parser::parse_index_expression(const mcf:
 
 	std::unique_ptr<const ast::expression> leftExpression(left);
 
-	read_next_token();
-	if (_currentToken.Type == token_type::lbracket)
+	if (read_next_token_if(token_type::rbracket))
 	{
-		read_next_token();
 		return new(std::nothrow) ast::index_expression(leftExpression.release(), new(std::nothrow) ast::unknown_index_expression());
 	}
 
-	const token infixOperatorToken = _currentToken;
-	const precedence precedence = get_current_infix_expression_token_precedence();
 	read_next_token();
-	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence));
+	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence::lowest));
 	if (rightExpression.get() == nullptr)
 	{
 		parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
+
+	if (_currentToken.Type != token_type::rbracket)
+	{
+		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbracket`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+		return nullptr;
+	}
 	return new(std::nothrow) ast::index_expression(leftExpression.release(), rightExpression.release());
 }
 
-const mcf::ast::expression* mcf::parser::parse_function_parameters(void) noexcept
+const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_parameters(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::lparen, u8"이 함수가 호출될때 현재 토큰은 `lparen` 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	const bool hasForToken = read_next_token_if_any({ token_type::keyword_unused, token_type::keyword_in, token_type::keyword_out }) == false;
-	const token_type dataFor = hasForToken ? _currentToken.Type : token_type::invalid;
-	ast::unique_expression dataType;
-	ast::unique_expression dataName;
-
-	// `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic` 의 표현식을 가지고 있는지 체크
-	if (hasForToken == false && read_next_token_if_any(get_data_type_list()))
+	// `rparen`이 바로 나온다면 바로 종료
+	if (read_next_token_if(token_type::rparen))
 	{
-		dataType = ast::unique_expression(parse_data_type_expressions());
+		return new(std::nothrow) ast::function_parameter_list_expression();
+	}
 
-		if (read_next_token_if(token_type::identifier) == false)
+	std::vector<ast::unique_expression> list;
+
+	while (list.empty() || (list.empty() == false && read_next_token_if(token_type::comma)))
+	{
+		const bool hasForToken = read_next_token_if_any({ token_type::keyword_unused, token_type::keyword_in, token_type::keyword_out });
+		const token_type dataFor = hasForToken ? _currentToken.Type : token_type::invalid;
+
+		// `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic` 의 표현식을 가지고 있는지 체크
+		if (hasForToken == true && read_next_token_if_any(get_data_type_list()))
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
-				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+			ast::unique_expression dataType;
+			ast::unique_expression dataName;
+
+			dataType = ast::unique_expression(parse_data_type_expressions());
+
+			if (read_next_token_if(token_type::identifier) == false)
+			{
+				parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+					internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+				return nullptr;
+			}
+			dataName = ast::unique_expression(new(std::nothrow) ast::identifier_expression(_currentToken));
+
+			// 배열 타입인지 체크
+			while (read_next_token_if(token_type::lbracket))
+			{
+				dataName.reset(parse_index_expression(dataName.release()));
+			}
+
+			list.emplace_back(new(std::nothrow) ast::function_parameter_expression(dataFor, dataType.release(), dataName.release()));
+		}
+		else if (read_next_token_if({ token_type::keyword_variadic }))
+		{
+			list.emplace_back(new(std::nothrow) ast::function_parameter_variadic_expression(dataFor));
+			// variadic 은 항상 parameter 의 끝에 있어야 합니다.
+			break;
+		}
+		else
+		{
+			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"앞의 표현식 형식은 `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic`여야만 합니다.");
 			return nullptr;
 		}
-		dataName = ast::unique_expression(new(std::nothrow) ast::identifier_expression(_currentToken));
-	}
-	else if (read_next_token_if({ token_type::keyword_variadic }))
-	{
-		return new(std::nothrow) ast::function_parameter_variadic_expression(dataFor);
-	}
-	else
-	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"앞의 표현식 형식은 `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic`여야만 합니다.");
-		return nullptr;
 	}
 
 	debug_assert(_nextToken.Type == token_type::rparen, u8"이 함수가 끝날때 현재 토큰은 'rparen' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return nullptr;
+	return new(std::nothrow) ast::function_parameter_list_expression(list);
 }
 
-const mcf::ast::function_block_statements_expression* mcf::parser::parse_function_block_statements_expressions(void) noexcept
+const mcf::ast::function_block_expression* mcf::parser::parse_function_block_expression(void) noexcept
 {
 	parsing_fail_message(error::id::not_registered_infix_expression_token, token(), u8"#18 기본적인 평가기 개발 구현 필요");
 	return nullptr;
 }
 
-const mcf::ast::enum_block_statements_expression* mcf::parser::parse_enum_block_statements_expression(void) noexcept
+const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(void) noexcept
 {
 	using unique_expression = std::unique_ptr <const mcf::ast::expression>;
 	using name_vector = std::vector<mcf::ast::identifier_expression>;
@@ -851,7 +891,7 @@ const mcf::ast::enum_block_statements_expression* mcf::parser::parse_enum_block_
 	debug_assert(_nextToken.Type == token_type::rbrace, u8"이 함수가 끝날때 현재 토큰은 'rbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) mcf::ast::enum_block_statements_expression(names, values.release());
+	return new(std::nothrow) mcf::ast::enum_block_expression(names, values.release());
 }
 
 inline void mcf::parser::read_next_token(void) noexcept
