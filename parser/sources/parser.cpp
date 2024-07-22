@@ -1216,9 +1216,9 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 
 const bool mcf::parser::register_custom_enum_type(mcf::token& inOutToken) noexcept
 {
-	debug_assert(inOutToken.Type == token_type::identifier, "identifier 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
+	debug_assert(inOutToken.Type == token_type::identifier, u8"identifier 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
 	inOutToken.Type = _lexer.register_custom_enum_type(inOutToken.Literal);
 	parsing_fail_assert(inOutToken.Type == token_type::custom_enum_type, error::id::registering_duplicated_symbol_name, inOutToken, 
-		"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", inOutToken.Literal.c_str());
+		u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", inOutToken.Literal.c_str());
 	return true;
 }
