@@ -323,7 +323,8 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 		statementType = ast::statement_type::variable;
-		name.reset(parse_index_expression(name.release()));
+		name = ast::unique_expression(parse_index_expression(name.release()));
+		read_next_token();
 	}
 
 	// 함수인지 체크 하고 맞는경우 함수문으로 파싱한다.
@@ -365,7 +366,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 
-		return new(std::nothrow) ast::function_statement(dataType.release(), *static_cast<const ast::identifier_expression*>(name.release()), parameters.release(), statementsBlock.release());
+		return new(std::nothrow) ast::function_statement(dataType.release(), *static_cast<const ast::identifier_expression*>(name.get()), parameters.release(), statementsBlock.release());
 	}
 
 	if (statementType == ast::statement_type::function)
