@@ -33,6 +33,7 @@ namespace mcf
 			variable,			// <data_type> identifier [optional: assign <expression>] semicolon
 			variable_assign,	// identifier assign <expression> semicolon
 			function,
+			function_call,
 			enum_def,			// keyword_enum <identifier> [optional: colon <data_type>] lbrace !<enum_block> rbrace semicolon
 
 			// 이 밑으로는 수정하면 안됩니다.
@@ -73,7 +74,8 @@ namespace mcf
 			// [variable] [optional: !<function_block>]
 			// [variable_assign] [optional: !<function_block>]
 			// [function_call] [optional: !<function_block>]
-			function_block_,
+			function_block,
+			function_call,
 
 			enum_value_increment,	// 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
 			enum_block,				// identifier [optional: assign expression] [optional: comma !<enum_block>]
@@ -227,13 +229,13 @@ namespace mcf
 		{
 		public:
 			explicit function_parameter_expression(void) noexcept = default;
-			explicit function_parameter_expression(token_type dataFor, const mcf::ast::expression* dataType, const mcf::ast::expression* name) noexcept;
+			explicit function_parameter_expression(const mcf::token& dataFor, const mcf::ast::expression* dataType, const mcf::ast::expression* name) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			token_type			_for;
+			token				_for;
 			unique_expression	_type;
 			unique_expression	_name;
 		};
@@ -242,12 +244,12 @@ namespace mcf
 		{
 		public:
 			explicit function_parameter_variadic_expression(void) noexcept = default;
-			explicit function_parameter_variadic_expression(const mcf::token_type& dataFor) noexcept;
+			explicit function_parameter_variadic_expression(const mcf::token& dataFor) noexcept : _for(dataFor) {}
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_variadic; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
-			token_type				_for;
+			token _for;
 		};
 
 		class function_parameter_list_expression final : public expression
@@ -277,6 +279,21 @@ namespace mcf
 			statement_array _statements;
 		};
 		using unique_function_block = std::unique_ptr<const mcf::ast::function_block_expression>;
+
+		using function_call_parameter_list = std::vector<std::pair<bool, unique_expression>>;
+		class function_call_expression final : public expression
+		{
+		public:
+			explicit function_call_expression(void) noexcept = default;
+			explicit function_call_expression(const mcf::ast::expression* function, expression_array&& parameters) noexcept;
+
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_call; }
+					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+		private:
+			unique_expression	_function;
+			expression_array	_parameters;
+		};
 
 		class enum_value_increment final : public expression
 		{
@@ -375,6 +392,19 @@ namespace mcf
 			identifier_expression			_name;
 			unique_function_parameter_list	_parameters;
 			unique_function_block			_statementsBlock;
+		};
+
+		class function_call_statement final : public statement
+		{
+		public:
+			explicit function_call_statement(void) noexcept = default;
+			explicit function_call_statement(const mcf::ast::function_call_expression* callExpression) noexcept : _callExpression(callExpression) {}
+
+			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function_call; }
+			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _callExpression->convert_to_string() + ";"; }
+
+		private:
+			std::unique_ptr<const mcf::ast::function_call_expression>	_callExpression;
 		};
 
 		class enum_statement final : public statement

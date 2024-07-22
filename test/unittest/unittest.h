@@ -107,6 +107,7 @@ namespace UnitTest
 		"variable",
 		"variable_assign",
 		"function",
+		"function_call",
 		"enum_def",
 	};
 	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
@@ -126,7 +127,8 @@ namespace UnitTest
 		"function_parameter",
 		"function_parameter_variadic",
 		"function_parameter_list",
-		"function_block_",
+		"function_block",
+		"function_call",
 		"enum_value_increment",
 		"enum_block",
 	};
@@ -144,6 +146,7 @@ namespace UnitTest
 		"fail_memory_allocation",
 		"fail_expression_parsing",
 		"fail_statement_parsing",
+		"unexpected_current_token",
 		"unexpected_next_token",
 		"not_registered_statement_token",
 		"not_registered_expression_token",
@@ -153,6 +156,7 @@ namespace UnitTest
 	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
 	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");
 
+	const mcf::token token_invalid = { mcf::token_type::invalid, "invalid" };
 	const mcf::token token_const = { mcf::token_type::keyword_const, "const" };
 	const mcf::token token_void = { mcf::token_type::keyword_void, "void" };
 	const mcf::token token_int8 = { mcf::token_type::keyword_int8, "int8" };
@@ -164,6 +168,9 @@ namespace UnitTest
 	const mcf::token token_uint32 = { mcf::token_type::keyword_uint32, "uint32" };
 	const mcf::token token_uint64 = { mcf::token_type::keyword_uint64, "uint64" };
 	const mcf::token token_utf8 = { mcf::token_type::keyword_utf8, "utf8" };
+	const mcf::token token_unused = { mcf::token_type::keyword_unused, "unused" };
+	const mcf::token token_in = { mcf::token_type::keyword_in, "in" };
+
 
 	const mcf::ast::data_type_expression type_int8(false, token_int8);
 	const mcf::ast::data_type_expression type_int16(false, token_int16);
@@ -182,6 +189,7 @@ namespace UnitTest
 	const mcf::ast::data_type_expression type_const_uint16(true, token_uint16);
 	const mcf::ast::data_type_expression type_const_uint32(true, token_uint32);
 	const mcf::ast::data_type_expression type_const_uint64(true, token_uint64);
+	const mcf::ast::data_type_expression type_const_utf8(true, token_utf8);
 
 	inline const mcf::ast::identifier_expression Identifier(const char* const value)
 	{

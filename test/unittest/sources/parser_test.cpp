@@ -314,7 +314,7 @@ UnitTest::Parser::Parser(void) noexcept
 			},
 			{
 				"int32 test = 3 + 4; int32 test2 = -5 * 5;",
-				"int32 test = (3 + 4);int32 test2 = ((-5) * 5);",
+				"int32 test = (3 + 4);\nint32 test2 = ((-5) * 5);",
 			},
 			/*{
 				"int32 test = 5 > 4 == 3 < 4;",
@@ -358,7 +358,7 @@ UnitTest::Parser::Parser(void) noexcept
 			},
 			{
 				"int32 test = 3 + 4; test = -5 * 5;",
-				"int32 test = (3 + 4);test = ((-5) * 5);",
+				"int32 test = (3 + 4);\ntest = ((-5) * 5);",
 			},
 			/*{
 				"test = 5 > 4 == 3 < 4;",
@@ -445,13 +445,13 @@ UnitTest::Parser::Parser(void) noexcept
 		auto EnumDataType = [](bool isConst, const char* const typeName) -> data_type_expression* { return new data_type_expression(isConst, { token_type::custom_enum_type, typeName }); };
 
 		auto UnknownIndex = [](const expression* left) -> index_expression* { return new index_expression(left, new unknown_index_expression()); };
-		auto Parameter = [](token_type dataFor, const data_type_expression* dataType, const char* const dataName) -> function_parameter_expression* {
+		auto Parameter = [](token dataFor, const data_type_expression* dataType, const char* const dataName) -> function_parameter_expression* {
 			return new function_parameter_expression(dataFor, dataType, new identifier_expression({ token_type::identifier, dataName }));
 			};
-		auto Variadic = [](token_type dataFor) -> function_parameter_variadic_expression* { return new function_parameter_variadic_expression(dataFor); };
+		auto Variadic = [](token dataFor) -> function_parameter_variadic_expression* { return new function_parameter_variadic_expression(dataFor); };
 
-		auto FunctionStatement = [](expression* returnType, const char* const name, std::initializer_list<expression*> parameters, std::initializer_list<expression*> block) -> function_statement* {
-			std::vector<unique_expression> list;
+		auto FunctionStatement = [](const expression* returnType, const char* const name, std::initializer_list<expression*> parameters, std::initializer_list<statement*> block) -> function_statement* {
+			expression_array list;
 			if (parameters.size() != 0)
 			{
 				for (expression* const * curr = parameters.begin(); curr != parameters.end(); curr++)
@@ -461,35 +461,73 @@ UnitTest::Parser::Parser(void) noexcept
 			}
 			function_parameter_list_expression* parameterList = new function_parameter_list_expression(std::move(list));
 
+			statement_array statements;
 			if (block.size() != 0)
 			{
-				for (expression* const* curr = block.begin(); curr != block.end(); curr++)
+				for (statement* const* curr = block.begin(); curr != block.end(); curr++)
 				{
-					//list.emplace_back(*curr);
+					statements.emplace_back(*curr);
 				}
 			}
-			function_block_expression* statementBlock = block.size() != 0 ? new function_block_expression() : nullptr;
+			function_block_expression* statementBlock = block.size() != 0 ? new function_block_expression(std::move(statements)) : nullptr;
 
 			return new function_statement(returnType, identifier_expression({ token_type::identifier, name }), parameterList, statementBlock); 
 			};
 
-		auto newDataType = [](bool isConst, token token) -> const data_type_expression* { return new data_type_expression(isConst, token); };
-		auto newInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
+		auto NewDataType = [](bool isConst, token token) -> const data_type_expression* { return new data_type_expression(isConst, token); };
+		auto NewIdentifier = [](const char* const value) -> const identifier_expression* { return new identifier_expression({ token_type::identifier, value }); };
+		auto NewInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
+		auto NewString = [](const char* const value) -> literal_expession* { return new literal_expession({ token_type::string_utf8, std::string("\"") + value + "\""}); };
+
+		auto NewFunctionCallStatement = [](const expression* function, std::initializer_list<const expression*> paramList) -> function_call_statement* { 
+			expression_array parameters;
+			if (paramList.size() != 0)
+			{
+				for (const expression* const* curr = paramList.begin(); curr != paramList.end(); curr++)
+				{
+					parameters.emplace_back(*curr);
+				}
+			}
+			return new function_call_statement(new function_call_expression(function, std::move(parameters)));
+			};
 
 		mcf::ast::statement* statements[] =
 		{
 			// int32 foo = 10; 
-			LiteralVariableStatement(type_int32, "foo", newInt(10)),
+			LiteralVariableStatement(type_int32, "foo", NewInt(10)),
 			// int32 boo = 5;							
-			LiteralVariableStatement(type_int32, "boo", newInt(5)),
+			LiteralVariableStatement(type_int32, "boo", NewInt(5)),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
 			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print",
 				{
-					UnknownIndex(Parameter(token_type::keyword_in, newDataType(false, token_utf8), "format")), Variadic(token_type::invalid)
-				}, {}),
+					UnknownIndex(Parameter(token_in, NewDataType(true, token_utf8), "format")),
+					Variadic(token_invalid),
+				}, 
+				{}),
+			// #include <builtins> // include vector, string, print
 			new macro_include_statement({token_type::macro_iibrary_file_include, "#include <builtins>"}),
+			/*
+				void main(unused const int32 argc, unused const utf8 argv[][])
+				{
+					const utf8 str[] = "Hello, World!"; // default string literal is static array of utf8 in mcf
+					Print("%s\n", str);
+				}
+			*/
+			FunctionStatement(NewDataType(false, token_void), "main",
+				{
+					Parameter(token_unused, NewDataType(true, token_int32), "argc"),
+					UnknownIndex(UnknownIndex(Parameter(token_unused, NewDataType(true, token_utf8), "argv"))),
+				}, 
+				{
+					new variable_statement(type_const_utf8, UnknownIndex(NewIdentifier("str")), NewString("Hello, World!")),
+					NewFunctionCallStatement(NewIdentifier("Print"), 
+						{
+							NewString("%s\\n"), 
+							NewIdentifier("str")
+						}),
+				}),
 		};
 		size_t statementSize = array_size(statements);
 
@@ -501,7 +539,7 @@ UnitTest::Parser::Parser(void) noexcept
 		}
 
 		program expectedProgram(std::move(statementArray));
-		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\nactual:%s\nexpected:%s\n",
+		fatal_assert(actualProgram.convert_to_string() == expectedProgram.convert_to_string(), u8"생성된 문자열이 기대값과 다릅니다.\n[actual]:\n%s\n\n[expected]:\n%s",
 			actualProgram.convert_to_string().c_str(), expectedProgram.convert_to_string().c_str());
 
 		return true;
@@ -632,7 +670,8 @@ bool UnitTest::Parser::test_expression(const mcf::ast::expression* actual, const
 	case mcf::ast::expression_type::function_parameter: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::function_parameter_variadic: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::function_parameter_list: __COUNTER__; [[fallthrough]];
-	case mcf::ast::expression_type::function_block_: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_call: __COUNTER__; [[fallthrough]];
+	case mcf::ast::expression_type::function_block: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 	default:
