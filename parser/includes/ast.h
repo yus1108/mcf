@@ -160,8 +160,7 @@ namespace mcf
 		{
 		public:
 			explicit prefix_expression(void) noexcept = default;
-			explicit prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept 
-				: _prefixOperator(prefix), _targetExpression(targetExpression) {}
+			explicit prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept;
 
 			inline const mcf::token&			get_prefix_operator_token(void) const noexcept { return _prefixOperator; }
 			inline const mcf::ast::expression*	get_target_expression(void) const noexcept { return _targetExpression.get(); }
@@ -180,8 +179,7 @@ namespace mcf
 		{
 		public:
 			explicit infix_expression(void) noexcept = default;
-			explicit infix_expression(const mcf::ast::expression* left, const mcf::token& infix, const mcf::ast::expression* right) noexcept
-				: _left(left), _infixOperator(infix), _right(right) {}
+			explicit infix_expression(const mcf::ast::expression* left, const mcf::token& infix, const mcf::ast::expression* right) noexcept;
 
 			inline const mcf::token&			get_infix_operator_token(void) const noexcept { return _infixOperator; }
 			inline const mcf::ast::expression*	get_left_expression(void) const noexcept { return _left.get(); }
@@ -211,8 +209,7 @@ namespace mcf
 		{
 		public:
 			explicit index_expression(void) noexcept = default;
-			explicit index_expression(const mcf::ast::expression* left, const mcf::ast::expression* index) noexcept
-				: _left(left), _index(index) {}
+			explicit index_expression(const mcf::ast::expression* left, const mcf::ast::expression* index) noexcept;
 
 			inline const mcf::ast::expression* get_left_expression(void) const noexcept { return _left.get(); }
 			inline const mcf::ast::expression* get_index_expression(void) const noexcept { return _index.get(); }
@@ -311,7 +308,7 @@ namespace mcf
 
 		public:
 			explicit enum_block_expression(void) noexcept = default;
-			explicit enum_block_expression(std::vector<mcf::ast::identifier_expression >& names, expression_array&& values) noexcept;
+			explicit enum_block_expression(std::vector<mcf::ast::identifier_expression>& names, expression_array&& values) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
 			virtual const std::string						convert_to_string(void) const noexcept override final;
