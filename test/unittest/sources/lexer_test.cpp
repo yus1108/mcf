@@ -259,11 +259,11 @@ namespace UnitTest
 				mcf::lexer lexer(testCases[i].Input, false);
 
 				std::vector<mcf::token>  actualTokens;
-				mcf::token token = lexer.read_next_token();
+				mcf::token token = lexer.read_next_token(std::vector<std::string>());
 				actualTokens.emplace_back(token);
 				while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 				{
-					token = lexer.read_next_token();
+					token = lexer.read_next_token(std::vector<std::string>());
 					actualTokens.emplace_back(token);
 				}
 				const size_t actualTokenCount = actualTokens.size();
@@ -350,6 +350,14 @@ namespace UnitTest
 					{mcf::token_type::rbracket, "]"},
 					{mcf::token_type::rparen, ")"},
 					{mcf::token_type::lbrace, "{"},
+					{mcf::token_type::keyword_enum, u8"enum"},
+					{mcf::token_type::identifier, "PRINT_RESULT"},
+					{mcf::token_type::colon, ":"},
+					{mcf::token_type::keyword_uint8, "uint8"},
+					{mcf::token_type::lbrace, "{"},
+					{mcf::token_type::identifier, "NO_ERROR"},
+					{mcf::token_type::rbrace, "}"},
+					{mcf::token_type::semicolon, ";"},
 					{mcf::token_type::keyword_const, "const"},
 					{mcf::token_type::keyword_utf8, "utf8"},
 					{mcf::token_type::identifier, "str"},
@@ -374,11 +382,11 @@ namespace UnitTest
 			mcf::lexer lexer(_names.back().c_str(), true);
 
 			std::vector<mcf::token>  actualTokens;
-			mcf::token token = lexer.read_next_token();
+			mcf::token token = lexer.read_next_token(std::vector<std::string>());
 			actualTokens.emplace_back(token);
 			while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 			{
-				token = lexer.read_next_token();
+				token = lexer.read_next_token(std::vector<std::string>());
 				actualTokens.emplace_back(token);
 			}
 			const size_t actualTokenCount = actualTokens.size();

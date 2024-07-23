@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <stack>
+#include <vector>
 #include <unordered_map>
 
 #define test             invalid;          test             \
@@ -112,8 +113,10 @@ namespace mcf
 		const mcf::lexer::error_token	get_last_error_token(void) noexcept;
 		const std::string				get_name(void) const noexcept { return _name; }
 
-		const mcf::token		read_next_token(void) noexcept;
-		const mcf::token_type	register_custom_enum_type(std::string name) noexcept;
+		const mcf::token		read_next_token(const std::vector<std::string>& scope) noexcept;
+		const mcf::token_type	register_custom_enum_type(std::string name, std::vector<std::string> scope) noexcept;
+
+		const bool has_datatype_at(const std::string& tokenLiteral, std::vector<std::string> scope) noexcept;
 
 	private:
 		const char get_next_byte(void) const noexcept;
@@ -130,7 +133,7 @@ namespace mcf
 		const mcf::token	read_macro_token(void) noexcept; 
 		const mcf::token	read_numeric_literal(void) noexcept; 
 
-		const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept;
+		const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral, std::vector<std::string> scope) noexcept;
 
 	private:
 		std::unordered_map<std::string, token_type> _customKeywordMap;

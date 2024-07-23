@@ -85,7 +85,7 @@ namespace mcf
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;
-		const bool	read_next_token_if_not(mcf::token_type tokenType) noexcept;
+		const bool	read_next_token_if(mcf::token_type tokenType, const std::string& scopeToPush) noexcept;
 		const bool	read_next_token_if_any(std::initializer_list<token_type> list) noexcept;
 
 		const bool	is_token_data_type(const mcf::token& token) const noexcept;
@@ -103,6 +103,7 @@ namespace mcf
 
 	private:
 		std::stack<mcf::parser::error>	_errors;
+		std::vector<std::string>		_scope = std::vector<std::string>({ "global" });
 		mcf::lexer						_lexer;
 		mcf::token						_currentToken;
 		mcf::token						_nextToken;

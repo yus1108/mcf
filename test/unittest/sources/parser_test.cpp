@@ -521,6 +521,7 @@ UnitTest::Parser::Parser(void) noexcept
 					UnknownIndex(UnknownIndex(Parameter(token_unused, NewDataType(true, token_utf8), "argv"))),
 				}, 
 				{
+					EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 					new variable_statement(type_const_utf8, UnknownIndex(NewIdentifier("str")), NewString("Hello, World!")),
 					NewFunctionCallStatement(NewIdentifier("Print"), 
 						{

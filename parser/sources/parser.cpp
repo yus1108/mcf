@@ -150,7 +150,8 @@ namespace mcf
 }
 
 mcf::parser::parser(const std::string& input, const bool isFile) noexcept
-	: _lexer(input, isFile)
+	: _scope(std::vector<std::string>({ "global" }))
+	, _lexer(input, isFile)
 {
 	if (check_last_lexer_error() == false)
 	{
@@ -342,10 +343,11 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		}
 
 		ast::unique_function_block statementsBlock;
-		if (read_next_token_if(token_type::lbrace) == true)
+		if (read_next_token_if(token_type::lbrace, name->convert_to_string()) == true)
 		{
 			statementsBlock.reset(parse_function_block_expression());
 
+			_scope.pop_back();
 			if (read_next_token_if(token_type::rbrace) == false)
 			{
 				parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -456,9 +458,27 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 
 	if (read_next_token_if(token_type::identifier) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
-			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
-		return nullptr;
+		// 커스텀 데이터인 경우면 스코프에 따라 중복 등록이 가능하다.
+		if (_nextToken.Type != token_type::custom_enum_type)
+		{
+			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier` 또는 커스텀 데이터 타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
+			return nullptr;
+		}
+		
+		if (_lexer.has_datatype_at(_nextToken.Literal, _scope) == true)
+		{
+			std::string scopeString;
+			for (size_t i = 0; i < _scope.size(); i++)
+			{
+				scopeString = (i == 0 ? "" : "::") + _scope[i];
+			}
+			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"같은 스코프안에 중복되는 타입이 있습니다.. 실제 값으로 %s::%s를 받았습니다.",
+				scopeString.c_str(), _nextToken.Literal.c_str());
+			return nullptr;
+		}
+
+		read_next_token();
 	}
 
 	// 열거형 타입을 등록하고 데이터 타입으로 받는다.
@@ -482,7 +502,7 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		ast::data_type_expression(false, token{ token_type::keyword_int32, "int32" }) : 
 		*std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions()).get();
 
-	if (read_next_token_if(token_type::lbrace) == false)
+	if (read_next_token_if(token_type::lbrace, name.convert_to_string()) == false)
 	{
 		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
@@ -492,9 +512,11 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	std::unique_ptr<const ast::enum_block_expression> values(parse_enum_block_expression());
 	if (values.get() == nullptr)
 	{
+		_scope.pop_back();
 		return nullptr;
 	}
 
+	_scope.pop_back();
 	if (read_next_token_if(token_type::rbrace) == false)
 	{
 		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -935,11 +957,11 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 inline void mcf::parser::read_next_token(void) noexcept
 {
 	_currentToken = _nextToken;
-	_nextToken = _lexer.read_next_token();
+	_nextToken = _lexer.read_next_token(_scope);
 	// 읽은 토큰이 주석이라면 주석이 아닐때까지 읽는다.
 	while (_nextToken.Type == token_type::comment || _nextToken.Type == token_type::comment_block)
 	{
-		_nextToken = _lexer.read_next_token();
+		_nextToken = _lexer.read_next_token(_scope);
 	}
 }
 
@@ -949,6 +971,17 @@ inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType) noe
 	{
 		return false;
 	}
+	read_next_token();
+	return true;
+}
+
+inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType, const std::string& scopeToPush) noexcept
+{
+	if (_nextToken.Type != tokenType)
+	{
+		return false;
+	}
+	_scope.emplace_back(scopeToPush);
 	read_next_token();
 	return true;
 }
@@ -1216,8 +1249,9 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 
 const bool mcf::parser::register_custom_enum_type(mcf::token& inOutToken) noexcept
 {
-	debug_assert(inOutToken.Type == token_type::identifier, u8"identifier 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
-	inOutToken.Type = _lexer.register_custom_enum_type(inOutToken.Literal);
+	debug_assert(inOutToken.Type == token_type::identifier || inOutToken.Type == token_type::custom_enum_type, 
+		u8"identifier 또는 custom_enum_type 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
+	inOutToken.Type = _lexer.register_custom_enum_type(inOutToken.Literal, _scope);
 	parsing_fail_assert(inOutToken.Type == token_type::custom_enum_type, error::id::registering_duplicated_symbol_name, inOutToken, 
 		u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", inOutToken.Literal.c_str());
 	return true;
