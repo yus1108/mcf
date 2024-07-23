@@ -256,14 +256,15 @@ namespace UnitTest
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
 				const size_t expectedResultSize = testCases[i].ExpectedResults.size();
-				mcf::lexer lexer(testCases[i].Input, false);
+				mcf::evaluator evaluator;
+				mcf::lexer lexer(&evaluator, testCases[i].Input, false);
 
 				std::vector<mcf::token>  actualTokens;
-				mcf::token token = lexer.read_next_token(std::vector<std::string>());
+				mcf::token token = lexer.read_next_token();
 				actualTokens.emplace_back(token);
 				while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 				{
-					token = lexer.read_next_token(std::vector<std::string>());
+					token = lexer.read_next_token();
 					actualTokens.emplace_back(token);
 				}
 				const size_t actualTokenCount = actualTokens.size();
@@ -379,14 +380,15 @@ namespace UnitTest
 			};
 			const size_t expectedResultSize = expectedResults.size();
 
-			mcf::lexer lexer(_names.back().c_str(), true);
+			mcf::evaluator evaluator;
+			mcf::lexer lexer(&evaluator, _names.back().c_str(), true);
 
 			std::vector<mcf::token>  actualTokens;
-			mcf::token token = lexer.read_next_token(std::vector<std::string>());
+			mcf::token token = lexer.read_next_token();
 			actualTokens.emplace_back(token);
 			while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
 			{
-				token = lexer.read_next_token(std::vector<std::string>());
+				token = lexer.read_next_token();
 				actualTokens.emplace_back(token);
 			}
 			const size_t actualTokenCount = actualTokens.size();

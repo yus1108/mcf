@@ -1,5 +1,4 @@
 ﻿#include <iostream>
-#include <fstream>
 #include "test/unittest/unittest.h"
 
 UnitTest::Parser::Parser(void) noexcept
@@ -9,7 +8,8 @@ UnitTest::Parser::Parser(void) noexcept
 		// TODO: #11 initialization 도 구현 필요
 		const std::string input = "int32 x; int32 y = 10; int32 foobar = 838383;";
 
-		mcf::parser parser = mcf::parser(input, false);
+		mcf::evaluator evaluator;
+		mcf::parser parser = mcf::parser(&evaluator, input, false);
 		mcf::ast::program program;
 		parser.parse_program(program);
 		const size_t statementCount = program.get_statement_count();
@@ -67,7 +67,8 @@ UnitTest::Parser::Parser(void) noexcept
 	_names.emplace_back("test_identifier_expression");
 	_tests.emplace_back([&]() {
 		const std::string input = "int32 foo = bar;";
-		mcf::parser parser(input, false);
+		mcf::evaluator evaluator;
+		mcf::parser parser(&evaluator, input, false);
 		mcf::ast::program program;
 		parser.parse_program(program);
 		if (check_parser_errors(parser) == false)
@@ -94,7 +95,8 @@ UnitTest::Parser::Parser(void) noexcept
 	_names.emplace_back("test_literal_expression");
 	_tests.emplace_back([&]() {
 		const std::string input = "int32 foo = 5;";
-		mcf::parser parser(input, false);
+		mcf::evaluator evaluator;
+		mcf::parser parser(&evaluator, input, false);
 		mcf::ast::program program;
 		parser.parse_program(program);
 		if (check_parser_errors(parser) == false)
@@ -141,7 +143,8 @@ UnitTest::Parser::Parser(void) noexcept
 
 		for (size_t i = 0; i < testCaseCount; i++)
 		{
-			mcf::parser parser(testCases[i].Input, false);
+			mcf::evaluator evaluator;
+			mcf::parser parser(&evaluator, testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program(program);
 			if (check_parser_errors(parser) == false)
@@ -193,7 +196,8 @@ UnitTest::Parser::Parser(void) noexcept
 
 		for (size_t i = 0; i < testCaseCount; i++)
 		{
-			mcf::parser parser(testCases[i].Input, false);
+			mcf::evaluator evaluator;
+			mcf::parser parser(&evaluator, testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program(program);
 			if (check_parser_errors(parser) == false)
@@ -377,7 +381,8 @@ UnitTest::Parser::Parser(void) noexcept
 
 		for (size_t i = 0; i < testCaseCount; i++)
 		{
-			mcf::parser parser(testCases[i].Input, false);
+			mcf::evaluator evaluator;
+			mcf::parser parser(&evaluator, testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program(program);
 			if (check_parser_errors(parser) == false)
@@ -397,7 +402,8 @@ UnitTest::Parser::Parser(void) noexcept
 	_tests.emplace_back([&]() {
 		mcf::ast::program actualProgram;
 		{
-			mcf::parser parser(test_file_read, true);
+			mcf::evaluator evaluator;
+			mcf::parser parser(&evaluator, test_file_read, true);
 			mcf::parser::error parserInitError = parser.get_last_error();
 			fatal_assert(parserInitError.ID == mcf::parser::error::id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
 				PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
@@ -569,7 +575,8 @@ UnitTest::Parser::Parser(void) noexcept
 
 		for (size_t i = 0; i < testCaseCount; i++)
 		{
-			mcf::parser parser(testCases[i].Input, false);
+			mcf::evaluator evaluator;
+			mcf::parser parser(&evaluator, testCases[i].Input, false);
 			mcf::ast::program program;
 			parser.parse_program(program);
 			if (check_parser_errors(parser) == false)

@@ -157,6 +157,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="includes\ast.h" />
+    <ClInclude Include="includes\evaluator.h" />
     <ClInclude Include="includes\lexer.h" />
     <ClInclude Include="includes\parser.h" />
     <ClInclude Include="internals\framework.h" />
@@ -165,6 +166,7 @@
   <ItemGroup>
     <ClInclude Include="includes\common.h" />
     <ClCompile Include="sources\ast.cpp" />
+    <ClCompile Include="sources\evaluator.cpp" />
     <ClCompile Include="sources\lexer.cpp" />
     <ClCompile Include="sources\parser.cpp" />
     <ClCompile Include="sources\pch.cpp">

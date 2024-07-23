@@ -4,6 +4,8 @@
 
 namespace mcf
 {
+	class evaluator;
+
 	namespace ast
 	{
 		class mcf::ast::statement;
@@ -60,7 +62,7 @@ namespace mcf
 
 	public:
 		explicit parser(void) noexcept = delete;
-		explicit parser(const std::string& input, const bool isFile) noexcept;
+		explicit parser(evaluator* evaluator, const std::string& input, const bool isFile) noexcept;
 
 		const size_t				get_error_count(void) noexcept;
 		const mcf::parser::error	get_last_error(void) noexcept;
@@ -102,10 +104,12 @@ namespace mcf
 		const bool register_custom_enum_type(mcf::token& inOutToken) noexcept;
 
 	private:
+		evaluator* _evaluator = nullptr;
+
 		std::stack<mcf::parser::error>	_errors;
-		std::vector<std::string>		_scope = std::vector<std::string>({ "global" });
-		mcf::lexer						_lexer;
-		mcf::token						_currentToken;
-		mcf::token						_nextToken;
+
+		mcf::lexer _lexer;
+		mcf::token _currentToken;
+		mcf::token _nextToken;
 	};
 }

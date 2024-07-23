@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "common.h"
+#include "evaluator.h"
 
 #include "lexer.h"
 #include "framework.h"
@@ -85,10 +86,51 @@ namespace mcf
 			return input;
 		}
 	}
+
+	const mcf::token_type mcf::find_keyword_token_type(const std::string& tokenLiteral) noexcept
+	{
+		// identifier 조건에 부합하는 키워드만 등록합니다.
+		constexpr const char* IDENTIFIER_KEYWORDS[] =
+		{
+			// TODO: #5 uint32 타입 추가 필요
+			// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
+			// TODO: #7 decimal 타입 추가 필요
+			"const",
+			"void",
+			"int8",
+			"int16",
+			"int32",
+			"int64",
+			"uint8",
+			"uint16",
+			"uint32",
+			"uint64",
+			"utf8",
+			"enum",
+			"unused",
+			"in",
+			"out",
+		};
+		constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
+		static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE,
+			"identifier keyword token_type count is changed. this array need to be changed as well.");
+
+		// 기본 제공 키워드 검색
+		for (size_t i = 0; i < KEYWORDS_SIZE; i++)
+		{
+			if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
+			{
+				return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
+			}
+		}
+
+		return mcf::token_type::invalid;
+	}
 }
 
-mcf::lexer::lexer(const std::string& input, const bool isFIle) noexcept
-	: _input(isFIle ? internal::read_file(input) : input)
+mcf::lexer::lexer(const evaluator* const evaluator, const std::string& input, const bool isFIle) noexcept
+	: _evaluator(evaluator)
+	, _input(isFIle ? internal::read_file(input) : input)
 	, _name(input)
 {
 	if ( _input.length() == 0 )
@@ -123,7 +165,7 @@ const mcf::lexer::error_token mcf::lexer::get_last_error_token(void) noexcept
 	return lError;
 }
 
-const mcf::token mcf::lexer::read_next_token(const std::vector<std::string>& scope) noexcept
+const mcf::token mcf::lexer::read_next_token(void) noexcept
 {
 	// 공백 문자는 스킵 하도록 합니다.
 	while (_currentByte == ' ' || _currentByte == '\t' || _currentByte == '\n' || _currentByte == '\r')
@@ -234,7 +276,7 @@ const mcf::token mcf::lexer::read_next_token(const std::vector<std::string>& sco
 			__COUNTER__; // count for custom_enum_type
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			token.Literal = read_keyword_or_identifier(); 
-			token.Type = determine_keyword_or_identifier(token.Literal, scope);
+			token.Type = determine_keyword_or_identifier(token.Literal);
 			token.Line = _currentLine;
 			token.Index = _currentIndex;
 			return token; 
@@ -261,73 +303,6 @@ const mcf::token mcf::lexer::read_next_token(const std::vector<std::string>& sco
 
 	read_next_byte();
 	return token;
-}
-
-const mcf::token_type mcf::lexer::register_custom_enum_type(std::string name, std::vector<std::string> scope) noexcept
-{
-	debug_assert(scope.empty() == false, "");
-
-	if (has_datatype_at(name, scope) == true)
-	{
-		_tokens.push(error_token::registering_duplicated_symbol_name);
-		return token_type::invalid;
-	}
-
-	mcf::token_type tokenType = token_type::custom_enum_type;
-	std::string scopeString;
-	for (size_t i = 0; i < scope.size(); i++)
-	{
-		scopeString = (i == 0 ? "" : "::") + scope[i];
-	}
-	_customKeywordMap[scopeString + "::" + name] = tokenType;
-	return tokenType;
-}
-
-const bool mcf::lexer::has_datatype_at(const std::string& tokenLiteral, std::vector<std::string> scope) noexcept
-{
-	// identifier 조건에 부합하는 키워드만 등록합니다.
-	constexpr const char* IDENTIFIER_KEYWORDS[] =
-	{
-		// TODO: #5 uint32 타입 추가 필요
-		// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
-		// TODO: #7 decimal 타입 추가 필요
-		"const",
-		"void",
-		"int8",
-		"int16",
-		"int32",
-		"int64",
-		"uint8",
-		"uint16",
-		"uint32",
-		"uint64",
-		"utf8",
-		"enum",
-		"unused",
-		"in",
-		"out",
-	};
-	constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
-	static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE,
-		"identifier keyword token_type count is changed. this array need to be changed as well.");
-
-	// 기본 제공 키워드 검색
-	for (size_t i = 0; i < KEYWORDS_SIZE; i++)
-	{
-		if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
-		{
-			return true;
-		}
-	}
-
-	// 특정 스코프에서만 검색 하고 없는 경우 false 반환
-	std::string scopeString;
-	for (size_t i = 0; i < scope.size(); i++)
-	{
-		scopeString = (i == 0 ? "" : "::") + scope[i];
-	}
-	auto iter = _customKeywordMap.find(scopeString + "::" + tokenLiteral);
-	return iter != _customKeywordMap.end();
 }
 
 inline const char mcf::lexer::get_next_byte(void) const noexcept
@@ -655,58 +630,8 @@ inline const mcf::token mcf::lexer::read_numeric_literal(void) noexcept
 	return token;
 }
 
-const mcf::token_type mcf::lexer::determine_keyword_or_identifier(const std::string& tokenLiteral, std::vector<std::string> scope) noexcept
+const mcf::token_type mcf::lexer::determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept
 {
-	// identifier 조건에 부합하는 키워드만 등록합니다.
-	constexpr const char* IDENTIFIER_KEYWORDS[] =
-	{
-		// TODO: #5 uint32 타입 추가 필요
-		// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
-		// TODO: #7 decimal 타입 추가 필요
-		"const",
-		"void",
-		"int8",
-		"int16",
-		"int32",
-		"int64",
-		"uint8",
-		"uint16",
-		"uint32",
-		"uint64",
-		"utf8",
-		"enum",
-		"unused",
-		"in",
-		"out",
-	};
-	constexpr const size_t KEYWORDS_SIZE = array_size(IDENTIFIER_KEYWORDS);
-	static_assert(enum_index(mcf::token_type::keyword_identifier_end) - enum_index(mcf::token_type::keyword_identifier_start) - 1 == KEYWORDS_SIZE,
-		"identifier keyword token_type count is changed. this array need to be changed as well.");
-
-	// 기본 제공 키워드 검색
-	for (size_t i = 0; i < KEYWORDS_SIZE; i++)
-	{
-		if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
-		{
-			return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
-		}
-	}
-
-	// 주어진 모든 스코프들 안에서 검색 하고 없는 경우 identifier 반환
-	while (scope.empty() == false)
-	{
-		std::string scopeString;
-		for (size_t i = 0; i < scope.size(); i++)
-		{
-			scopeString = (i == 0 ? "" : "::") + scope[i];
-		}
-		auto iter = _customKeywordMap.find(scopeString + "::" + tokenLiteral);
-		if (iter != _customKeywordMap.end())
-		{
-			return iter->second;
-		}
-
-		scope.pop_back();
-	}
-	return mcf::token_type::identifier;
+	const mcf::token_type tokenFound = _evaluator->find_datatype_registered(tokenLiteral);
+	return tokenFound != token_type::invalid ? tokenFound : mcf::token_type::identifier;
 }

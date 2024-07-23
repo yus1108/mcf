@@ -9,6 +9,7 @@
 #include <parser/includes/ast.h>
 #include <parser/includes/lexer.h>
 #include <parser/includes/parser.h>
+#include <parser/includes/evaluator.h>
 
 #if defined(_DEBUG)
 #define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
