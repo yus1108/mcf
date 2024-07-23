@@ -329,6 +329,8 @@ namespace mcf
 			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
+			inline const std::string get_path(void) const noexcept { return _path; }
+
 		private:
 			token		_token;
 			std::string _path;

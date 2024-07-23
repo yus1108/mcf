@@ -1,0 +1,4 @@
+﻿enum TEST_ENUM: uint8
+{
+    TEST_VALUE1
+};

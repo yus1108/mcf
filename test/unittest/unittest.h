@@ -227,12 +227,23 @@ namespace UnitTest
 		explicit Parser(void) noexcept;
 		virtual const bool Test(void) const noexcept override final;
 
-	private:
 		static bool check_parser_errors(mcf::parser& parser) noexcept;
+	private:
 		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
 		static bool test_expression(const mcf::ast::expression* actual, const mcf::ast::expression* expected) noexcept;
 		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
 		static bool test_identifier(const mcf::ast::expression* targetExpression, const std::string expectedValue) noexcept;
+
+	private:
+		std::vector<std::string>			_names;
+		std::vector<std::function<bool()>>	_tests;
+	};
+
+	class Evaluator final : UnitTest
+	{
+	public:
+		explicit Evaluator(void) noexcept;
+		virtual const bool Test(void) const noexcept override final;
 
 	private:
 		std::vector<std::string>			_names;

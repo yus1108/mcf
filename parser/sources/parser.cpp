@@ -231,6 +231,23 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 
 	case token_type::macro_project_file_include: __COUNTER__;
 		statement = std::make_unique<const ast::macro_include_statement>(_currentToken);
+		{
+			std::string includeFilePath = static_cast<const ast::macro_include_statement*>(statement.get())->get_path();
+			if (_evaluator->include_project_file(includeFilePath) == false)
+			{
+				parsing_fail_message(error::id::fail_read_file, _currentToken, u8"파일 include에 실패하였습니다.");
+			}
+			mcf::ast::program actualProgram;
+			mcf::parser parser(_evaluator, includeFilePath, true);
+			//mcf::parser::error parserInitError = parser.get_last_error();
+			//if (parserInitError.ID != mcf::parser::error::id::no_error)
+			//{
+			//	parsing_fail_message(parserInitError.ID, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
+			//		PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
+			//}
+			parser.parse_program(actualProgram);
+			//return Parser::check_parser_errors(parser);
+		}
 		break;
 
 	case token_type::eof: __COUNTER__;

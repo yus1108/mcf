@@ -232,7 +232,7 @@ const std::string mcf::ast::enum_block_expression::convert_to_string(void) const
 
 mcf::ast::macro_include_statement::macro_include_statement(mcf::token token) noexcept
 	: _token(token)
-	, _path(token.Literal.substr(sizeof("#include <")))
+	, _path(token.Literal.substr(sizeof("#include "), token.Literal.size() - sizeof("#include <")))
 {}
 
 mcf::ast::variable_statement::variable_statement(	

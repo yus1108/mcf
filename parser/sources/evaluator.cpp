@@ -58,6 +58,19 @@ const bool mcf::evaluator::is_datatype_registered_at_current_scope(const std::st
 	return iter != _customDataTypeMap.end();
 }
 
+const bool mcf::evaluator::include_project_file(const std::string& filePath) noexcept
+{
+	std::filesystem::path path = filePath;
+	std::filesystem::path absolutePath = std::filesystem::absolute(path);
+	auto iter = _includedProjectFIles.find(absolutePath);
+	if (iter != _includedProjectFIles.end())
+	{
+		return false;
+	}
+	_includedProjectFIles.insert(absolutePath);
+	return true;
+}
+
 void mcf::evaluator::push(std::string scope) noexcept
 {
 	_scope.emplace_back(scope);

@@ -8,6 +8,7 @@
 #define PCH_H
 
 // add headers that you want to pre-compile here
+#include <filesystem>
 #include <fstream>
 #include <initializer_list>
 #include <memory>
@@ -15,6 +16,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "common.h"

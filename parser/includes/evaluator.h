@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include <vector>
+#include <filesystem>
+#include <unordered_set>
 #include "lexer.h"
 
 namespace mcf
@@ -11,6 +13,7 @@ namespace mcf
 		const mcf::token_type find_datatype_registered(const std::string& tokenLiteral) const noexcept;
 
 		const bool is_datatype_registered_at_current_scope(const std::string& tokenLiteral) const noexcept;
+		const bool include_project_file(const std::string& filePath) noexcept;
 
 		void push(std::string scope) noexcept;
 		void pop(void) noexcept;
@@ -18,7 +21,8 @@ namespace mcf
 		const std::string convert_scope_to_string(void) const noexcept;
 
 	private:
+		std::unordered_set<std::filesystem::path>	_includedProjectFIles;
 		std::unordered_map<std::string, token_type> _customDataTypeMap;
-		std::vector<std::string>					_scope = std::vector<std::string>({ "global" });
+		std::vector<std::string> _scope = std::vector<std::string>({ "global" });
 	};
 }

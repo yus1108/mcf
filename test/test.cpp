@@ -61,6 +61,16 @@ const int main(const size_t argc, const char* const argv[])
 			return 1;
 		}
 	}
+
+	// evaluator test
+	{
+		UnitTest::Evaluator evaluator;
+		if (evaluator.Test() == false)
+		{
+			std::cout << "`evaluator.Test()` Failed" << std::endl;
+			return 1;
+		}
+	}
 	
 
     std::cout << "All Tests Passed" << std::endl;
