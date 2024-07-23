@@ -9,6 +9,7 @@ namespace mcf
 	public:
 		const mcf::token_type register_custom_enum_type(std::string name) noexcept;
 		const mcf::token_type find_datatype_registered(const std::string& tokenLiteral) const noexcept;
+
 		const bool is_datatype_registered_at_current_scope(const std::string& tokenLiteral) const noexcept;
 
 		void push(std::string scope) noexcept;

@@ -476,7 +476,13 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	}
 
 	// 열거형 타입을 등록하고 데이터 타입으로 받는다.
-	register_custom_enum_type(_currentToken);
+	_currentToken.Type = _evaluator->register_custom_enum_type(_currentToken.Literal);
+	if (_currentToken.Type != token_type::custom_enum_type)
+	{
+		parsing_fail_message(error::id::registering_duplicated_symbol_name, _currentToken, u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", _currentToken.Literal.c_str());
+		return nullptr;
+	}
+
 	const ast::data_type_expression name = *std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions()).get();
 
 	bool isUseDefaultDataType = true;
@@ -1235,14 +1241,4 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 
 	check_last_lexer_error();
 	return false;
-}
-
-const bool mcf::parser::register_custom_enum_type(mcf::token& inOutToken) noexcept
-{
-	debug_assert(inOutToken.Type == token_type::identifier || inOutToken.Type == token_type::custom_enum_type, 
-		u8"identifier 또는 custom_enum_type 타입의 토큰만 커스텀 타입으로 변경 가능합니다.");
-	inOutToken.Type = _evaluator->register_custom_enum_type(inOutToken.Literal);
-	parsing_fail_assert(inOutToken.Type == token_type::custom_enum_type, error::id::registering_duplicated_symbol_name, inOutToken, 
-		u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", inOutToken.Literal.c_str());
-	return true;
 }

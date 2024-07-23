@@ -101,8 +101,6 @@ namespace mcf
 
 		const bool check_last_lexer_error(void) noexcept;
 
-		const bool register_custom_enum_type(mcf::token& inOutToken) noexcept;
-
 	private:
 		evaluator* _evaluator = nullptr;
 
