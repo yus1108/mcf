@@ -82,7 +82,6 @@ namespace UnitTest
 
 		"custom_keyword_start",
 		"custom_enum_type",
-		"custom_enum_value",
 		"custom_keyword_end",
 
 		// '.' 으로 시작하는 토큰

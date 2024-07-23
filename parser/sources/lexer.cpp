@@ -232,7 +232,6 @@ const mcf::token mcf::lexer::read_next_token(const std::vector<std::string>& sco
 			__COUNTER__; // count for keyword_in
 			__COUNTER__; // count for keyword_out
 			__COUNTER__; // count for custom_enum_type
-			__COUNTER__; // count for custom_enum_value
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			token.Literal = read_keyword_or_identifier(); 
 			token.Type = determine_keyword_or_identifier(token.Literal, scope);

@@ -61,7 +61,6 @@ namespace mcf
 
 		custom_keyword_start,	// 실제 값으로 사용되어선 안됩니다!!!
 		custom_enum_type,		// 커스텀 열거형 타입
-		custom_enum_value,		// 커스텀 열거형 값
 		custom_keyword_end,		// 실제 값으로 사용되어선 안됩니다!!!
 
 		// '.' 으로 시작하는 토큰
