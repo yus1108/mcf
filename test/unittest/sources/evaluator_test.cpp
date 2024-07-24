@@ -8,7 +8,7 @@ UnitTest::Evaluator::Evaluator(void) noexcept
 	_names.emplace_back(symbol_share_test);
 	_tests.emplace_back
 	(
-		[]()
+		[symbol_share_test]()
 		{
 			mcf::ast::program actualProgram;
 			mcf::evaluator evaluator;

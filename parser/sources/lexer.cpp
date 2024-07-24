@@ -321,7 +321,7 @@ inline void mcf::lexer::read_next_byte(void) noexcept
 	_currentIndex += 1;
 }
 
-inline const bool mcf::lexer::read_line_if_start_with(std::string* optionalOut, const char* startWith) noexcept
+inline const bool mcf::lexer::read_line_if_start_with(_Outptr_opt_ std::string* optionalOut, const char* _In_opt_ startWith) noexcept
 {
 	const size_t startWithLength = std::strlen(startWith);
 	const size_t firstLetterPosition = _currentPosition;
@@ -350,7 +350,7 @@ inline const bool mcf::lexer::read_line_if_start_with(std::string* optionalOut, 
 	return true;
 }
 
-inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept
+inline const bool mcf::lexer::read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* stringToCompare) noexcept
 {
 	debug_assert(stringToCompare != nullptr, u8"stringToCompare가 null일 수 없습니다.");
 
@@ -377,7 +377,7 @@ inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const 
 	return true;
 }
 
-inline const bool mcf::lexer::read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept
+inline const bool mcf::lexer::read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith, _In_opt_ const char* endWith, _In_opt_ const char* invalidCharList) noexcept
 {
 	debug_assert(startWith != nullptr || endWith != nullptr, u8"startWith와 endWith 둘다 null이면 안됩니다.");
 	debug_assert(endWith != nullptr || (endWith == nullptr && invalidCharList != nullptr), u8"endWith가 null인 경우 invalidCharList는 null이면 안됩니다.");
@@ -583,7 +583,7 @@ inline const mcf::token mcf::lexer::read_macro_token( void ) noexcept
 	std::string target;
 	switch (tokenType)
 	{
-	case token_type::macro_iibrary_file_include: __COUNTER__;
+	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
 	case token_type::macro_project_file_include: __COUNTER__;
 		// 공백 문자는 스킵합니다.
 		while (_currentByte == ' ' || _currentByte == '\t')

@@ -21,8 +21,8 @@ namespace mcf
 		const std::string convert_scope_to_string(void) const noexcept;
 
 	private:
-		std::unordered_set<std::filesystem::path>	_includedProjectFIles;
-		std::unordered_map<std::string, token_type> _customDataTypeMap;
+		std::unordered_set<std::filesystem::path::string_type>	_includedProjectFIles;
+		std::unordered_map<std::string, token_type>				_customDataTypeMap;
 		std::vector<std::string> _scope = std::vector<std::string>({ "global" });
 	};
 }

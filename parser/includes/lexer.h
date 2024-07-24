@@ -120,9 +120,9 @@ namespace mcf
 		const char get_next_byte(void) const noexcept;
 
 		void				read_next_byte(void) noexcept;
-		const bool			read_line_if_start_with(std::string* optionalOut, const char* startWith) noexcept;
-		const bool			read_and_validate(std::string* optionalOut, const char* stringToCompare) noexcept;
-		const bool			read_and_validate(std::string* optionalOut, const char* startWith, const char* endWith, const char* invalidCharList) noexcept;
+		const bool			read_line_if_start_with(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith) noexcept;
+		const bool			read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* stringToCompare) noexcept;
+		const bool			read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith, _In_opt_ const char* endWith, _In_opt_ const char* invalidCharList) noexcept;
 		const std::string	read_keyword_or_identifier(void) noexcept;
 		const std::string	read_number(void) noexcept;
 		const mcf::token	read_string_utf8(void) noexcept;

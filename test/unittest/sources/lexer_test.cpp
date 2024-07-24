@@ -267,7 +267,7 @@ namespace UnitTest
 					actualTokens.emplace_back(token);
 				}
 				const size_t actualTokenCount = actualTokens.size();
-				fatal_assert(expectedResultSize == actualTokenCount, "기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
+				fatal_assert(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
 				for (size_t j = 0; j < expectedResultSize; j++)
 				{
@@ -391,7 +391,7 @@ namespace UnitTest
 				actualTokens.emplace_back(token);
 			}
 			const size_t actualTokenCount = actualTokens.size();
-			fatal_assert(expectedResultSize == actualTokenCount, "기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
+			fatal_assert(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
 			for (size_t i = 0; i < actualTokenCount; i++)
 			{
