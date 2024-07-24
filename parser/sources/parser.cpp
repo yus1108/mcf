@@ -202,17 +202,17 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	switch (_currentToken.Type)
 	{
 	// !<declaration> 관련 키워드인 경우
-	case token_type::keyword_const: __COUNTER__;
-	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int8: __COUNTER__;
-	case token_type::keyword_int16: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
-	case token_type::keyword_int64: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint16: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
-	case token_type::keyword_uint64: __COUNTER__;
-	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::keyword_const: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_void: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_declaration_statement());
 		break;
@@ -250,40 +250,40 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		}
 		break;
 
-	case token_type::eof: __COUNTER__;
+	case token_type::eof: __COUNTER__; [[fallthrough]];
 	case token_type::semicolon: __COUNTER__;
 		break;
 
-	case token_type::integer: __COUNTER__;
-	case token_type::string_utf8: __COUNTER__;
-	case token_type::assign: __COUNTER__;
-	case token_type::plus: __COUNTER__;
-	case token_type::minus: __COUNTER__;
-	case token_type::asterisk: __COUNTER__;
-	case token_type::slash: __COUNTER__;
-	case token_type::lt: __COUNTER__;
-	case token_type::gt: __COUNTER__;
-	case token_type::ampersand: __COUNTER__;
-	case token_type::lparen: __COUNTER__;
-	case token_type::rparen: __COUNTER__;
-	case token_type::lbrace: __COUNTER__;
-	case token_type::rbrace: __COUNTER__;
-	case token_type::lbracket: __COUNTER__;
-	case token_type::rbracket: __COUNTER__;
-	case token_type::colon: __COUNTER__;
-	case token_type::comma: __COUNTER__;
-	case token_type::keyword_identifier_start: __COUNTER__;
-	case token_type::keyword_unused: __COUNTER__;
-	case token_type::keyword_in: __COUNTER__;
-	case token_type::keyword_out: __COUNTER__;
-	case token_type::keyword_identifier_end: __COUNTER__;
-	case token_type::custom_keyword_start: __COUNTER__;
-	case token_type::custom_keyword_end: __COUNTER__;
-	case token_type::keyword_variadic: __COUNTER__;
-	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
-	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::integer: __COUNTER__; [[fallthrough]];
+	case token_type::string_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::assign: __COUNTER__; [[fallthrough]];
+	case token_type::plus: __COUNTER__; [[fallthrough]];
+	case token_type::minus: __COUNTER__; [[fallthrough]];
+	case token_type::asterisk: __COUNTER__; [[fallthrough]];
+	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::lt: __COUNTER__; [[fallthrough]];
+	case token_type::gt: __COUNTER__; [[fallthrough]];
+	case token_type::ampersand: __COUNTER__; [[fallthrough]];
+	case token_type::lparen: __COUNTER__; [[fallthrough]];
+	case token_type::rparen: __COUNTER__; [[fallthrough]];
+	case token_type::lbrace: __COUNTER__; [[fallthrough]];
+	case token_type::rbrace: __COUNTER__; [[fallthrough]];
+	case token_type::lbracket: __COUNTER__; [[fallthrough]];
+	case token_type::rbracket: __COUNTER__; [[fallthrough]];
+	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::comma: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
+	case token_type::macro_start: __COUNTER__; [[fallthrough]];
+	case token_type::macro_end: __COUNTER__; [[fallthrough]];
+	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -561,27 +561,27 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		expression = std::make_unique<ast::identifier_expression>(_currentToken);
 		break;
 	
-	case token_type::integer: __COUNTER__;
+	case token_type::integer: __COUNTER__; [[fallthrough]];
 	case token_type::string_utf8: __COUNTER__;
 		expression = std::make_unique<ast::literal_expession>(_currentToken);
 		break;
 
-	case token_type::plus: __COUNTER__;
+	case token_type::plus: __COUNTER__; [[fallthrough]];
 	case token_type::minus: __COUNTER__;
 		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
-	case token_type::keyword_const: __COUNTER__;
-	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int8: __COUNTER__;
-	case token_type::keyword_int16: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
-	case token_type::keyword_int64: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint16: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
-	case token_type::keyword_uint64: __COUNTER__;
-	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::keyword_const: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_void: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		expression = std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions());
 		break;
@@ -594,35 +594,35 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"TODO: parse_block_expression 구현");
 		break;
 
-	case token_type::eof: __COUNTER__;
-	case token_type::assign: __COUNTER__;
-	case token_type::asterisk: __COUNTER__;
-	case token_type::slash: __COUNTER__;
-	case token_type::lt: __COUNTER__;
-	case token_type::gt: __COUNTER__;
-	case token_type::ampersand: __COUNTER__;
-	case token_type::rparen: __COUNTER__;
-	case token_type::lbrace: __COUNTER__;
-	case token_type::rbrace: __COUNTER__;
-	case token_type::lbracket: __COUNTER__;
-	case token_type::rbracket: __COUNTER__;
-	case token_type::semicolon: __COUNTER__;
-	case token_type::colon: __COUNTER__;
-	case token_type::comma: __COUNTER__;
-	case token_type::keyword_identifier_start: __COUNTER__;
-	case token_type::keyword_enum: __COUNTER__;
-	case token_type::keyword_unused: __COUNTER__;
-	case token_type::keyword_in: __COUNTER__;
-	case token_type::keyword_out: __COUNTER__;
-	case token_type::keyword_identifier_end: __COUNTER__;
-	case token_type::custom_keyword_start: __COUNTER__;
-	case token_type::custom_keyword_end: __COUNTER__;
-	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_iibrary_file_include: __COUNTER__;
-	case token_type::macro_project_file_include: __COUNTER__;
-	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
-	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::eof: __COUNTER__; [[fallthrough]];
+	case token_type::assign: __COUNTER__; [[fallthrough]];
+	case token_type::asterisk: __COUNTER__; [[fallthrough]];
+	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::lt: __COUNTER__; [[fallthrough]];
+	case token_type::gt: __COUNTER__; [[fallthrough]];
+	case token_type::ampersand: __COUNTER__; [[fallthrough]];
+	case token_type::rparen: __COUNTER__; [[fallthrough]];
+	case token_type::lbrace: __COUNTER__; [[fallthrough]];
+	case token_type::rbrace: __COUNTER__; [[fallthrough]];
+	case token_type::lbracket: __COUNTER__; [[fallthrough]];
+	case token_type::rbracket: __COUNTER__; [[fallthrough]];
+	case token_type::semicolon: __COUNTER__; [[fallthrough]];
+	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::comma: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
+	case token_type::macro_start: __COUNTER__; [[fallthrough]];
+	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_project_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_end: __COUNTER__; [[fallthrough]];
+	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
@@ -636,11 +636,11 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		constexpr const size_t INFIX_COUNT_BEGIN = __COUNTER__;
 		switch (_nextToken.Type)
 		{
-		case token_type::plus: __COUNTER__;
-		case token_type::minus: __COUNTER__;
-		case token_type::asterisk: __COUNTER__;
-		case token_type::slash: __COUNTER__;
-		case token_type::lt: __COUNTER__;
+		case token_type::plus: __COUNTER__; [[fallthrough]];
+		case token_type::minus: __COUNTER__; [[fallthrough]];
+		case token_type::asterisk: __COUNTER__; [[fallthrough]];
+		case token_type::slash: __COUNTER__; [[fallthrough]];
+		case token_type::lt: __COUNTER__; [[fallthrough]];
 		case token_type::gt: __COUNTER__;
 			read_next_token();
 			expression = std::unique_ptr<const ast::expression>(parse_infix_expression(expression.release()));
@@ -660,45 +660,45 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 			parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"TODO 비트 연산자 파싱");
 			break;
 
-		case token_type::eof: __COUNTER__;
-		case token_type::identifier: __COUNTER__;
-		case token_type::integer: __COUNTER__;
-		case token_type::string_utf8: __COUNTER__;
-		case token_type::assign: __COUNTER__;
-		case token_type::rparen: __COUNTER__;
-		case token_type::lbrace: __COUNTER__;
-		case token_type::rbrace: __COUNTER__;
-		case token_type::rbracket: __COUNTER__;
-		case token_type::semicolon: __COUNTER__;
-		case token_type::colon: __COUNTER__;
-		case token_type::comma: __COUNTER__;
-		case token_type::keyword_identifier_start: __COUNTER__;
-		case token_type::keyword_const: __COUNTER__;
-		case token_type::keyword_void: __COUNTER__;
-		case token_type::keyword_int8: __COUNTER__;
-		case token_type::keyword_int16: __COUNTER__;
-		case token_type::keyword_int32: __COUNTER__;
-		case token_type::keyword_int64: __COUNTER__;
-		case token_type::keyword_uint8: __COUNTER__;
-		case token_type::keyword_uint16: __COUNTER__;
-		case token_type::keyword_uint32: __COUNTER__;
-		case token_type::keyword_uint64: __COUNTER__;
-		case token_type::keyword_utf8: __COUNTER__;
-		case token_type::keyword_enum: __COUNTER__;
-		case token_type::keyword_unused: __COUNTER__;
-		case token_type::keyword_in: __COUNTER__;
-		case token_type::keyword_out: __COUNTER__;
-		case token_type::keyword_identifier_end: __COUNTER__;
-		case token_type::keyword_variadic: __COUNTER__;
-		case token_type::custom_keyword_start: __COUNTER__;
-		case token_type::custom_enum_type: __COUNTER__;
-		case token_type::custom_keyword_end: __COUNTER__;
-		case token_type::macro_start: __COUNTER__;
-		case token_type::macro_iibrary_file_include: __COUNTER__;
-		case token_type::macro_project_file_include: __COUNTER__;
-		case token_type::macro_end: __COUNTER__;
-		case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
-		case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+		case token_type::eof: __COUNTER__; [[fallthrough]];
+		case token_type::identifier: __COUNTER__; [[fallthrough]];
+		case token_type::integer: __COUNTER__; [[fallthrough]];
+		case token_type::string_utf8: __COUNTER__; [[fallthrough]];
+		case token_type::assign: __COUNTER__; [[fallthrough]];
+		case token_type::rparen: __COUNTER__; [[fallthrough]];
+		case token_type::lbrace: __COUNTER__; [[fallthrough]];
+		case token_type::rbrace: __COUNTER__; [[fallthrough]];
+		case token_type::rbracket: __COUNTER__; [[fallthrough]];
+		case token_type::semicolon: __COUNTER__; [[fallthrough]];
+		case token_type::colon: __COUNTER__; [[fallthrough]];
+		case token_type::comma: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_const: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_void: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_int8: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_int16: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_int32: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_int64: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_uint8: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_uint16: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_in: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
+		case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
+		case token_type::custom_enum_type: __COUNTER__; [[fallthrough]];
+		case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
+		case token_type::macro_start: __COUNTER__; [[fallthrough]];
+		case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
+		case token_type::macro_project_file_include: __COUNTER__; [[fallthrough]];
+		case token_type::macro_end: __COUNTER__; [[fallthrough]];
+		case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+		case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 		default:
 			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
@@ -1020,56 +1020,56 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	switch (token.Type)
 	{
 	// !<declaration> 관련 키워드인 경우
-	case token_type::keyword_const: __COUNTER__;
-	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int8: __COUNTER__;
-	case token_type::keyword_int16: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
-	case token_type::keyword_int64: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint16: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
-	case token_type::keyword_uint64: __COUNTER__;
-	case token_type::keyword_utf8: __COUNTER__;
+	case token_type::keyword_const: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_void: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		return true;
 
-	case token_type::eof: __COUNTER__;
-	case token_type::identifier: __COUNTER__;
-	case token_type::integer: __COUNTER__;
-	case token_type::string_utf8: __COUNTER__;
-	case token_type::assign: __COUNTER__;
-	case token_type::plus: __COUNTER__;
-	case token_type::minus: __COUNTER__;
-	case token_type::asterisk: __COUNTER__;
-	case token_type::slash: __COUNTER__;
-	case token_type::lt: __COUNTER__;
-	case token_type::gt: __COUNTER__;
-	case token_type::ampersand: __COUNTER__;
-	case token_type::lparen: __COUNTER__;
-	case token_type::rparen: __COUNTER__;
-	case token_type::lbrace: __COUNTER__;
-	case token_type::rbrace: __COUNTER__;
-	case token_type::lbracket: __COUNTER__;
-	case token_type::rbracket: __COUNTER__;
-	case token_type::semicolon: __COUNTER__;
-	case token_type::colon: __COUNTER__;
-	case token_type::comma: __COUNTER__;
-	case token_type::keyword_identifier_start: __COUNTER__;
-	case token_type::keyword_enum: __COUNTER__;
-	case token_type::keyword_unused: __COUNTER__;
-	case token_type::keyword_in: __COUNTER__;
-	case token_type::keyword_out: __COUNTER__;
-	case token_type::keyword_identifier_end: __COUNTER__;
-	case token_type::keyword_variadic: __COUNTER__;
-	case token_type::custom_keyword_start: __COUNTER__;
-	case token_type::custom_keyword_end: __COUNTER__;
-	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_iibrary_file_include: __COUNTER__;
-	case token_type::macro_project_file_include: __COUNTER__;
-	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
-	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::eof: __COUNTER__; [[fallthrough]];
+	case token_type::identifier: __COUNTER__; [[fallthrough]];
+	case token_type::integer: __COUNTER__; [[fallthrough]];
+	case token_type::string_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::assign: __COUNTER__; [[fallthrough]];
+	case token_type::plus: __COUNTER__; [[fallthrough]];
+	case token_type::minus: __COUNTER__; [[fallthrough]];
+	case token_type::asterisk: __COUNTER__; [[fallthrough]];
+	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::lt: __COUNTER__; [[fallthrough]];
+	case token_type::gt: __COUNTER__; [[fallthrough]];
+	case token_type::ampersand: __COUNTER__; [[fallthrough]];
+	case token_type::lparen: __COUNTER__; [[fallthrough]];
+	case token_type::rparen: __COUNTER__; [[fallthrough]];
+	case token_type::lbrace: __COUNTER__; [[fallthrough]];
+	case token_type::rbrace: __COUNTER__; [[fallthrough]];
+	case token_type::lbracket: __COUNTER__; [[fallthrough]];
+	case token_type::rbracket: __COUNTER__; [[fallthrough]];
+	case token_type::semicolon: __COUNTER__; [[fallthrough]];
+	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::comma: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
+	case token_type::macro_start: __COUNTER__; [[fallthrough]];
+	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_project_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_end: __COUNTER__; [[fallthrough]];
+	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		break;
 	}
@@ -1142,15 +1142,15 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	constexpr const size_t PRECEDENCE_COUNT_BEGIN = __COUNTER__;
 	switch (token.Type)
 	{
-	case token_type::plus: __COUNTER__;
+	case token_type::plus: __COUNTER__; [[fallthrough]];
 	case token_type::minus: __COUNTER__;
 		return parser::precedence::sum;
 
-	case token_type::asterisk: __COUNTER__;
+	case token_type::asterisk: __COUNTER__; [[fallthrough]];
 	case token_type::slash: __COUNTER__;
 		return parser::precedence::product;
 
-	case token_type::lt: __COUNTER__;
+	case token_type::lt: __COUNTER__; [[fallthrough]];
 	case token_type::gt: __COUNTER__;
 		return parser::precedence::lessgreater;
 
@@ -1160,48 +1160,48 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::lbracket: __COUNTER__;
 		return parser::precedence::index;
 
-	case token_type::rparen: __COUNTER__;
+	case token_type::rparen: __COUNTER__; [[fallthrough]];
 	case token_type::comma: __COUNTER__;
 		break;
 
-	case token_type::eof: __COUNTER__;
-	case token_type::identifier: __COUNTER__;
-	case token_type::integer: __COUNTER__;
-	case token_type::string_utf8: __COUNTER__;
-	case token_type::assign: __COUNTER__;
-	case token_type::ampersand: __COUNTER__;
-	case token_type::lbrace: __COUNTER__;
-	case token_type::rbrace: __COUNTER__;
-	case token_type::rbracket: __COUNTER__;
-	case token_type::semicolon: __COUNTER__;
-	case token_type::colon: __COUNTER__;
-	case token_type::keyword_identifier_start: __COUNTER__;
-	case token_type::keyword_const: __COUNTER__;
-	case token_type::keyword_void: __COUNTER__;
-	case token_type::keyword_int8: __COUNTER__;
-	case token_type::keyword_int16: __COUNTER__;
-	case token_type::keyword_int32: __COUNTER__;
-	case token_type::keyword_int64: __COUNTER__;
-	case token_type::keyword_uint8: __COUNTER__;
-	case token_type::keyword_uint16: __COUNTER__;
-	case token_type::keyword_uint32: __COUNTER__;
-	case token_type::keyword_uint64: __COUNTER__;
-	case token_type::keyword_utf8: __COUNTER__;
-	case token_type::keyword_enum: __COUNTER__;
-	case token_type::keyword_unused: __COUNTER__;
-	case token_type::keyword_in: __COUNTER__;
-	case token_type::keyword_out: __COUNTER__;
-	case token_type::keyword_identifier_end: __COUNTER__;
-	case token_type::keyword_variadic: __COUNTER__;
-	case token_type::custom_keyword_start: __COUNTER__;
-	case token_type::custom_enum_type: __COUNTER__;
-	case token_type::custom_keyword_end: __COUNTER__;
-	case token_type::macro_start: __COUNTER__;
-	case token_type::macro_iibrary_file_include: __COUNTER__;
-	case token_type::macro_project_file_include: __COUNTER__;
-	case token_type::macro_end: __COUNTER__;
-	case token_type::comment: __COUNTER__;			// 주석은 파서에서 토큰을 읽으면 안됩니다.
-	case token_type::comment_block: __COUNTER__;	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::eof: __COUNTER__; [[fallthrough]];
+	case token_type::identifier: __COUNTER__; [[fallthrough]];
+	case token_type::integer: __COUNTER__; [[fallthrough]];
+	case token_type::string_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::assign: __COUNTER__; [[fallthrough]];
+	case token_type::ampersand: __COUNTER__; [[fallthrough]];
+	case token_type::lbrace: __COUNTER__; [[fallthrough]];
+	case token_type::rbrace: __COUNTER__; [[fallthrough]];
+	case token_type::rbracket: __COUNTER__; [[fallthrough]];
+	case token_type::semicolon: __COUNTER__; [[fallthrough]];
+	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_const: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_void: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_int64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint16: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
+	case token_type::custom_enum_type: __COUNTER__; [[fallthrough]];
+	case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
+	case token_type::macro_start: __COUNTER__; [[fallthrough]];
+	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_project_file_include: __COUNTER__; [[fallthrough]];
+	case token_type::macro_end: __COUNTER__; [[fallthrough]];
+	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(token.Type)], enum_index(token.Type));

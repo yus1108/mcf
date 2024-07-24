@@ -2,5 +2,5 @@
 
 void main(unused const int32 argc, unused const utf8 argv[][]) 
 {
-    const TEST_ENUM testVal = TEST_ENUM ::TEST_VALUE1;
+    const TEST_ENUM testVal = TEST_ENUM::TEST_VALUE1;
 }

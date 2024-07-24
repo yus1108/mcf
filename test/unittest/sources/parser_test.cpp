@@ -399,7 +399,7 @@ UnitTest::Parser::Parser(void) noexcept
 
 	constexpr const char* const test_file_read = "./test/unittest/texts/test_file_read.txt";
 	_names.emplace_back(test_file_read);
-	_tests.emplace_back([&]() {
+	_tests.emplace_back([test_file_read]() {
 		mcf::ast::program actualProgram;
 		{
 			mcf::evaluator evaluator;
