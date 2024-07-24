@@ -106,6 +106,7 @@ namespace mcf
 
 			// 구분자
 			"colon",
+			"double_colon",
 			"semicolon",
 			"comma",
 
@@ -271,6 +272,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::lbracket: __COUNTER__; [[fallthrough]];
 	case token_type::rbracket: __COUNTER__; [[fallthrough]];
 	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::double_colon: __COUNTER__; [[fallthrough]];
 	case token_type::comma: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
@@ -300,7 +302,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ast::statement_type statementType = ast::statement_type::invalid;
-	std::unique_ptr<const mcf::ast::expression> dataType(parse_data_type_expressions());
+	std::unique_ptr<const mcf::ast::expression> dataType(parse_data_type_or_identifier_expressions());
 
 	// 배열 타입인지 체크 (함수만 가능)
 	while (read_next_token_if(token_type::lbracket))
@@ -500,7 +502,13 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		return nullptr;
 	}
 
-	const ast::data_type_expression name = *std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions()).get();
+	ast::unique_expression nameExpression = ast::unique_expression(parse_data_type_or_identifier_expressions());
+	if (nameExpression->get_expression_type() != ast::expression_type::data_type)
+	{
+		parsing_fail_message( error::id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
+		return nullptr;
+	}
+	const ast::data_type_expression name = *static_cast<const ast::data_type_expression*>(nameExpression.get());
 
 	bool isUseDefaultDataType = true;
 	if (read_next_token_if(token_type::colon) == true)
@@ -515,9 +523,13 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		isUseDefaultDataType = false;
 	}
 
-	ast::data_type_expression dataType = isUseDefaultDataType ? 
-		ast::data_type_expression(false, token{ token_type::keyword_int32, "int32" }) : 
-		*std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions()).get();
+	ast::unique_expression dataTypeExpression = isUseDefaultDataType ? nullptr : ast::unique_expression(parse_data_type_or_identifier_expressions());
+	if ( dataTypeExpression != nullptr && nameExpression->get_expression_type() != ast::expression_type::data_type )
+	{
+		parsing_fail_message( error::id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
+		return nullptr;
+	}
+	ast::data_type_expression dataType = (dataTypeExpression == nullptr) ? ast::data_type_expression(false, token{ token_type::keyword_int32, "int32" }) : *static_cast<const ast::data_type_expression*>(dataTypeExpression.get());
 
 	if (read_next_token_if(token_type::lbrace, name.convert_to_string()) == false)
 	{
@@ -583,7 +595,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
-		expression = std::unique_ptr<const ast::data_type_expression>(parse_data_type_expressions());
+		expression = ast::unique_expression(parse_data_type_or_identifier_expressions());
 		break;
 
 	case token_type::keyword_variadic: __COUNTER__;
@@ -608,6 +620,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::rbracket: __COUNTER__; [[fallthrough]];
 	case token_type::semicolon: __COUNTER__; [[fallthrough]];
 	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::double_colon: __COUNTER__; [[fallthrough]];
 	case token_type::comma: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
@@ -671,6 +684,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::rbracket: __COUNTER__; [[fallthrough]];
 		case token_type::semicolon: __COUNTER__; [[fallthrough]];
 		case token_type::colon: __COUNTER__; [[fallthrough]];
+		case token_type::double_colon: __COUNTER__; [[fallthrough]];
 		case token_type::comma: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_const: __COUNTER__; [[fallthrough]];
@@ -711,7 +725,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	return expression.release();
 }
 
-const mcf::ast::data_type_expression* mcf::parser::parse_data_type_expressions(void) noexcept
+const mcf::ast::expression* mcf::parser::parse_data_type_or_identifier_expressions(void) noexcept
 {
 	debug_assert(is_token_data_type(_currentToken) == true, u8"이 함수가 호출될때 현재 토큰은 데이터 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -724,7 +738,30 @@ const mcf::ast::data_type_expression* mcf::parser::parse_data_type_expressions(v
 	debug_assert(is_token_data_type(_currentToken) == true && _currentToken.Type != token_type::keyword_const, 
 		u8"이 함수가 호출될때 현재 토큰은 const 키워드를 제외한 데이터 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
-	return new(std::nothrow) mcf::ast::data_type_expression(isConst, _currentToken);
+
+	token curr = _currentToken;
+	while (read_next_token_if(token_type::double_colon))
+	{
+		if (read_next_token_if(token_type::identifier) || read_next_token_if_any(get_data_type_list()))
+		{
+			curr.Type = _currentToken.Type;
+			curr.Literal += "::" + _currentToken.Literal;
+			curr.Line = _currentToken.Line;
+			curr.Index = _currentToken.Index;
+		}
+	}
+
+	if (is_token_data_type(curr))
+	{
+		return new(std::nothrow) mcf::ast::data_type_expression(isConst, curr);
+	}
+	else if (curr.Type == token_type::identifier)
+	{
+		return new(std::nothrow) mcf::ast::identifier_expression(curr);
+	}
+	
+	parsing_fail_message(error::id::fail_expression_parsing, curr, u8"현재 토큰에 문제가 있습니다.");
+	return nullptr;
 }
 
 const mcf::ast::prefix_expression* mcf::parser::parse_prefix_expression(void) noexcept
@@ -853,7 +890,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 			ast::unique_expression dataType;
 			ast::unique_expression dataName;
 
-			dataType = ast::unique_expression(parse_data_type_expressions());
+			dataType = ast::unique_expression(parse_data_type_or_identifier_expressions());
 
 			if (read_next_token_if(token_type::identifier) == false)
 			{
@@ -1054,6 +1091,7 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::rbracket: __COUNTER__; [[fallthrough]];
 	case token_type::semicolon: __COUNTER__; [[fallthrough]];
 	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::double_colon: __COUNTER__; [[fallthrough]];
 	case token_type::comma: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_enum: __COUNTER__; [[fallthrough]];
@@ -1100,6 +1138,7 @@ constexpr const std::initializer_list<mcf::token_type> mcf::parser::get_data_typ
 	enum_at<token_type>(enum_index(token_type::lbracket) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::rbracket) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::colon) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::double_colon) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::semicolon) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::comma) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::keyword_identifier_start) + __COUNTER__ * 0);
@@ -1175,6 +1214,7 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::rbracket: __COUNTER__; [[fallthrough]];
 	case token_type::semicolon: __COUNTER__; [[fallthrough]];
 	case token_type::colon: __COUNTER__; [[fallthrough]];
+	case token_type::double_colon: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_start: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_const: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_void: __COUNTER__; [[fallthrough]];

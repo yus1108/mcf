@@ -17,7 +17,9 @@ UnitTest::Evaluator::Evaluator(void) noexcept
 			fatal_assert(parserInitError.ID == mcf::parser::error::id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
 				PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
 			parser.parse_program(actualProgram);
-			return Parser::check_parser_errors(parser);
+			const bool isTestPassed = Parser::check_parser_errors(parser);
+			std::cout << symbol_share_test << ":" << std::endl << actualProgram.convert_to_string() << std::endl;
+			return isTestPassed;
 		}
 	);
 }
@@ -31,7 +33,7 @@ const bool UnitTest::Evaluator::Test(void) const noexcept
 			std::cout << "Test[#" << i << "] `" << _names[i] << "` Failed" << std::endl;
 			return false;
 		}
-		std::cout << "Parser Test[#" << i << "] `" << _names[i] << "` Passed" << std::endl;
+		std::cout << "Evaluator Test[#" << i << "] `" << _names[i] << "` Passed" << std::endl;
 	}
 	return true;
 }

@@ -24,8 +24,8 @@ namespace mcf
 			sum,			// + | -
 			product,		// * | /
 			prefix,			// -foo | !boo
-			call,			// func(x)		TODO: #16 구현 필요
-			index,			// foo[0]		TODO: #16 구현 필요
+			call,			// func(x)
+			index,			// foo[0]
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count
@@ -76,7 +76,7 @@ namespace mcf
 		const mcf::ast::enum_statement*				parse_enum_statement(void) noexcept;
 
 		const mcf::ast::expression*								parse_expression(const mcf::parser::precedence precedence) noexcept;
-		const mcf::ast::data_type_expression*					parse_data_type_expressions(void) noexcept;
+		const mcf::ast::expression*								parse_data_type_or_identifier_expressions(void) noexcept;
 		const mcf::ast::prefix_expression*						parse_prefix_expression(void) noexcept;
 		const mcf::ast::infix_expression*						parse_infix_expression(const mcf::ast::expression* left) noexcept;
 		const mcf::ast::function_call_expression*				parse_call_expression(const mcf::ast::expression* left) noexcept;

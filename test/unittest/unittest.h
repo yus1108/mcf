@@ -59,6 +59,7 @@ namespace UnitTest
 
 		// 구분자
 		"colon",
+		"double_colon",
 		"semicolon",
 		"comma",
 
