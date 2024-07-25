@@ -330,8 +330,6 @@ namespace UnitTest
 					{mcf::token_type::keyword_variadic, "..."},
 					{mcf::token_type::rparen, ")"},
 					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
-					{mcf::token_type::comment, u8"// include vector, string, print"},
 					{mcf::token_type::keyword_void, "void"},
 					{mcf::token_type::identifier, "main"},
 					{mcf::token_type::lparen, "("},

@@ -10,7 +10,6 @@ enum PRINT_RESULT : uint8
     NO_ERROR
 };
 const PRINT_RESULT Print(in const utf8 format[], ...);
-#include <builtins> // include vector, string, print
 void main(unused const int32 argc, unused const utf8 argv[][]) 
 {
     enum PRINT_RESULT : uint8

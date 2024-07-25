@@ -11,6 +11,37 @@ namespace mcf
 		class mcf::ast::statement;
 	}
 
+	enum class parser_error_id : unsigned char
+	{
+		invalid = 0,
+
+		no_error,
+		invalid_lexer_error_token,
+		invalid_input_length,
+		fail_read_file,
+		fail_memory_allocation,
+		fail_expression_parsing,
+		fail_statement_parsing,
+		unexpected_current_token,
+		unexpected_next_token,
+		not_registered_statement_token,
+		not_registered_expression_token,
+		not_registered_infix_expression_token,
+		registering_duplicated_symbol_name,
+
+		// 이 밑으로는 수정하면 안됩니다.
+		count,
+	};
+
+	struct parser_error final
+	{
+		parser_error_id ID;
+		std::string		Name;
+		std::string		Message;
+		size_t			Line;
+		size_t			Index;
+	};
+
 	class parser final
 	{
 	public:
@@ -31,43 +62,14 @@ namespace mcf
 			count
 		};
 
-		struct error final
-		{
-			enum class id : unsigned char
-			{
-				invalid = 0,
-
-				no_error,
-				invalid_lexer_error_token,
-				invalid_input_length,
-				fail_read_file,
-				fail_memory_allocation,
-				fail_expression_parsing,
-				fail_statement_parsing,
-				unexpected_current_token,
-				unexpected_next_token,
-				not_registered_statement_token,
-				not_registered_expression_token,
-				not_registered_infix_expression_token,
-				registering_duplicated_symbol_name,
-
-				// 이 밑으로는 수정하면 안됩니다.
-				count,
-			} ID;
-			std::string Name;
-			std::string Message;
-			size_t		Line;
-			size_t		Index;
-		};
-
 	public:
 		explicit parser(void) noexcept = delete;
 		explicit parser(evaluator* evaluator, const std::string& input, const bool isFile) noexcept;
 
 		const size_t				get_error_count(void) noexcept;
-		const mcf::parser::error	get_last_error(void) noexcept;
+		const mcf::parser_error		get_last_error(void) noexcept;
 
-		void parse_program(ast::program& outProgram) noexcept;
+		void parse_program( ast::program& outProgram ) noexcept;
 
 	private:
 		const mcf::ast::statement*					parse_statement(void) noexcept;
@@ -104,10 +106,31 @@ namespace mcf
 	private:
 		evaluator* _evaluator = nullptr;
 
-		std::stack<mcf::parser::error>	_errors;
+		std::stack<mcf::parser_error>	_errors;
 
 		mcf::lexer _lexer;
 		mcf::token _currentToken;
 		mcf::token _nextToken;
 	};
+
+	constexpr const char* PARSER_ERROR_ID[] =
+	{
+		"invalid",
+
+		"no_error",
+		"invalid_lexer_error_token",
+		"invalid_input_length",
+		"fail_read_file",
+		"fail_memory_allocation",
+		"fail_expression_parsing",
+		"fail_statement_parsing",
+		"unexpected_current_token",
+		"unexpected_next_token",
+		"not_registered_statement_token",
+		"not_registered_expression_token",
+		"not_registered_infix_expression_token",
+		"registering_duplicated_symbol_name",
+	};
+	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size( PARSER_ERROR_ID );
+	static_assert(static_cast<size_t>(mcf::parser_error_id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");
 }

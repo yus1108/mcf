@@ -136,27 +136,6 @@ namespace UnitTest
 	constexpr const size_t EXPRESSION_TYPES_SIZE = array_size( EXPRESSION_TYPES );
 	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
 
-	constexpr const char* PARSER_ERROR_ID[] =
-	{
-		"invalid",
-
-		"no_error",
-		"invalid_lexer_error_token",
-		"invalid_input_length",
-		"fail_read_file",
-		"fail_memory_allocation",
-		"fail_expression_parsing",
-		"fail_statement_parsing",
-		"unexpected_current_token",
-		"unexpected_next_token",
-		"not_registered_statement_token",
-		"not_registered_expression_token",
-		"not_registered_infix_expression_token",
-		"registering_duplicated_symbol_name",
-	};
-	constexpr const size_t PARSER_ERROR_ID_SIZE = array_size(PARSER_ERROR_ID);
-	static_assert(static_cast<size_t>(mcf::parser::error::id::count) == PARSER_ERROR_ID_SIZE, "mcf::parser::error::id count not matching");
-
 	const mcf::token token_invalid = { mcf::token_type::invalid, "invalid" };
 	const mcf::token token_const = { mcf::token_type::keyword_const, "const" };
 	const mcf::token token_void = { mcf::token_type::keyword_void, "void" };

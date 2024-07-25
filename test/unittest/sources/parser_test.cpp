@@ -404,9 +404,9 @@ UnitTest::Parser::Parser(void) noexcept
 		{
 			mcf::evaluator evaluator;
 			mcf::parser parser(&evaluator, test_file_read, true);
-			mcf::parser::error parserInitError = parser.get_last_error();
-			fatal_assert(parserInitError.ID == mcf::parser::error::id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
-				PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
+			mcf::parser_error parserInitError = parser.get_last_error();
+			fatal_assert(parserInitError.ID == mcf::parser_error_id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
+				mcf::PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
 			parser.parse_program(actualProgram);
 			if (check_parser_errors(parser) == false)
 			{
@@ -497,6 +497,7 @@ UnitTest::Parser::Parser(void) noexcept
 			return new function_call_statement(new function_call_expression(function, std::move(parameters)));
 			};
 
+		mcf::evaluator evaluator;
 		mcf::ast::statement* statements[] =
 		{
 			// int32 foo = 10; 
@@ -512,8 +513,6 @@ UnitTest::Parser::Parser(void) noexcept
 					Variadic(token_invalid),
 				}, 
 				{}),
-			// #include <builtins> // include vector, string, print
-			new macro_include_statement({token_type::macro_iibrary_file_include, "#include <builtins>"}),
 			/*
 				void main(unused const int32 argc, unused const utf8 argv[][])
 				{
@@ -625,8 +624,8 @@ bool UnitTest::Parser::check_parser_errors(mcf::parser& parser) noexcept
 	}
 
 	error_message_begin(errorCount);
-	mcf::parser::error curr = parser.get_last_error();
-	while (curr.ID != mcf::parser::error::id::no_error)
+	mcf::parser_error curr = parser.get_last_error();
+	while (curr.ID != mcf::parser_error_id::no_error)
 	{
 		error_message("[ID:%zu]%s%s", enum_index(curr.ID), curr.Name.c_str(), curr.Message.c_str());
 		curr = parser.get_last_error();

@@ -13,9 +13,9 @@ UnitTest::Evaluator::Evaluator(void) noexcept
 			mcf::ast::program actualProgram;
 			mcf::evaluator evaluator;
 			mcf::parser parser(&evaluator, symbol_share_test, true);
-			mcf::parser::error parserInitError = parser.get_last_error();
-			fatal_assert(parserInitError.ID == mcf::parser::error::id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
-				PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
+			mcf::parser_error parserInitError = parser.get_last_error();
+			fatal_assert(parserInitError.ID == mcf::parser_error_id::no_error, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
+				mcf::PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
 			parser.parse_program(actualProgram);
 			const bool isTestPassed = Parser::check_parser_errors(parser);
 			std::cout << symbol_share_test << ":" << std::endl << actualProgram.convert_to_string() << std::endl;

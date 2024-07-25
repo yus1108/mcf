@@ -20,7 +20,7 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
-	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser_error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push(pfa_error); \
 	__debugbreak(); \
 	return false;\
@@ -36,7 +36,7 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
 	} \
-	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser_error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push( pfa_error ); \
 	__debugbreak(); \
 } ((void)0)
@@ -50,7 +50,7 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 	snprintf(pfa_buffer, pfa_bufferLength + 1, FORMAT, __VA_ARGS__); \
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
-	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser_error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push(pfa_error); \
 	return false;\
 } ((void)0)
@@ -65,7 +65,7 @@ constexpr const char* PARSING_FAIL_MESSAGE_FORMAT = "(Line: %zu)(%zu)\n[Descript
 	pfa_message += pfa_buffer; delete[] pfa_buffer; \
 	pfa_message += "\n"; \
 	} \
-	mcf::parser::error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
+	mcf::parser_error pfa_error = { ERROR_ID, _lexer.get_name(), pfa_message, TOKEN.Line, TOKEN.Index }; \
 	_errors.push( pfa_error ); \
 } ((void)0)
 #endif
@@ -74,8 +74,6 @@ namespace mcf
 {
 	namespace internal
 	{
-		static std::stack<mcf::parser::error> PARSER_ERRORS;
-
 		constexpr const char* TOKEN_TYPES[] =
 		{
 			"invalid",
@@ -167,14 +165,14 @@ const size_t mcf::parser::get_error_count(void) noexcept
 	return _errors.size();
 }
 
-const mcf::parser::error mcf::parser::get_last_error(void) noexcept
+const mcf::parser_error mcf::parser::get_last_error(void) noexcept
 {
 	if (_errors.empty())
 	{
-		return { parser::error::id::no_error, _lexer.get_name(), std::string(), 0, 0};
+		return { parser_error_id::no_error, _lexer.get_name(), std::string(), 0, 0};
 	}
 
-	const mcf::parser::error error = _errors.top();
+	const mcf::parser_error error = _errors.top();
 	_errors.pop();
 	return error;
 }
@@ -187,7 +185,7 @@ void mcf::parser::parse_program(ast::program& outProgram) noexcept
 		statements.emplace_back(std::unique_ptr<const mcf::ast::statement>(parse_statement()));
 		if (statements.back().get() == nullptr)
 		{
-			parsing_fail_message(error::id::fail_statement_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+			parsing_fail_message(parser_error_id::fail_statement_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		}
 
 		// read next token
@@ -226,29 +224,9 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 		statement = std::unique_ptr<const ast::statement>(parse_enum_statement());
 		break;
 
-	case token_type::macro_iibrary_file_include: __COUNTER__;
-		statement = std::make_unique<const ast::macro_include_statement>(_currentToken);
-		break;
-
+	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
 	case token_type::macro_project_file_include: __COUNTER__;
-		statement = std::make_unique<const ast::macro_include_statement>(_currentToken);
-		{
-			std::string includeFilePath = static_cast<const ast::macro_include_statement*>(statement.get())->get_path();
-			if (_evaluator->include_project_file(includeFilePath) == false)
-			{
-				parsing_fail_message(error::id::fail_read_file, _currentToken, u8"파일 include에 실패하였습니다.");
-			}
-			mcf::ast::program actualProgram;
-			mcf::parser parser(_evaluator, includeFilePath, true);
-			//mcf::parser::error parserInitError = parser.get_last_error();
-			//if (parserInitError.ID != mcf::parser::error::id::no_error)
-			//{
-			//	parsing_fail_message(parserInitError.ID, "ID=`%s`, File=`%s`(%zu, %zu)\n%s",
-			//		PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
-			//}
-			parser.parse_program(actualProgram);
-			//return Parser::check_parser_errors(parser);
-		}
+		statement = std::make_unique<const ast::macro_include_statement>(_evaluator, _errors, _currentToken);
 		break;
 
 	case token_type::eof: __COUNTER__; [[fallthrough]];
@@ -287,7 +265,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
-		parsing_fail_message(error::id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
+		parsing_fail_message(parser_error_id::not_registered_statement_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu) literal=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 		break;
 	}
@@ -314,7 +292,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 
 	if (read_next_token_if(token_type::identifier) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -325,7 +303,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 	{
 		if (statementType == ast::statement_type::function)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`function`일때 들어올 수 없습니다. _currentToken=`%s`",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`function`일때 들어올 수 없습니다. _currentToken=`%s`",
 				internal::TOKEN_TYPES[enum_index(_currentToken.Type)]);
 			return nullptr;
 		}
@@ -334,7 +312,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 
 		if (_currentToken.Type != token_type::rbracket)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rbracket`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rbracket`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -345,7 +323,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 	{
 		if (statementType == ast::statement_type::variable)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`variable`일때 들어올 수 없습니다. _currentToken=`%s`",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`variable`일때 들어올 수 없습니다. _currentToken=`%s`",
 				internal::TOKEN_TYPES[enum_index(_currentToken.Type)]);
 			return nullptr;
 		}
@@ -355,7 +333,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 
 		if (read_next_token_if(token_type::rparen) == false)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -368,14 +346,14 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			_evaluator->pop();
 			if (read_next_token_if(token_type::rbrace) == false)
 			{
-				parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 					internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 				return nullptr;
 			}
 		}
 		else if (read_next_token_if(token_type::semicolon) == false)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace` 또는 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace` 또는 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -385,7 +363,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 
 	if (statementType == ast::statement_type::function)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`function`일때 들어올 수 없습니다. _currentToken=`%s`",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"현재 토큰은 statementType=`function`일때 들어올 수 없습니다. _currentToken=`%s`",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)]);
 		return nullptr;
 	}
@@ -399,14 +377,14 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		rightExpression = std::unique_ptr<const mcf::ast::expression>(parse_expression(mcf::parser::precedence::lowest));
 		if (rightExpression == nullptr)
 		{
-			parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+			parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 			return nullptr;
 		}
 	}
 
 	if (read_next_token_if(token_type::semicolon) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -427,7 +405,7 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 		name.reset(parse_call_expression(name.release()));
 		if (_currentToken.Type != token_type::rparen)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -437,7 +415,7 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 	{
 		if (read_next_token_if(token_type::semicolon) == false)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -452,7 +430,7 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 
 	if (read_next_token_if(token_type::assign) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `assign`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `assign`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -461,7 +439,7 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 
 	if (read_next_token_if(token_type::semicolon) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -479,14 +457,14 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		// 커스텀 데이터인 경우면 스코프에 따라 중복 등록이 가능하다.
 		if (_nextToken.Type != token_type::custom_enum_type)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier` 또는 커스텀 데이터 타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier` 또는 커스텀 데이터 타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
 		
 		if (_evaluator->is_datatype_registered_at_current_scope(_nextToken.Literal) == true)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"같은 스코프안에 중복되는 타입이 있습니다.. 실제 값으로 %s::%s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"같은 스코프안에 중복되는 타입이 있습니다.. 실제 값으로 %s::%s를 받았습니다.",
 				_evaluator->convert_scope_to_string().c_str(), _nextToken.Literal.c_str());
 			return nullptr;
 		}
@@ -498,14 +476,14 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	_currentToken.Type = _evaluator->register_custom_enum_type(_currentToken.Literal);
 	if (_currentToken.Type != token_type::custom_enum_type)
 	{
-		parsing_fail_message(error::id::registering_duplicated_symbol_name, _currentToken, u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", _currentToken.Literal.c_str());
+		parsing_fail_message(parser_error_id::registering_duplicated_symbol_name, _currentToken, u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", _currentToken.Literal.c_str());
 		return nullptr;
 	}
 
 	ast::unique_expression nameExpression = ast::unique_expression(parse_data_type_or_identifier_expressions());
 	if (nameExpression->get_expression_type() != ast::expression_type::data_type)
 	{
-		parsing_fail_message( error::id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
+		parsing_fail_message( parser_error_id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
 		return nullptr;
 	}
 	const ast::data_type_expression name = *static_cast<const ast::data_type_expression*>(nameExpression.get());
@@ -515,7 +493,7 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	{
 		if (is_token_data_type(_nextToken) == false)
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 데이터 타입이어야 합니다. 실제 값으로 %s를 받았습니다.",
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 데이터 타입이어야 합니다. 실제 값으로 %s를 받았습니다.",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
@@ -526,14 +504,14 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	ast::unique_expression dataTypeExpression = isUseDefaultDataType ? nullptr : ast::unique_expression(parse_data_type_or_identifier_expressions());
 	if ( dataTypeExpression != nullptr && nameExpression->get_expression_type() != ast::expression_type::data_type )
 	{
-		parsing_fail_message( error::id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
+		parsing_fail_message( parser_error_id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
 		return nullptr;
 	}
 	ast::data_type_expression dataType = (dataTypeExpression == nullptr) ? ast::data_type_expression(false, token{ token_type::keyword_int32, "int32" }) : *static_cast<const ast::data_type_expression*>(dataTypeExpression.get());
 
 	if (read_next_token_if(token_type::lbrace, name.convert_to_string()) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -548,14 +526,14 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 	_evaluator->pop();
 	if (read_next_token_if(token_type::rbrace) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
 
 	if (read_next_token_if(token_type::semicolon) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `semicolon`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -599,11 +577,11 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		break;
 
 	case token_type::keyword_variadic: __COUNTER__;
-		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
+		parsing_fail_message(parser_error_id::not_registered_expression_token, _currentToken, u8"#21 구현에 필요한 expressions & statements 개발");
 		break;
 
 	case token_type::lparen: __COUNTER__;
-		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"TODO: parse_block_expression 구현");
+		parsing_fail_message(parser_error_id::not_registered_expression_token, _currentToken, u8"TODO: parse_block_expression 구현");
 		break;
 
 	case token_type::eof: __COUNTER__; [[fallthrough]];
@@ -637,7 +615,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
-		parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+		parsing_fail_message(parser_error_id::not_registered_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type));
 		break;
 	}
@@ -670,7 +648,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 			break;
 
 		case token_type::ampersand: __COUNTER__;
-			parsing_fail_message(error::id::not_registered_expression_token, _currentToken, u8"TODO 비트 연산자 파싱");
+			parsing_fail_message(parser_error_id::not_registered_expression_token, _currentToken, u8"TODO 비트 연산자 파싱");
 			break;
 
 		case token_type::eof: __COUNTER__; [[fallthrough]];
@@ -714,7 +692,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 		case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 		default:
-			parsing_fail_message(error::id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+			parsing_fail_message(parser_error_id::not_registered_infix_expression_token, _currentToken, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)], enum_index(_nextToken.Type));
 			return nullptr;
 		}
@@ -760,7 +738,7 @@ const mcf::ast::expression* mcf::parser::parse_data_type_or_identifier_expressio
 		return new(std::nothrow) mcf::ast::identifier_expression(curr);
 	}
 	
-	parsing_fail_message(error::id::fail_expression_parsing, curr, u8"현재 토큰에 문제가 있습니다.");
+	parsing_fail_message(parser_error_id::fail_expression_parsing, curr, u8"현재 토큰에 문제가 있습니다.");
 	return nullptr;
 }
 
@@ -789,7 +767,7 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence));
 	if (rightExpression.get() == nullptr)
 	{
-		parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+		parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
 	return new(std::nothrow) ast::infix_expression(leftExpression.release(), infixOperatorToken, rightExpression.release());
@@ -813,7 +791,7 @@ const mcf::ast::function_call_expression* mcf::parser::parse_call_expression(con
 	parameters.emplace_back(parse_expression(precedence::lowest));
 	if (parameters.back().get() == nullptr)
 	{
-		parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+		parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
 
@@ -823,14 +801,14 @@ const mcf::ast::function_call_expression* mcf::parser::parse_call_expression(con
 		parameters.emplace_back(parse_expression(precedence::lowest));
 		if (parameters.back().get() == nullptr)
 		{
-			parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+			parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 			return nullptr;
 		}
 	}
 
 	if (read_next_token_if(token_type::rparen) == false)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -853,13 +831,13 @@ const mcf::ast::index_expression* mcf::parser::parse_index_expression(const mcf:
 	std::unique_ptr<const ast::expression> rightExpression(parse_expression(precedence::lowest));
 	if (rightExpression.get() == nullptr)
 	{
-		parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+		parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
 
 	if (_currentToken.Type != token_type::rbracket)
 	{
-		parsing_fail_message(error::id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rbracket`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+		parsing_fail_message(parser_error_id::unexpected_next_token, _currentToken, u8"현재 토큰은 `rbracket`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
@@ -894,7 +872,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 
 			if (read_next_token_if(token_type::identifier) == false)
 			{
-				parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `identifier`여야만 합니다. 실제 값으로 %s를 받았습니다.",
 					internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 				return nullptr;
 			}
@@ -916,7 +894,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 		}
 		else
 		{
-			parsing_fail_message(error::id::unexpected_next_token, _nextToken, u8"앞의 표현식 형식은 `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic`여야만 합니다.");
+			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"앞의 표현식 형식은 `unused|in|out <data_type> <identifier>` 혹은 `[optional: unused] keyword_variadic`여야만 합니다.");
 			return nullptr;
 		}
 	}
@@ -939,14 +917,14 @@ const mcf::ast::function_block_expression* mcf::parser::parse_function_block_exp
 
 		if (_currentToken.Type == mcf::token_type::eof)
 		{
-			parsing_fail_message(error::id::unexpected_current_token, _nextToken, u8"파싱에 실패하였습니다.");
+			parsing_fail_message(parser_error_id::unexpected_current_token, _nextToken, u8"파싱에 실패하였습니다.");
 			return nullptr;
 		}
 
 		statements.emplace_back(std::unique_ptr<const mcf::ast::statement>(parse_statement()));
 		if (statements.back().get() == nullptr)
 		{
-			parsing_fail_message(error::id::fail_memory_allocation, _nextToken, u8"파싱에 실패하였습니다.");
+			parsing_fail_message(parser_error_id::fail_memory_allocation, _nextToken, u8"파싱에 실패하였습니다.");
 		}
 	}
 
@@ -977,7 +955,7 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 			values.emplace_back(parse_expression(mcf::parser::precedence::lowest));
 			if (values.back().get() == nullptr)
 			{
-				parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+				parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 				return nullptr;
 			}
 		}
@@ -986,7 +964,7 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 			values.emplace_back(new(std::nothrow) mcf::ast::enum_value_increment());
 			if (values.back().get() == nullptr)
 			{
-				parsing_fail_message(error::id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
+				parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 				return nullptr;
 			}
 		}
@@ -1243,7 +1221,7 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::comment: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	case token_type::comment_block: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
-		parsing_fail_message(parser::error::id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
+		parsing_fail_message(parser_error_id::not_registered_infix_expression_token, token, u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. token_type=%s(%zu)",
 			internal::TOKEN_TYPES[enum_index(token.Type)], enum_index(token.Type));
 		break;
 	}
@@ -1274,23 +1252,23 @@ const bool mcf::parser::check_last_lexer_error(void) noexcept
 		return true;
 
 	case lexer::error_token::invalid_input_length: __COUNTER__;
-		parsing_fail_message(error::id::invalid_input_length, token(), u8"input의 길이가 0입니다.");
+		parsing_fail_message(parser_error_id::invalid_input_length, token(), u8"input의 길이가 0입니다.");
 		break;
 
 	case lexer::error_token::fail_read_file: __COUNTER__;
-		parsing_fail_message(error::id::fail_read_file, token(), u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
+		parsing_fail_message(parser_error_id::fail_read_file, token(), u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
 		break;
 
 	case lexer::error_token::fail_memory_allocation: __COUNTER__;
-		parsing_fail_message(error::id::fail_memory_allocation, token(), u8"메모리 할당에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
+		parsing_fail_message(parser_error_id::fail_memory_allocation, token(), u8"메모리 할당에 실패 하였습니다. file path=%s", _lexer.get_name().c_str());
 		break;
 
 	case lexer::error_token::registering_duplicated_symbol_name: __COUNTER__;
-		parsing_fail_message(error::id::registering_duplicated_symbol_name, token(), u8"심볼이 중복되는 타입이 등록 되었습니다. file path=%s", _lexer.get_name().c_str());
+		parsing_fail_message(parser_error_id::registering_duplicated_symbol_name, token(), u8"심볼이 중복되는 타입이 등록 되었습니다. file path=%s", _lexer.get_name().c_str());
 		break;
 
 	default:
-		parsing_fail_message(error::id::invalid_lexer_error_token, token(), u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. parser::error::id=invalid_lexer_error_token");
+		parsing_fail_message( parser_error_id::invalid_lexer_error_token, token(), u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. parser::parser_error_id=invalid_lexer_error_token");
 		break;
 	}
 	constexpr const size_t LEXER_ERROR_TOKEN_COUNT = __COUNTER__ - LEXER_ERROR_TOKEN_COUNT_BEGIN;

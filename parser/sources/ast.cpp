@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
 #include "ast.h"
+#include "parser.h"
+#include "evaluator.h"
 
 mcf::ast::program::program(statement_array&& statements) noexcept
 {
@@ -230,10 +232,31 @@ const std::string mcf::ast::enum_block_expression::convert_to_string(void) const
 	return buffer;
 }
 
-mcf::ast::macro_include_statement::macro_include_statement(mcf::token token) noexcept
+mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept
 	: _token(token)
 	, _path(token.Literal.substr(sizeof("#include "), token.Literal.size() - sizeof("#include <")))
-{}
+{
+	debug_assert(outEvaluator->include_project_file(_path), u8"파일 include에 실패하였습니다.");
+	mcf::parser parser(outEvaluator, _path, true);
+	mcf::parser_error parserInitError = parser.get_last_error();
+	debug_assert(parserInitError.ID == mcf::parser_error_id::no_error, u8"파일 include에 실패하였습니다. ID=`%s`, File=`%s`(%zu, %zu)\n%s",
+		PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
+	parser.parse_program(_program);
+	const size_t errorCount = parser.get_error_count();
+	if (errorCount > 0)
+	{
+		std::stack<mcf::parser_error> errors;
+		for ( int i = 0; i < errorCount; ++i )
+		{
+			errors.push(parser.get_last_error());
+		}
+		for (int i = 0; i < errorCount; ++i)
+		{
+			outErrors.push(errors.top());
+			errors.pop();
+		}
+	}
+}
 
 mcf::ast::variable_statement::variable_statement(	
 	const mcf::ast::data_type_expression& dataType, 

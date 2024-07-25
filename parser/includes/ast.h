@@ -5,6 +5,8 @@
 
 namespace mcf
 {
+	struct parser_error;
+
 	namespace ast
 	{
 		enum class node_type : unsigned char
@@ -324,7 +326,7 @@ namespace mcf
 		{
 		public:
 			explicit macro_include_statement(void) noexcept = default;
-			explicit macro_include_statement(mcf::token token) noexcept;
+			explicit macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept;
 
 			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
@@ -334,6 +336,7 @@ namespace mcf
 		private:
 			token		_token;
 			std::string _path;
+			program		_program;
 		};
 
 		class variable_statement final : public statement
