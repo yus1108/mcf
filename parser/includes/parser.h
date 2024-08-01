@@ -51,7 +51,7 @@ namespace mcf
 
 			lowest,
 			equals,			// == | !=		TODO: #16 구현 필요
-			lessgreater,	// > | <		TODO: #16 구현 필요
+			lessgreater,	// > | <
 			sum,			// + | -
 			product,		// * | /
 			prefix,			// -foo | !boo

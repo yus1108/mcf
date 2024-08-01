@@ -187,8 +187,8 @@ UnitTest::Parser::Parser(void) noexcept
 			{"int32 foo = 5 - 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::minus, "-" }, { mcf::token_type::integer, "5" }},
 			{"int32 foo = 5 * 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::asterisk, "*" }, { mcf::token_type::integer, "5" }},
 			{"int32 foo = 5 / 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::slash, "/" }, { mcf::token_type::integer, "5" }},
-			//TODO: {"int32 foo = 5 > 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::greater, ">" }, { mcf::token_type::integer, "5" }},
-			//TODO: {"int32 foo = 5 < 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::less, "<" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 > 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::gt, ">" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 < 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::lt, "<" }, { mcf::token_type::integer, "5" }},
 			//TODO: {"int32 foo = 5 == 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
 			//TODO: {"int32 foo = 5 != 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
 		};
