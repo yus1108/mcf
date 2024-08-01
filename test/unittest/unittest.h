@@ -80,6 +80,9 @@ namespace UnitTest
 		"keyword_unused",
 		"keyword_in",
 		"keyword_out",
+		"keyword_bool",
+		"keyword_true",
+		"keyword_false",
 		"keyword_identifier_end",
 
 		"custom_keyword_start",

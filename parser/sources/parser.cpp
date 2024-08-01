@@ -125,6 +125,9 @@ namespace mcf
 			"keyword_unused",
 			"keyword_in",
 			"keyword_out",
+			"keyword_bool",
+			"keyword_true",
+			"keyword_false",
 			"keyword_identifier_end",
 
 			"custom_keyword_start",
@@ -212,6 +215,7 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		statement = std::unique_ptr<const ast::statement>(parse_declaration_statement());
 		break;
@@ -256,6 +260,8 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_true: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_false: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
 	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
 	case token_type::custom_keyword_end: __COUNTER__; [[fallthrough]];
@@ -553,6 +559,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	
 	case token_type::integer: __COUNTER__; [[fallthrough]];
 	case token_type::string_utf8: __COUNTER__;
+	case token_type::keyword_true: __COUNTER__;
+	case token_type::keyword_false: __COUNTER__;
 		expression = std::make_unique<ast::literal_expession>(_currentToken);
 		break;
 
@@ -572,6 +580,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		expression = ast::unique_expression(parse_data_type_or_identifier_expressions());
 		break;
@@ -680,6 +689,9 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_in: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_true: __COUNTER__; [[fallthrough]];
+		case token_type::keyword_false: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
 		case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
 		case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
@@ -1046,6 +1058,7 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::keyword_uint32: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_uint64: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
 		return true;
 
@@ -1076,6 +1089,8 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_true: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_false: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
 	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
@@ -1124,10 +1139,11 @@ constexpr const std::initializer_list<mcf::token_type> mcf::parser::get_data_typ
 	enum_at<token_type>(enum_index(token_type::keyword_unused) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::keyword_in) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::keyword_out) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::keyword_true) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::keyword_false) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::keyword_identifier_end) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::custom_keyword_start) + __COUNTER__ * 0);
-	enum_at<token_type>(enum_index(token_type::keyword_identifier_end) + __COUNTER__ * 0);
-	enum_at<token_type>(enum_index(token_type::keyword_identifier_end) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::custom_keyword_end) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::keyword_variadic) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::macro_start) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::macro_iibrary_file_include) + __COUNTER__ * 0);
@@ -1148,10 +1164,11 @@ constexpr const std::initializer_list<mcf::token_type> mcf::parser::get_data_typ
 		enum_at<token_type>(enum_index(token_type::keyword_uint32) + __COUNTER__ * 0),
 		enum_at<token_type>(enum_index(token_type::keyword_uint64) + __COUNTER__ * 0),
 		enum_at<token_type>(enum_index(token_type::keyword_utf8) + __COUNTER__ * 0),
+		enum_at<token_type>(enum_index(token_type::keyword_bool) + __COUNTER__ * 0),
 		enum_at<token_type>(enum_index(token_type::custom_enum_type) + __COUNTER__ * 0),
 	};
 }
-constexpr const size_t get_data_type_list_count = __COUNTER__ - get_data_type_list_invalid - 1;
+constexpr const size_t get_data_type_list_count = __COUNTER__ - get_data_type_list_invalid;
 static_assert(get_data_type_list_count == mcf::enum_count<mcf::token_type>(), "token_type count is changed. this list need to be changed as well.");
 
 inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_precedence(const mcf::token& token) noexcept
@@ -1209,6 +1226,9 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::keyword_unused: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_in: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_out: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_true: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_false: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_identifier_end: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_variadic: __COUNTER__; [[fallthrough]];
 	case token_type::custom_keyword_start: __COUNTER__; [[fallthrough]];
