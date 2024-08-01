@@ -50,7 +50,7 @@ namespace mcf
 			invalid = 0,
 
 			lowest,
-			equals,			// == | !=		TODO: #16 구현 필요
+			equals,			// == | !=
 			lessgreater,	// > | <
 			sum,			// + | -
 			product,		// * | /

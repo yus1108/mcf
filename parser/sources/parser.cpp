@@ -90,6 +90,9 @@ namespace mcf
 			"minus",
 			"asterisk",
 			"slash",
+			"bang",
+			"equal",
+			"not_equal",
 			"lt",
 			"gt",
 			"ampersand",
@@ -244,6 +247,9 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::minus: __COUNTER__; [[fallthrough]];
 	case token_type::asterisk: __COUNTER__; [[fallthrough]];
 	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::bang: __COUNTER__; [[fallthrough]];
+	case token_type::equal: __COUNTER__; [[fallthrough]];
+	case token_type::not_equal: __COUNTER__; [[fallthrough]];
 	case token_type::lt: __COUNTER__; [[fallthrough]];
 	case token_type::gt: __COUNTER__; [[fallthrough]];
 	case token_type::ampersand: __COUNTER__; [[fallthrough]];
@@ -565,7 +571,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		break;
 
 	case token_type::plus: __COUNTER__; [[fallthrough]];
-	case token_type::minus: __COUNTER__;
+	case token_type::minus: __COUNTER__; [[fallthrough]];
+	case token_type::bang: __COUNTER__;
 		expression = std::unique_ptr<const ast::expression>(parse_prefix_expression());
 		break;
 
@@ -597,6 +604,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 	case token_type::assign: __COUNTER__; [[fallthrough]];
 	case token_type::asterisk: __COUNTER__; [[fallthrough]];
 	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::equal: __COUNTER__; [[fallthrough]];
+	case token_type::not_equal: __COUNTER__; [[fallthrough]];
 	case token_type::lt: __COUNTER__; [[fallthrough]];
 	case token_type::gt: __COUNTER__; [[fallthrough]];
 	case token_type::ampersand: __COUNTER__; [[fallthrough]];
@@ -640,6 +649,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::minus: __COUNTER__; [[fallthrough]];
 		case token_type::asterisk: __COUNTER__; [[fallthrough]];
 		case token_type::slash: __COUNTER__; [[fallthrough]];
+		case token_type::equal: __COUNTER__; [[fallthrough]];
+		case token_type::not_equal: __COUNTER__; [[fallthrough]];
 		case token_type::lt: __COUNTER__; [[fallthrough]];
 		case token_type::gt: __COUNTER__;
 			read_next_token();
@@ -665,6 +676,7 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::integer: __COUNTER__; [[fallthrough]];
 		case token_type::string_utf8: __COUNTER__; [[fallthrough]];
 		case token_type::assign: __COUNTER__; [[fallthrough]];
+		case token_type::bang: __COUNTER__; [[fallthrough]];
 		case token_type::rparen: __COUNTER__; [[fallthrough]];
 		case token_type::lbrace: __COUNTER__; [[fallthrough]];
 		case token_type::rbrace: __COUNTER__; [[fallthrough]];
@@ -1071,6 +1083,9 @@ inline const bool mcf::parser::is_token_data_type(const mcf::token& token) const
 	case token_type::minus: __COUNTER__; [[fallthrough]];
 	case token_type::asterisk: __COUNTER__; [[fallthrough]];
 	case token_type::slash: __COUNTER__; [[fallthrough]];
+	case token_type::bang: __COUNTER__; [[fallthrough]];
+	case token_type::equal: __COUNTER__; [[fallthrough]];
+	case token_type::not_equal: __COUNTER__; [[fallthrough]];
 	case token_type::lt: __COUNTER__; [[fallthrough]];
 	case token_type::gt: __COUNTER__; [[fallthrough]];
 	case token_type::ampersand: __COUNTER__; [[fallthrough]];
@@ -1121,6 +1136,9 @@ constexpr const std::initializer_list<mcf::token_type> mcf::parser::get_data_typ
 	enum_at<token_type>(enum_index(token_type::minus) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::asterisk) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::slash) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::bang) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::equal) + __COUNTER__ * 0);
+	enum_at<token_type>(enum_index(token_type::not_equal) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::lt) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::gt) + __COUNTER__ * 0);
 	enum_at<token_type>(enum_index(token_type::ampersand) + __COUNTER__ * 0);
@@ -1184,6 +1202,10 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::slash: __COUNTER__;
 		return parser::precedence::product;
 
+	case token_type::equal: __COUNTER__; [[fallthrough]];
+	case token_type::not_equal: __COUNTER__;
+		return parser::precedence::equals;
+
 	case token_type::lt: __COUNTER__; [[fallthrough]];
 	case token_type::gt: __COUNTER__;
 		return parser::precedence::lessgreater;
@@ -1203,6 +1225,7 @@ inline const mcf::parser::precedence mcf::parser::get_infix_expression_token_pre
 	case token_type::integer: __COUNTER__; [[fallthrough]];
 	case token_type::string_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::assign: __COUNTER__; [[fallthrough]];
+	case token_type::bang: __COUNTER__; [[fallthrough]];
 	case token_type::ampersand: __COUNTER__; [[fallthrough]];
 	case token_type::lbrace: __COUNTER__; [[fallthrough]];
 	case token_type::rbrace: __COUNTER__; [[fallthrough]];

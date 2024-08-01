@@ -24,6 +24,9 @@ namespace mcf
 		minus,		// -
 		asterisk,	// *
 		slash,		// /
+		bang,		// !
+		equal,		// ==
+		not_equal,	// !=
 		lt,			// <
 		gt,			// >
 		ampersand,	// &

@@ -207,7 +207,7 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 11.
+				{ // 11. 문자열
 					"const utf8 str[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
 					{
 						{mcf::token_type::keyword_const, "const"},
@@ -222,21 +222,21 @@ namespace UnitTest
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 12.
+				{ // 12. slash eof
 					"/",
 					{
 						{mcf::token_type::slash, "/"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 13.
+				{ // 13. 주석 eof
 					"//",
 					{
 						{mcf::token_type::comment, "//"},
 						{mcf::token_type::eof, "\0"},
 					},
 				},
-				{ // 14.
+				{ // 14. 주석 블록
 					"const /* utf8  */ int32 comment_block_test = 5;",
 					{
 						{mcf::token_type::keyword_const, "const"},
@@ -245,6 +245,47 @@ namespace UnitTest
 						{mcf::token_type::identifier, "comment_block_test"},
 						{mcf::token_type::assign, "="},
 						{mcf::token_type::integer, "5"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::eof, "\0"},
+					},
+				},
+				{ // 15. bool 변수 및 비교/논리 연산자
+					"const bool foo = false; const bool boo = true; const bool jar = foo == boo; const bool bar = jar != boo; const bool tar = !jar;",
+					{
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_bool, "bool"},
+						{mcf::token_type::identifier, "foo"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::keyword_false, "false"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_bool, "bool"},
+						{mcf::token_type::identifier, "boo"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::keyword_true, "true"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_bool, "bool"},
+						{mcf::token_type::identifier, "jar"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::identifier, "foo"},
+						{mcf::token_type::equal, "=="},
+						{mcf::token_type::identifier, "boo"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_bool, "bool"},
+						{mcf::token_type::identifier, "bar"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::identifier, "jar"},
+						{mcf::token_type::not_equal, "!="},
+						{mcf::token_type::identifier, "boo"},
+						{mcf::token_type::semicolon, ";"},
+						{mcf::token_type::keyword_const, "const"},
+						{mcf::token_type::keyword_bool, "bool"},
+						{mcf::token_type::identifier, "tar"},
+						{mcf::token_type::assign, "="},
+						{mcf::token_type::bang, "!"},
+						{mcf::token_type::identifier, "jar"},
 						{mcf::token_type::semicolon, ";"},
 						{mcf::token_type::eof, "\0"},
 					},

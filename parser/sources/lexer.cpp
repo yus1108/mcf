@@ -195,9 +195,23 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		return { token_type::eof, "\0", _currentLine, _currentIndex };
 	case '"': __COUNTER__;
 		return read_string_utf8();
-	case '=': __COUNTER__;
-		token = { token_type::assign, std::string(1, _currentByte), _currentLine, _currentIndex };
-		break;
+	case '=':
+	{
+		__COUNTER__; // count for assign
+		__COUNTER__; // count for equal
+		debug_assert(_currentByte == '=', u8"이 함수가 호출될때 '='으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+
+		const size_t firstLetterPosition = _currentPosition;
+
+		// 연속되는 문자열이 "==" 인지 검사합니다.
+		read_next_byte();
+		if (_currentByte == '=')
+		{
+			read_next_byte();
+			return { token_type::equal, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+		}
+		return { token_type::assign, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
 	case '+': __COUNTER__;
 		token = { token_type::plus, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -212,6 +226,23 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		__COUNTER__; // count for comment
 		__COUNTER__; // count for comment_block
 		return read_slash_starting_token();
+	case '!': 
+	{
+		__COUNTER__; // count for bang
+		__COUNTER__; // count for not_equal
+		debug_assert(_currentByte == '!', u8"이 함수가 호출될때 '!'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+
+		const size_t firstLetterPosition = _currentPosition;
+
+		// 연속되는 문자열이 "!=" 인지 검사합니다.
+		read_next_byte();
+		if (_currentByte == '=')
+		{
+			read_next_byte();
+			return { token_type::not_equal, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+		}
+		return { token_type::bang, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
 	case '<': __COUNTER__;
 		token = { token_type::lt, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -533,7 +564,7 @@ inline const mcf::token mcf::lexer::read_colon_starting_token( void ) noexcept
 
 	const size_t firstLetterPosition = _currentPosition;
 
-	// 연속되는 문자열이 "..."(keyword_variadic) 인지 검사합니다.
+	// 연속되는 문자열이 "::" 인지 검사합니다.
 	read_next_byte();
 	if (_currentByte == ':')
 	{

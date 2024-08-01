@@ -134,10 +134,12 @@ UnitTest::Parser::Parser(void) noexcept
 		} testCases[] =
 		{
 			{"int32 foo = -5;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
-			// TODO: {"int32 foo = !5;", { token_type::not, "!" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
+			{"int32 foo = !5;", { token_type::bang, "!" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
 			{"int32 foo = -15;", { token_type::minus, "-" }, make_unique<const literal_expession>(token{ token_type::integer, "15" })},
 			{"int32 foo = +5;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer, "5" })},
 			{"int32 foo = +15;", { token_type::plus, "+" }, make_unique<const literal_expession>(token{ token_type::integer, "15" })},
+			{"bool foo = !false;", { token_type::bang, "!" }, make_unique<const literal_expession>(token{ token_type::keyword_false, "false" })},
+			{"bool foo = !true;", { token_type::bang, "!" }, make_unique<const literal_expession>(token{ token_type::keyword_true, "true" })},
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);
 
@@ -189,8 +191,24 @@ UnitTest::Parser::Parser(void) noexcept
 			{"int32 foo = 5 / 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::slash, "/" }, { mcf::token_type::integer, "5" }},
 			{"int32 foo = 5 > 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::gt, ">" }, { mcf::token_type::integer, "5" }},
 			{"int32 foo = 5 < 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::lt, "<" }, { mcf::token_type::integer, "5" }},
-			//TODO: {"int32 foo = 5 == 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
-			//TODO: {"int32 foo = 5 != 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 == 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
+			{"int32 foo = 5 != 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
+			{"bool foo = 5 == 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
+			{"bool foo = 5 != 5;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
+			{"bool foo = boo == 5;", { mcf::token_type::identifier, "boo" }, { mcf::token_type::equal, "==" }, { mcf::token_type::integer, "5" }},
+			{"bool foo = boo != 5;", { mcf::token_type::identifier, "boo" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::integer, "5" }},
+			{"bool foo = 5 == bar;", { mcf::token_type::integer, "5" }, { mcf::token_type::equal, "==" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = 5 != bar;", { mcf::token_type::integer, "5" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = boo == bar;", { mcf::token_type::identifier, "boo" }, { mcf::token_type::equal, "==" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = boo != bar;", { mcf::token_type::identifier, "boo" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = true == bar;", { mcf::token_type::keyword_true, "true" }, { mcf::token_type::equal, "==" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = true != bar;", { mcf::token_type::keyword_true, "true" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = false == bar;", { mcf::token_type::keyword_false, "false" }, { mcf::token_type::equal, "==" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = false != bar;", { mcf::token_type::keyword_false, "false" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::identifier, "bar" }},
+			{"bool foo = true == true;", { mcf::token_type::keyword_true, "true" }, { mcf::token_type::equal, "==" }, { mcf::token_type::keyword_true, "true" }},
+			{"bool foo = true != true;", { mcf::token_type::keyword_true, "true" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::keyword_true, "true" }},
+			{"bool foo = false == false;", { mcf::token_type::keyword_false, "false" }, { mcf::token_type::equal, "==" }, { mcf::token_type::keyword_false, "false" }},
+			{"bool foo = false != false;", { mcf::token_type::keyword_false, "false" }, { mcf::token_type::not_equal, "!=" }, { mcf::token_type::keyword_false, "false" }},
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);
 
@@ -292,10 +310,10 @@ UnitTest::Parser::Parser(void) noexcept
 				"const int32 test = -a * b;",
 				"const int32 test = ((-a) * b);",
 			},
-			/*{
+			{
 				"int32 test = !-a;",
 				"int32 test = (!(-a));",
-			},*/
+			},
 			{
 				"int32 test = a + b - c;",
 				"int32 test = ((a + b) - c);",
@@ -320,7 +338,7 @@ UnitTest::Parser::Parser(void) noexcept
 				"int32 test = 3 + 4; int32 test2 = -5 * 5;",
 				"int32 test = (3 + 4);\nint32 test2 = ((-5) * 5);",
 			},
-			/*{
+			{
 				"int32 test = 5 > 4 == 3 < 4;",
 				"int32 test = ((5 > 4) == (3 < 4));",
 			},
@@ -331,15 +349,15 @@ UnitTest::Parser::Parser(void) noexcept
 			{
 				"int32 test = 3 + 4 * 5 == 3 * 1 + 4 * 5;",
 				"int32 test = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
-			},*/
+			},
 			{
 				"test = -a * b;",
 				"test = ((-a) * b);",
 			},
-			/*{
+			{
 				"test = !-a;",
 				"test = (!(-a));",
-			},*/
+			},
 			{
 				"test = a + b - c;",
 				"test = ((a + b) - c);",
@@ -364,7 +382,7 @@ UnitTest::Parser::Parser(void) noexcept
 				"int32 test = 3 + 4; test = -5 * 5;",
 				"int32 test = (3 + 4);\ntest = ((-5) * 5);",
 			},
-			/*{
+			{
 				"test = 5 > 4 == 3 < 4;",
 				"test = ((5 > 4) == (3 < 4));",
 			},
@@ -375,7 +393,7 @@ UnitTest::Parser::Parser(void) noexcept
 			{
 				"test = 3 + 4 * 5 == 3 * 1 + 4 * 5;",
 				"test = ((3 + (4 * 5)) == ((3 * 1) + (4 * 5)));",
-			},*/
+			},
 		};
 		constexpr const size_t testCaseCount = array_size(testCases);
 
