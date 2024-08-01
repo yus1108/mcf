@@ -271,9 +271,22 @@ const mcf::token mcf::lexer::read_next_token(void) noexcept
 		token = { token_type::rbracket, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case ':': 
+	{
 		__COUNTER__; // count for colon
 		__COUNTER__; // count for double_colon
-		return read_colon_starting_token();
+		debug_assert(_currentByte == ':', u8"이 함수가 호출될때 ':'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+
+		const size_t firstLetterPosition = _currentPosition;
+
+		// 연속되는 문자열이 "::" 인지 검사합니다.
+		read_next_byte();
+		if (_currentByte == ':')
+		{
+			read_next_byte();
+			return { token_type::double_colon, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+		}
+		return { token_type::colon, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+	}
 	case ';': __COUNTER__;
 		token = { token_type::semicolon, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -556,22 +569,6 @@ inline const mcf::token mcf::lexer::read_slash_starting_token(void) noexcept
 	}
 
 	return { token_type::slash, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
-}
-
-inline const mcf::token mcf::lexer::read_colon_starting_token( void ) noexcept
-{
-	debug_assert( _currentByte == ':', u8"이 함수가 호출될때 ':'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
-
-	const size_t firstLetterPosition = _currentPosition;
-
-	// 연속되는 문자열이 "::" 인지 검사합니다.
-	read_next_byte();
-	if (_currentByte == ':')
-	{
-		read_next_byte();
-		return { token_type::double_colon, _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition ), _currentLine, _currentIndex };
-	}
-	return { token_type::colon, _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition ), _currentLine, _currentIndex };
 }
 
 inline const mcf::token mcf::lexer::read_dot_starting_token(void) noexcept

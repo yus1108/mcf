@@ -134,7 +134,6 @@ namespace mcf
 		const std::string	read_number(void) noexcept;
 		const mcf::token	read_string_utf8(void) noexcept;
 		const mcf::token	read_slash_starting_token(void) noexcept;
-		const mcf::token	read_colon_starting_token(void) noexcept;
 		const mcf::token	read_dot_starting_token(void) noexcept;
 		const mcf::token	read_macro_token(void) noexcept; 
 		const mcf::token	read_numeric_literal(void) noexcept; 
