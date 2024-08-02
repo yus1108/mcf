@@ -36,6 +36,7 @@
     <ClInclude Include="includes\evaluator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="internals\parser.ih" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sources\parser.cpp">
