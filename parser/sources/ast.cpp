@@ -47,10 +47,11 @@ const std::vector<mcf::token> mcf::ast::program::convert_to_tokens(void) const n
 	return tokens;
 }
 
-mcf::ast::prefix_expression::prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept
-	: _prefixOperator(prefix), _targetExpression(targetExpression) 
+mcf::ast::prefix_expression::prefix_expression(const mcf::token& prefix, unique_expression&& targetExpression) noexcept
+	: _prefixOperator(prefix)
+	, _targetExpression(targetExpression.release()) 
 {
-	debug_assert(targetExpression != nullptr, u8"인자로 받은 targetExpression은 nullptr 여선 안됩니다.");
+	debug_assert(targetExpression.get() != nullptr, u8"인자로 받은 targetExpression은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
@@ -59,11 +60,13 @@ const std::string mcf::ast::prefix_expression::convert_to_string(void) const noe
 	return "(" + _prefixOperator.Literal + _targetExpression->convert_to_string() + ")";
 }
 
-mcf::ast::infix_expression::infix_expression(const mcf::ast::expression* left, const mcf::token& infix, const mcf::ast::expression* right) noexcept
-	: _left(left), _infixOperator(infix), _right(right) 
+mcf::ast::infix_expression::infix_expression(unique_expression&& left, const mcf::token& infix, unique_expression&& right) noexcept
+	: _left(left.release())
+	, _infixOperator(infix)
+	, _right(right.release())
 {
-	debug_assert(left != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(right != nullptr, u8"인자로 받은 right는 nullptr 여선 안됩니다.");
+	debug_assert(left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
+	debug_assert(right.get() != nullptr, u8"인자로 받은 right는 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
@@ -73,11 +76,12 @@ const std::string mcf::ast::infix_expression::convert_to_string(void) const noex
 	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
 }
 
-mcf::ast::index_expression::index_expression(const mcf::ast::expression* left, const mcf::ast::expression* index) noexcept
-	: _left(left), _index(index) 
+mcf::ast::index_expression::index_expression(unique_expression&& left, unique_expression&& index) noexcept
+	: _left(left.release())
+	, _index(index.release()) 
 {
-	debug_assert(left != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(index != nullptr, u8"인자로 받은 index는 nullptr 여선 안됩니다.");
+	debug_assert(left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
+	debug_assert(index.get() != nullptr, u8"인자로 받은 index는 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
@@ -87,13 +91,13 @@ const std::string mcf::ast::index_expression::convert_to_string(void) const noex
 	return _left->convert_to_string() + "[" + _index->convert_to_string() + "]";
 }
 
-mcf::ast::function_parameter_expression::function_parameter_expression(const mcf::token& dataFor, const mcf::ast::expression* dataType, const mcf::ast::expression* name) noexcept
+mcf::ast::function_parameter_expression::function_parameter_expression(const mcf::token& dataFor, unique_expression&& dataType, unique_expression&& name) noexcept
 	: _for(dataFor)
-	, _type(dataType)
-	, _name(name)
+	, _type(dataType.release())
+	, _name(name.release())
 {
-	debug_assert(dataType != nullptr, u8"인자로 받은 dataType은 nullptr 여선 안됩니다.");
-	debug_assert(name != nullptr, u8"인자로 받은 name은 nullptr 여선 안됩니다.");
+	debug_assert(dataType.get() != nullptr, u8"인자로 받은 dataType은 nullptr 여선 안됩니다.");
+	debug_assert(name.get() != nullptr, u8"인자로 받은 name은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::function_parameter_expression::convert_to_string(void) const noexcept
@@ -103,10 +107,10 @@ const std::string mcf::ast::function_parameter_expression::convert_to_string(voi
 	return _for.Literal + " " + _type->convert_to_string() + " " + _name->convert_to_string();
 }
 
-mcf::ast::function_call_expression::function_call_expression(const mcf::ast::expression* function, expression_array&& parameters) noexcept
-	: _function(function)
+mcf::ast::function_call_expression::function_call_expression(unique_expression&& function, expression_array&& parameters) noexcept
+	: _function(function.release())
 {
-	debug_assert(function != nullptr, u8"인자로 받은 function은 nullptr 여선 안됩니다.");
+	debug_assert(function.get() != nullptr, u8"인자로 받은 function은 nullptr 여선 안됩니다.");
 	const size_t size = parameters.size();
 	_parameters.reserve(size);
 	for (size_t i = 0; i < size; i++)
@@ -258,13 +262,10 @@ mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const
 	}
 }
 
-mcf::ast::variable_statement::variable_statement(	
-	const mcf::ast::data_type_expression& dataType, 
-	const mcf::ast::expression* name,
-	const mcf::ast::expression* initExpression) noexcept
+mcf::ast::variable_statement::variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
 	: _dataType(dataType)
-	, _name(name)
-	, _initExpression(initExpression)
+	, _name(name.release())
+	, _initExpression(initExpression.release())
 {
 	debug_assert(name != nullptr, u8"name은 nullptr 여선 안됩니다.");
 }

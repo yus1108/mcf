@@ -256,7 +256,7 @@ inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_declaration
 		return nullptr;
 	}
 
-	return std::make_unique<mcf::ast::variable_statement>(*static_cast<const ast::data_type_expression*>(dataType.get()), name.release(), rightExpression.release());
+	return std::make_unique<mcf::ast::variable_statement>(*static_cast<const ast::data_type_expression*>(dataType.get()), std::move(name), std::move(rightExpression));
 }
 
 inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_call_or_assign_statement(void) noexcept
@@ -633,7 +633,7 @@ inline std::unique_ptr<const mcf::ast::prefix_expression> mcf::parser::parse_pre
 		return nullptr;
 	}
 
-	return std::make_unique<ast::prefix_expression>(prefixToken, targetExpression.release());
+	return std::make_unique<ast::prefix_expression>(prefixToken, std::move(targetExpression));
 }
 
 inline std::unique_ptr<const mcf::ast::infix_expression> mcf::parser::parse_infix_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
@@ -647,7 +647,7 @@ inline std::unique_ptr<const mcf::ast::infix_expression> mcf::parser::parse_infi
 		parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
-	return std::make_unique<ast::infix_expression>(left.release(), infixOperatorToken, rightExpression.release());
+	return std::make_unique<ast::infix_expression>(std::move(left), infixOperatorToken, std::move(rightExpression));
 }
 
 inline std::unique_ptr<const mcf::ast::function_call_expression> mcf::parser::parse_call_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
@@ -660,7 +660,7 @@ inline std::unique_ptr<const mcf::ast::function_call_expression> mcf::parser::pa
 	// 인수가 없는 경우 바로 리턴한다.
 	if (read_next_token_if(token_type::rparen) == true)
 	{
-		return std::make_unique<ast::function_call_expression>(left.release(), std::move(parameters));
+		return std::make_unique<ast::function_call_expression>(std::move(left), std::move(parameters));
 	}
 
 	read_next_token();
@@ -688,7 +688,7 @@ inline std::unique_ptr<const mcf::ast::function_call_expression> mcf::parser::pa
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
-	return std::make_unique<ast::function_call_expression>(left.release(), std::move(parameters));
+	return std::make_unique<ast::function_call_expression>(std::move(left), std::move(parameters));
 }
 
 inline std::unique_ptr<const mcf::ast::index_expression> mcf::parser::parse_index_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
@@ -698,7 +698,7 @@ inline std::unique_ptr<const mcf::ast::index_expression> mcf::parser::parse_inde
 
 	if (read_next_token_if(token_type::rbracket))
 	{
-		return std::make_unique<ast::index_expression>(left.release(), new(std::nothrow) ast::unknown_index_expression());
+		return std::make_unique<ast::index_expression>(std::move(left), std::make_unique<ast::unknown_index_expression>());
 	}
 
 	read_next_token();
@@ -715,7 +715,7 @@ inline std::unique_ptr<const mcf::ast::index_expression> mcf::parser::parse_inde
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
-	return std::make_unique<ast::index_expression>(left.release(), rightExpression.release());
+	return std::make_unique<ast::index_expression>(std::move(left), std::move(rightExpression));
 }
 
 inline std::unique_ptr<const mcf::ast::function_parameter_list_expression> mcf::parser::parse_function_parameters(void) noexcept
@@ -758,7 +758,7 @@ inline std::unique_ptr<const mcf::ast::function_parameter_list_expression> mcf::
 				dataName = parse_index_expression(std::move(dataName));
 			}
 
-			list.emplace_back(new(std::nothrow) ast::function_parameter_expression(dataFor, dataType.release(), dataName.release()));
+			list.emplace_back(new(std::nothrow) ast::function_parameter_expression(dataFor, std::move(dataType), std::move(dataName)));
 		}
 		else if (read_next_token_if({ token_type::keyword_variadic }))
 		{

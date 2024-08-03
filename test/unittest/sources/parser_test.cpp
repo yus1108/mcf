@@ -49,7 +49,7 @@ UnitTest::Parser::Parser(void) noexcept
 		__COUNTER__;
 		mcf::ast::data_type_expression dataType(false, { mcf::token_type::integer, "int32" });
 		mcf::ast::identifier_expression* rightExpression = new(std::nothrow) mcf::ast::identifier_expression({ mcf::token_type::identifier, "anotherVar" });
-		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, NewIdentifier("myVar"), rightExpression);
+		mcf::ast::variable_statement* variableDeclarationStatement = new(std::nothrow) mcf::ast::variable_statement(dataType, mcf::ast::unique_expression(NewIdentifier("myVar")), mcf::ast::unique_expression(rightExpression));
 		constexpr size_t CAPACITY = __COUNTER__ - CAPACITY_START - 1;
 
 		mcf::ast::statement_array statementArray;
@@ -436,7 +436,7 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf::ast;
 
 		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> mcf::ast::statement* {
-			return new variable_statement(type, NewIdentifier(name), literalExpression);
+			return new variable_statement(type, unique_expression(NewIdentifier(name)), unique_expression(literalExpression));
 			};
 
 		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames)
@@ -468,9 +468,9 @@ UnitTest::Parser::Parser(void) noexcept
 
 		auto EnumDataType = [](bool isConst, const char* const typeName) -> data_type_expression* { return new data_type_expression(isConst, { token_type::custom_enum_type, typeName }); };
 
-		auto UnknownIndex = [](const expression* left) -> index_expression* { return new index_expression(left, new unknown_index_expression()); };
+		auto UnknownIndex = [](const expression* left) -> std::unique_ptr<index_expression> { return std::make_unique<index_expression>(mcf::ast::unique_expression(left), std::make_unique<unknown_index_expression>()); };
 		auto Parameter = [](token dataFor, const data_type_expression* dataType, const char* const dataName) -> function_parameter_expression* {
-			return new function_parameter_expression(dataFor, dataType, new identifier_expression({ token_type::identifier, dataName }));
+			return new function_parameter_expression(dataFor, unique_expression(dataType), std::make_unique<identifier_expression>(mcf::token{ token_type::identifier, dataName }));
 			};
 		auto Variadic = [](token dataFor) -> function_parameter_variadic_expression* { return new function_parameter_variadic_expression(dataFor); };
 
@@ -501,7 +501,7 @@ UnitTest::Parser::Parser(void) noexcept
 		auto NewDataType = [](bool isConst, token token) -> const data_type_expression* { return new data_type_expression(isConst, token); };
 		auto NewIdentifier = [](const char* const value) -> const identifier_expression* { return new identifier_expression({ token_type::identifier, value }); };
 		auto NewInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
-		auto NewString = [](const char* const value) -> literal_expession* { return new literal_expession({ token_type::string_utf8, std::string("\"") + value + "\""}); };
+		auto NewString = [](const char* const value) -> std::unique_ptr<literal_expession> { return std::make_unique<literal_expession>(token{ token_type::string_utf8, std::string("\"") + value + "\""}); };
 
 		auto NewFunctionCallStatement = [](const expression* function, std::initializer_list<const expression*> paramList) -> function_call_statement* { 
 			expression_array parameters;
@@ -512,7 +512,7 @@ UnitTest::Parser::Parser(void) noexcept
 					parameters.emplace_back(*curr);
 				}
 			}
-			return new function_call_statement(new function_call_expression(function, std::move(parameters)));
+			return new function_call_statement(new function_call_expression(unique_expression(function), std::move(parameters)));
 			};
 
 		mcf::evaluator evaluator;
@@ -527,7 +527,7 @@ UnitTest::Parser::Parser(void) noexcept
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
 			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print",
 				{
-					UnknownIndex(Parameter(token_in, NewDataType(true, token_utf8), "format")),
+					UnknownIndex(Parameter(token_in, NewDataType(true, token_utf8), "format")).release(),
 					Variadic(token_invalid),
 				}, 
 				{}),
@@ -541,14 +541,14 @@ UnitTest::Parser::Parser(void) noexcept
 			FunctionStatement(NewDataType(false, token_void), "main",
 				{
 					Parameter(token_unused, NewDataType(true, token_int32), "argc"),
-					UnknownIndex(UnknownIndex(Parameter(token_unused, NewDataType(true, token_utf8), "argv"))),
+					UnknownIndex(UnknownIndex(Parameter(token_unused, NewDataType(true, token_utf8), "argv")).release()).release(),
 				}, 
 				{
 					EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 					new variable_statement(type_const_utf8, UnknownIndex(NewIdentifier("str")), NewString("Hello, World!")),
 					NewFunctionCallStatement(NewIdentifier("Print"), 
 						{
-							NewString("%s\\n"), 
+							NewString("%s\\n").release(),
 							NewIdentifier("str")
 						}),
 				}),

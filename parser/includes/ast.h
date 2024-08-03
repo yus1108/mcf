@@ -162,7 +162,7 @@ namespace mcf
 		{
 		public:
 			explicit prefix_expression(void) noexcept = default;
-			explicit prefix_expression(const mcf::token& prefix, const mcf::ast::expression* targetExpression) noexcept;
+			explicit prefix_expression(const mcf::token& prefix, unique_expression&& targetExpression) noexcept;
 
 			inline const mcf::token&			get_prefix_operator_token(void) const noexcept { return _prefixOperator; }
 			inline const mcf::ast::expression*	get_target_expression(void) const noexcept { return _targetExpression.get(); }
@@ -171,17 +171,16 @@ namespace mcf
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			using expression = std::unique_ptr<const mcf::ast::expression>;
 
-			const mcf::token _prefixOperator = { token_type::invalid, std::string() };	// { prefix_operator, literal }
-			const expression _targetExpression;											// <expression>
+			const mcf::token		_prefixOperator = { token_type::invalid, std::string() };	// { prefix_operator, literal }
+			const unique_expression _targetExpression;											// <expression>
 		};
 
 		class infix_expression final : public expression
 		{
 		public:
 			explicit infix_expression(void) noexcept = default;
-			explicit infix_expression(const mcf::ast::expression* left, const mcf::token& infix, const mcf::ast::expression* right) noexcept;
+			explicit infix_expression(unique_expression&& left, const mcf::token& infix, unique_expression&& right) noexcept;
 
 			inline const mcf::token&			get_infix_operator_token(void) const noexcept { return _infixOperator; }
 			inline const mcf::ast::expression*	get_left_expression(void) const noexcept { return _left.get(); }
@@ -191,11 +190,10 @@ namespace mcf
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
-			using expression = std::unique_ptr<const mcf::ast::expression>;
 
-			const mcf::token _infixOperator = { token_type::invalid, std::string() };	// { infix_operator, literal }
-			const expression _left;														// <expression>
-			const expression _right;													// <expression>
+			const mcf::token		_infixOperator = { token_type::invalid, std::string() };	// { infix_operator, literal }
+			const unique_expression _left;														// <expression>
+			const unique_expression _right;													// <expression>
 		};
 
 		class unknown_index_expression final : public expression
@@ -211,7 +209,7 @@ namespace mcf
 		{
 		public:
 			explicit index_expression(void) noexcept = default;
-			explicit index_expression(const mcf::ast::expression* left, const mcf::ast::expression* index) noexcept;
+			explicit index_expression(unique_expression&& left, unique_expression&& index) noexcept;
 
 			inline const mcf::ast::expression* get_left_expression(void) const noexcept { return _left.get(); }
 			inline const mcf::ast::expression* get_index_expression(void) const noexcept { return _index.get(); }
@@ -228,7 +226,7 @@ namespace mcf
 		{
 		public:
 			explicit function_parameter_expression(void) noexcept = default;
-			explicit function_parameter_expression(const mcf::token& dataFor, const mcf::ast::expression* dataType, const mcf::ast::expression* name) noexcept;
+			explicit function_parameter_expression(const mcf::token& dataFor, unique_expression&& dataType, unique_expression&& name) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
@@ -284,7 +282,7 @@ namespace mcf
 		{
 		public:
 			explicit function_call_expression(void) noexcept = default;
-			explicit function_call_expression(const mcf::ast::expression* function, expression_array&& parameters) noexcept;
+			explicit function_call_expression(unique_expression&& function, expression_array&& parameters) noexcept;
 
 			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_call; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
@@ -343,9 +341,7 @@ namespace mcf
 		{
 		public:
 			explicit variable_statement(void) noexcept = default;
-			explicit variable_statement(const mcf::ast::data_type_expression& dataType,
-										const mcf::ast::expression* name,
-										const mcf::ast::expression* initExpression) noexcept;
+			explicit variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept;
 
 			inline	const mcf::token_type		get_type(void) const noexcept { return _dataType.get_type(); }
 					const std::string			get_name(void) const noexcept;
