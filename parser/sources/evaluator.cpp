@@ -1,6 +1,12 @@
-﻿#include "pch.h"
+﻿#include "ast.h"
+#include "pch.h"
 #include "evaluator.h"
 #include "framework.h"
+
+void mcf::evaluator::evaluate_program(const mcf::ast::program& program) noexcept
+{
+	program;
+}
 
 const mcf::token_type mcf::evaluator::register_custom_enum_type(std::string name) noexcept
 {
