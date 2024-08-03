@@ -72,20 +72,20 @@ namespace mcf
 		void parse_program( ast::program& outProgram ) noexcept;
 
 	private:
-		const mcf::ast::statement*					parse_statement(void) noexcept;
-		const mcf::ast::statement*					parse_declaration_statement(void) noexcept;
-		const mcf::ast::statement*					parse_call_or_assign_statement(void) noexcept;
-		const mcf::ast::enum_statement*				parse_enum_statement(void) noexcept;
+		std::unique_ptr<const mcf::ast::statement>		parse_statement(void) noexcept;
+		std::unique_ptr<const mcf::ast::statement>		parse_declaration_statement(void) noexcept;
+		std::unique_ptr<const mcf::ast::statement>		parse_call_or_assign_statement(void) noexcept;
+		std::unique_ptr<const mcf::ast::enum_statement> parse_enum_statement(void) noexcept;
 
-		const mcf::ast::expression*								parse_expression(const mcf::parser::precedence precedence) noexcept;
-		const mcf::ast::expression*								parse_data_type_or_identifier_expressions(void) noexcept;
-		const mcf::ast::prefix_expression*						parse_prefix_expression(void) noexcept;
-		const mcf::ast::infix_expression*						parse_infix_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::function_call_expression*				parse_call_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::index_expression*						parse_index_expression(const mcf::ast::expression* left) noexcept;
-		const mcf::ast::function_parameter_list_expression*		parse_function_parameters(void) noexcept;
-		const mcf::ast::function_block_expression*				parse_function_block_expression(void) noexcept;
-		const mcf::ast::enum_block_expression*					parse_enum_block_expression(void) noexcept;
+		std::unique_ptr<const mcf::ast::expression>							parse_expression(const mcf::parser::precedence precedence) noexcept;
+		std::unique_ptr<const mcf::ast::expression>							parse_data_type_or_identifier_expressions(void) noexcept;
+		std::unique_ptr<const mcf::ast::prefix_expression>					parse_prefix_expression(void) noexcept;
+		std::unique_ptr<const mcf::ast::infix_expression>					parse_infix_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept;
+		std::unique_ptr<const mcf::ast::function_call_expression>			parse_call_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept;
+		std::unique_ptr<const mcf::ast::index_expression>					parse_index_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept;
+		std::unique_ptr<const mcf::ast::function_parameter_list_expression>	parse_function_parameters(void) noexcept;
+		std::unique_ptr<const mcf::ast::function_block_expression>			parse_function_block_expression(void) noexcept;
+		std::unique_ptr<const mcf::ast::enum_block_expression>				parse_enum_block_expression(void) noexcept;
 
 		void		read_next_token(void) noexcept;
 		const bool	read_next_token_if(mcf::token_type tokenType) noexcept;

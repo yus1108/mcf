@@ -43,7 +43,7 @@ void mcf::parser::parse_program(ast::program& outProgram) noexcept
 	ast::statement_array statements;
 	while (_currentToken.Type != mcf::token_type::eof)
 	{
-		statements.emplace_back(std::unique_ptr<const mcf::ast::statement>(parse_statement()));
+		statements.emplace_back(parse_statement());
 		if (statements.back().get() == nullptr)
 		{
 			parsing_fail_message(parser_error_id::fail_statement_parsing, _nextToken, u8"파싱에 실패하였습니다.");
@@ -55,7 +55,7 @@ void mcf::parser::parse_program(ast::program& outProgram) noexcept
 	outProgram = ast::program(std::move(statements));
 }
 
-inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
+inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_statement(void) noexcept
 {
 	std::unique_ptr<const ast::statement> statement;
 	constexpr const size_t TOKEN_TYPE_COUNT_BEGIN = __COUNTER__;
@@ -75,15 +75,15 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	case token_type::keyword_utf8: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_bool: __COUNTER__; [[fallthrough]];
 	case token_type::custom_enum_type: __COUNTER__;
-		statement = std::unique_ptr<const ast::statement>(parse_declaration_statement());
+		statement = parse_declaration_statement();
 		break;
 
 	case token_type::identifier: __COUNTER__;
-		statement = std::unique_ptr<const ast::statement>(parse_call_or_assign_statement());
+		statement = parse_call_or_assign_statement();
 		break;
 
 	case token_type::keyword_enum: __COUNTER__;
-		statement = std::unique_ptr<const ast::statement>(parse_enum_statement());
+		statement = parse_enum_statement();
 		break;
 
 	case token_type::macro_iibrary_file_include: __COUNTER__; [[fallthrough]];
@@ -138,10 +138,10 @@ inline const mcf::ast::statement* mcf::parser::parse_statement(void) noexcept
 	}
 	constexpr const size_t TOKEN_TYPE_COUNT = __COUNTER__ - TOKEN_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPE_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
-	return statement.release();
+	return statement;
 }
 
-const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexcept
+inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_declaration_statement(void) noexcept
 {
 	debug_assert(is_token_data_type(_currentToken) == true, u8"이 함수가 호출될때 현재 토큰은 데이터 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -154,7 +154,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 	{
 		// 이곳에선 현재 함수인지 변수 인지 알 수 없기 때문에 타입 체크를 하지 않습니다.
 		statementType = ast::statement_type::function;
-		dataType.reset(parse_index_expression(dataType.release()));
+		dataType = parse_index_expression(std::move(dataType));
 	}
 
 	if (read_next_token_if(token_type::identifier) == false)
@@ -175,7 +175,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 		statementType = ast::statement_type::variable;
-		name = ast::unique_expression(parse_index_expression(name.release()));
+		name = parse_index_expression(std::move(name));
 
 		if (_currentToken.Type != token_type::rbracket)
 		{
@@ -208,7 +208,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		ast::unique_function_block statementsBlock;
 		if (read_next_token_if(token_type::lbrace, name->convert_to_string()) == true)
 		{
-			statementsBlock.reset(parse_function_block_expression());
+			statementsBlock = parse_function_block_expression();
 
 			_evaluator->pop();
 			if (read_next_token_if(token_type::rbrace) == false)
@@ -225,7 +225,7 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 			return nullptr;
 		}
 
-		return new(std::nothrow) ast::function_statement(dataType.release(), *static_cast<const ast::identifier_expression*>(name.get()), parameters.release(), statementsBlock.release());
+		return std::make_unique<ast::function_statement>(dataType.release(), *static_cast<const ast::identifier_expression*>(name.get()), parameters.release(), statementsBlock.release());
 	}
 
 	if (statementType == ast::statement_type::function)
@@ -256,10 +256,10 @@ const mcf::ast::statement* mcf::parser::parse_declaration_statement(void) noexce
 		return nullptr;
 	}
 
-	return new(std::nothrow) mcf::ast::variable_statement(*static_cast<const ast::data_type_expression*>(dataType.get()), name.release(), rightExpression.release());
+	return std::make_unique<mcf::ast::variable_statement>(*static_cast<const ast::data_type_expression*>(dataType.get()), name.release(), rightExpression.release());
 }
 
-const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noexcept
+inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_call_or_assign_statement(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::identifier, u8"이 함수가 호출될때 현재 토큰은 식별자 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -269,7 +269,7 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 	// 함수 호출인지 체크
 	while (read_next_token_if(token_type::lparen))
 	{
-		name.reset(parse_call_expression(name.release()));
+		name = parse_call_expression(std::move(name));
 		if (_currentToken.Type != token_type::rparen)
 		{
 			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rparen`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -286,13 +286,13 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
-		return new(std::nothrow) ast::function_call_statement(static_cast<const ast::function_call_expression*>(name.release()));
+		return std::make_unique<mcf::ast::function_call_statement>(static_cast<const ast::function_call_expression*>(name.release()));
 	}
 
 	// 배열 타입인지 체크 (함수만 가능)
 	while (read_next_token_if(token_type::lbracket))
 	{
-		name.reset(parse_index_expression(name.release()));
+		name = parse_index_expression(std::move(name));
 	}
 
 	if (read_next_token_if(token_type::assign) == false)
@@ -311,10 +311,10 @@ const mcf::ast::statement* mcf::parser::parse_call_or_assign_statement(void) noe
 		return nullptr;
 	}
 
-	return new(std::nothrow) mcf::ast::variable_assign_statement(name.release(), rightExpression.release());
+	return std::make_unique<mcf::ast::variable_assign_statement>(name.release(), rightExpression.release());
 }
 
-const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
+inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_statement(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::keyword_enum, u8"이 함수가 호출될때 현재 enum 키워드여야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -405,10 +405,10 @@ const mcf::ast::enum_statement* mcf::parser::parse_enum_statement(void) noexcept
 		return nullptr;
 	}
 
-	return new(std::nothrow) ast::enum_statement(name, dataType, values.release());
+	return std::make_unique<ast::enum_statement>(name, dataType, values.release());
 }
 
-const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
+inline std::unique_ptr<const mcf::ast::expression> mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
 {
 	std::unique_ptr<const ast::expression> expression;
 	constexpr const size_t EXPRESSION_TOKEN_COUNT_BEGIN = __COUNTER__;
@@ -419,8 +419,8 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		break;
 	
 	case token_type::integer: __COUNTER__; [[fallthrough]];
-	case token_type::string_utf8: __COUNTER__;
-	case token_type::keyword_true: __COUNTER__;
+	case token_type::string_utf8: __COUNTER__; [[fallthrough]];
+	case token_type::keyword_true: __COUNTER__; [[fallthrough]];
 	case token_type::keyword_false: __COUNTER__;
 		expression = std::make_unique<ast::literal_expession>(_currentToken);
 		break;
@@ -509,17 +509,17 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		case token_type::lt: __COUNTER__; [[fallthrough]];
 		case token_type::gt: __COUNTER__;
 			read_next_token();
-			expression = std::unique_ptr<const ast::expression>(parse_infix_expression(expression.release()));
+			expression = parse_infix_expression(std::move(expression));
 			break;
 
 		case token_type::lparen: __COUNTER__;
 			read_next_token();
-			expression = std::unique_ptr<const ast::expression>(parse_call_expression(expression.release()));
+			expression = parse_call_expression(std::move(expression));
 			break;
 
 		case token_type::lbracket: __COUNTER__;
 			read_next_token();
-			expression = std::unique_ptr<const ast::expression>(parse_index_expression(expression.release()));
+			expression = parse_index_expression(std::move(expression));
 			break;
 
 		case token_type::ampersand: __COUNTER__;
@@ -579,10 +579,10 @@ const mcf::ast::expression* mcf::parser::parse_expression(const mcf::parser::pre
 		static_assert(static_cast<size_t>(mcf::token_type::count) == INFIX_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
 	}
 
-	return expression.release();
+	return expression;
 }
 
-const mcf::ast::expression* mcf::parser::parse_data_type_or_identifier_expressions(void) noexcept
+inline std::unique_ptr<const mcf::ast::expression> mcf::parser::parse_data_type_or_identifier_expressions(void) noexcept
 {
 	debug_assert(is_token_data_type(_currentToken) == true, u8"이 함수가 호출될때 현재 토큰은 데이터 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -610,18 +610,18 @@ const mcf::ast::expression* mcf::parser::parse_data_type_or_identifier_expressio
 
 	if (is_token_data_type(curr))
 	{
-		return new(std::nothrow) mcf::ast::data_type_expression(isConst, curr);
+		return std::make_unique<mcf::ast::data_type_expression>(isConst, curr);
 	}
 	else if (curr.Type == token_type::identifier)
 	{
-		return new(std::nothrow) mcf::ast::identifier_expression(curr);
+		return std::make_unique<mcf::ast::identifier_expression>(curr);
 	}
 	
 	parsing_fail_message(parser_error_id::fail_expression_parsing, curr, u8"현재 토큰에 문제가 있습니다.");
 	return nullptr;
 }
 
-const mcf::ast::prefix_expression* mcf::parser::parse_prefix_expression(void) noexcept
+inline std::unique_ptr<const mcf::ast::prefix_expression> mcf::parser::parse_prefix_expression(void) noexcept
 {
 	const token prefixToken = _currentToken;
 
@@ -633,13 +633,11 @@ const mcf::ast::prefix_expression* mcf::parser::parse_prefix_expression(void) no
 		return nullptr;
 	}
 
-	return new(std::nothrow) ast::prefix_expression(prefixToken, targetExpression.release());
+	return std::make_unique<ast::prefix_expression>(prefixToken, targetExpression.release());
 }
 
-const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf::ast::expression* left) noexcept
+inline std::unique_ptr<const mcf::ast::infix_expression> mcf::parser::parse_infix_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
 {
-	std::unique_ptr<const ast::expression> leftExpression(left);
-
 	const token infixOperatorToken = _currentToken;
 	const precedence precedence = get_current_infix_expression_token_precedence();
 	read_next_token();
@@ -649,21 +647,20 @@ const mcf::ast::infix_expression* mcf::parser::parse_infix_expression(const mcf:
 		parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
 		return nullptr;
 	}
-	return new(std::nothrow) ast::infix_expression(leftExpression.release(), infixOperatorToken, rightExpression.release());
+	return std::make_unique<ast::infix_expression>(left.release(), infixOperatorToken, rightExpression.release());
 }
 
-const mcf::ast::function_call_expression* mcf::parser::parse_call_expression(const mcf::ast::expression* left) noexcept
+inline std::unique_ptr<const mcf::ast::function_call_expression> mcf::parser::parse_call_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::lparen, u8"이 함수가 호출될때 현재 토큰은 'lparen' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	ast::unique_expression function(left);
 	ast::expression_array parameters;
 
 	// 인수가 없는 경우 바로 리턴한다.
 	if (read_next_token_if(token_type::rparen) == true)
 	{
-		return new(std::nothrow) ast::function_call_expression(function.release(), std::move(parameters));
+		return std::make_unique<ast::function_call_expression>(left.release(), std::move(parameters));
 	}
 
 	read_next_token();
@@ -691,19 +688,17 @@ const mcf::ast::function_call_expression* mcf::parser::parse_call_expression(con
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
-	return new(std::nothrow) ast::function_call_expression(function.release(), std::move(parameters));
+	return std::make_unique<ast::function_call_expression>(left.release(), std::move(parameters));
 }
 
-const mcf::ast::index_expression* mcf::parser::parse_index_expression(const mcf::ast::expression* left) noexcept
+inline std::unique_ptr<const mcf::ast::index_expression> mcf::parser::parse_index_expression(std::unique_ptr<const mcf::ast::expression>&& left) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::lbracket, u8"이 함수가 호출될때 현재 토큰은 'lbracket' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	std::unique_ptr<const ast::expression> leftExpression(left);
-
 	if (read_next_token_if(token_type::rbracket))
 	{
-		return new(std::nothrow) ast::index_expression(leftExpression.release(), new(std::nothrow) ast::unknown_index_expression());
+		return std::make_unique<ast::index_expression>(left.release(), new(std::nothrow) ast::unknown_index_expression());
 	}
 
 	read_next_token();
@@ -720,10 +715,10 @@ const mcf::ast::index_expression* mcf::parser::parse_index_expression(const mcf:
 			internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 		return nullptr;
 	}
-	return new(std::nothrow) ast::index_expression(leftExpression.release(), rightExpression.release());
+	return std::make_unique<ast::index_expression>(left.release(), rightExpression.release());
 }
 
-const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_parameters(void) noexcept
+inline std::unique_ptr<const mcf::ast::function_parameter_list_expression> mcf::parser::parse_function_parameters(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::lparen, u8"이 함수가 호출될때 현재 토큰은 `lparen` 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -731,7 +726,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 	// `rparen`이 바로 나온다면 바로 종료
 	if (read_next_token_if(token_type::rparen))
 	{
-		return new(std::nothrow) ast::function_parameter_list_expression();
+		return std::make_unique<ast::function_parameter_list_expression>();
 	}
 
 	std::vector<ast::unique_expression> list;
@@ -760,7 +755,7 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 			// 배열 타입인지 체크
 			while (read_next_token_if(token_type::lbracket))
 			{
-				dataName.reset(parse_index_expression(dataName.release()));
+				dataName = parse_index_expression(std::move(dataName));
 			}
 
 			list.emplace_back(new(std::nothrow) ast::function_parameter_expression(dataFor, dataType.release(), dataName.release()));
@@ -781,10 +776,10 @@ const mcf::ast::function_parameter_list_expression* mcf::parser::parse_function_
 	debug_assert(_nextToken.Type == token_type::rparen, u8"이 함수가 끝날때 다음 토큰은 'rparen' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) ast::function_parameter_list_expression(std::move(list));
+	return std::make_unique<ast::function_parameter_list_expression>(std::move(list));
 }
 
-const mcf::ast::function_block_expression* mcf::parser::parse_function_block_expression(void) noexcept
+inline std::unique_ptr<const mcf::ast::function_block_expression> mcf::parser::parse_function_block_expression(void) noexcept
 {
 	debug_assert(_currentToken.Type == token_type::lbrace, u8"이 함수가 호출될때 현재 토큰은 `lbrace` 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
@@ -810,10 +805,10 @@ const mcf::ast::function_block_expression* mcf::parser::parse_function_block_exp
 	debug_assert(_nextToken.Type == token_type::rbrace, u8"이 함수가 호출될때 다음 토큰은 `rbrace` 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) ast::function_block_expression(std::move(statements));
+	return std::make_unique<ast::function_block_expression>(std::move(statements));
 }
 
-const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(void) noexcept
+std::unique_ptr<const mcf::ast::enum_block_expression> mcf::parser::parse_enum_block_expression(void) noexcept
 {
 	using name_vector = std::vector<mcf::ast::identifier_expression>;
 
@@ -860,7 +855,7 @@ const mcf::ast::enum_block_expression* mcf::parser::parse_enum_block_expression(
 	debug_assert(_nextToken.Type == token_type::rbrace, u8"이 함수가 끝날때 다음 토큰은 'rbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
 		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
 
-	return new(std::nothrow) mcf::ast::enum_block_expression(names, std::move(values));
+	return std::make_unique<mcf::ast::enum_block_expression>(names, std::move(values));
 }
 
 inline void mcf::parser::read_next_token(void) noexcept
