@@ -435,13 +435,13 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf;
 		using namespace mcf::ast;
 
-		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> mcf::ast::statement* {
-			return new variable_statement(type, unique_expression(NewIdentifier(name)), unique_expression(literalExpression));
+		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> std::unique_ptr<statement> {
+			return std::make_unique<variable_statement>(type, unique_expression(NewIdentifier(name)), unique_expression(literalExpression));
 			};
 
-		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames)
+		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
 			{
-				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> enum_block_expression* {
+				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> std::unique_ptr<enum_block_expression> {
 					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
 						std::vector<identifier_expression> nameVector;
 						const char* const* pointer = names.begin();
@@ -461,29 +461,30 @@ UnitTest::Parser::Parser(void) noexcept
 						return std::move(values);
 						};
 					auto nameVector = EnumValueNames(names);
-					return new enum_block_expression(nameVector, EnumIncrementValues(names.size()));
+					return std::make_unique<enum_block_expression>(nameVector, EnumIncrementValues(names.size()));
 					};
-				return new enum_statement(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), enumDataType, BuildBlockStatement(valueNames));
+				return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), enumDataType, std::move(BuildBlockStatement(valueNames)));
 			};
 
-		auto EnumDataType = [](bool isConst, const char* const typeName) -> data_type_expression* { return new data_type_expression(isConst, { token_type::custom_enum_type, typeName }); };
+		auto EnumDataType = [](bool isConst, const char* const typeName) -> std::unique_ptr<data_type_expression> { return std::make_unique<data_type_expression>(isConst, token{ token_type::custom_enum_type, typeName }); };
 
-		auto UnknownIndex = [](const expression* left) -> std::unique_ptr<index_expression> { return std::make_unique<index_expression>(mcf::ast::unique_expression(left), std::make_unique<unknown_index_expression>()); };
-		auto Parameter = [](token dataFor, const data_type_expression* dataType, const char* const dataName) -> function_parameter_expression* {
-			return new function_parameter_expression(dataFor, unique_expression(dataType), std::make_unique<identifier_expression>(mcf::token{ token_type::identifier, dataName }));
+		auto UnknownIndex = [](unique_expression&& left) -> std::unique_ptr<index_expression> { return std::make_unique<index_expression>(std::move(left), std::make_unique<unknown_index_expression>()); };
+		auto Parameter = [](token dataFor, unique_expression&& dataType, const char* const dataName) -> std::unique_ptr<function_parameter_expression> {
+			return std::make_unique<function_parameter_expression>(dataFor, std::move(dataType), std::make_unique<identifier_expression>(mcf::token{ token_type::identifier, dataName }));
 			};
-		auto Variadic = [](token dataFor) -> function_parameter_variadic_expression* { return new function_parameter_variadic_expression(dataFor); };
+		auto Variadic = [](token dataFor) -> std::unique_ptr<function_parameter_variadic_expression> { return std::make_unique<function_parameter_variadic_expression>(dataFor); };
 
-		auto FunctionStatement = [](const expression* returnType, const char* const name, std::initializer_list<expression*> parameters, std::initializer_list<statement*> block) -> function_statement* {
+		auto FunctionStatement = [](unique_expression&& returnType, const char* const name, std::initializer_list<expression*> parameters, std::initializer_list<statement*> block)
+			-> std::unique_ptr<function_statement> {
 			expression_array list;
 			if (parameters.size() != 0)
 			{
-				for (expression* const * curr = parameters.begin(); curr != parameters.end(); curr++)
+				for (auto curr = parameters.begin(); curr != parameters.end(); curr++)
 				{
 					list.emplace_back(*curr);
 				}
 			}
-			function_parameter_list_expression* parameterList = new function_parameter_list_expression(std::move(list));
+			std::unique_ptr<function_parameter_list_expression> parameterList = std::make_unique<function_parameter_list_expression>(std::move(list));
 
 			statement_array statements;
 			if (block.size() != 0)
@@ -493,17 +494,17 @@ UnitTest::Parser::Parser(void) noexcept
 					statements.emplace_back(*curr);
 				}
 			}
-			function_block_expression* statementBlock = block.size() != 0 ? new function_block_expression(std::move(statements)) : nullptr;
+			std::unique_ptr<function_block_expression> statementBlock = block.size() != 0 ? std::make_unique<function_block_expression>(std::move(statements)) : nullptr;
 
-			return new function_statement(returnType, identifier_expression({ token_type::identifier, name }), parameterList, statementBlock); 
+			return std::make_unique<function_statement>(std::move(returnType), identifier_expression({ token_type::identifier, name }), std::move(parameterList), std::move(statementBlock)); 
 			};
 
-		auto NewDataType = [](bool isConst, token token) -> const data_type_expression* { return new data_type_expression(isConst, token); };
-		auto NewIdentifier = [](const char* const value) -> const identifier_expression* { return new identifier_expression({ token_type::identifier, value }); };
+		auto NewDataType = [](bool isConst, token token) -> std::unique_ptr<const data_type_expression> { return std::make_unique<data_type_expression>(isConst, token); };
+		auto NewIdentifier = [](const char* const value) -> std::unique_ptr<const identifier_expression> { return std::make_unique<identifier_expression>(token{ token_type::identifier, value }); };
 		auto NewInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
 		auto NewString = [](const char* const value) -> std::unique_ptr<literal_expession> { return std::make_unique<literal_expession>(token{ token_type::string_utf8, std::string("\"") + value + "\""}); };
 
-		auto NewFunctionCallStatement = [](const expression* function, std::initializer_list<const expression*> paramList) -> function_call_statement* { 
+		auto NewFunctionCallStatement = [](unique_expression&& function, std::initializer_list<const expression*> paramList) -> std::unique_ptr<function_call_statement> { 
 			expression_array parameters;
 			if (paramList.size() != 0)
 			{
@@ -512,11 +513,11 @@ UnitTest::Parser::Parser(void) noexcept
 					parameters.emplace_back(*curr);
 				}
 			}
-			return new function_call_statement(new function_call_expression(unique_expression(function), std::move(parameters)));
+			return std::make_unique<function_call_statement>(std::make_unique<function_call_expression>(std::move(function), std::move(parameters)));
 			};
 
 		mcf::evaluator evaluator;
-		mcf::ast::statement* statements[] =
+		std::unique_ptr<mcf::ast::statement> statements[] =
 		{
 			// int32 foo = 10; 
 			LiteralVariableStatement(type_int32, "foo", NewInt(10)),
@@ -525,33 +526,33 @@ UnitTest::Parser::Parser(void) noexcept
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
-			FunctionStatement(EnumDataType(true, "PRINT_RESULT"), "Print",
+			FunctionStatement(std::move(EnumDataType(true, "PRINT_RESULT")), "Print",
 				{
-					UnknownIndex(Parameter(token_in, NewDataType(true, token_utf8), "format")).release(),
-					Variadic(token_invalid),
-				}, 
+					UnknownIndex(std::move(Parameter(token_in, NewDataType(true, token_utf8), "format"))).release(),
+					Variadic(token_invalid).release(),
+				},
 				{}),
-			/*
-				void main(unused const int32 argc, unused const utf8 argv[][])
-				{
-					const utf8 str[] = "Hello, World!"; // default string literal is static array of utf8 in mcf
-					Print("%s\n", str);
-				}
-			*/
-			FunctionStatement(NewDataType(false, token_void), "main",
-				{
-					Parameter(token_unused, NewDataType(true, token_int32), "argc"),
-					UnknownIndex(UnknownIndex(Parameter(token_unused, NewDataType(true, token_utf8), "argv")).release()).release(),
-				}, 
-				{
-					EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
-					new variable_statement(type_const_utf8, UnknownIndex(NewIdentifier("str")), NewString("Hello, World!")),
-					NewFunctionCallStatement(NewIdentifier("Print"), 
-						{
-							NewString("%s\\n").release(),
-							NewIdentifier("str")
-						}),
-				}),
+				/*
+					void main(unused const int32 argc, unused const utf8 argv[][])
+					{
+						const utf8 str[] = "Hello, World!"; // default string literal is static array of utf8 in mcf
+						Print("%s\n", str);
+					}
+				*/
+				FunctionStatement(std::move(NewDataType(false, token_void)), "main",
+					{
+						Parameter(token_unused, NewDataType(true, token_int32), "argc").release(),
+						UnknownIndex(UnknownIndex(std::move(Parameter(token_unused, NewDataType(true, token_utf8), "argv")))).release(),
+					},
+					{
+						EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}).release(),
+						new variable_statement(type_const_utf8, std::move(UnknownIndex(std::move(NewIdentifier("str")))), NewString("Hello, World!")),
+						NewFunctionCallStatement(NewIdentifier("Print"),
+							{
+								NewString("%s\\n").release(),
+								NewIdentifier("str").release()
+							}).release(),
+					}),
 		};
 		size_t statementSize = array_size(statements);
 
@@ -559,7 +560,7 @@ UnitTest::Parser::Parser(void) noexcept
 		statementArray.reserve(statementSize);
 		for (size_t i = 0; i < statementSize; i++)
 		{
-			statementArray.emplace_back(mcf::ast::unique_statement(statements[i]));
+			statementArray.emplace_back(std::move(statements[i]));
 		}
 
 		program expectedProgram(std::move(statementArray));

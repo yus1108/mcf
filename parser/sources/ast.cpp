@@ -51,7 +51,7 @@ mcf::ast::prefix_expression::prefix_expression(const mcf::token& prefix, unique_
 	: _prefixOperator(prefix)
 	, _targetExpression(targetExpression.release()) 
 {
-	debug_assert(targetExpression.get() != nullptr, u8"인자로 받은 targetExpression은 nullptr 여선 안됩니다.");
+	debug_assert(_targetExpression.get() != nullptr, u8"인자로 받은 targetExpression은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
@@ -65,8 +65,8 @@ mcf::ast::infix_expression::infix_expression(unique_expression&& left, const mcf
 	, _infixOperator(infix)
 	, _right(right.release())
 {
-	debug_assert(left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(right.get() != nullptr, u8"인자로 받은 right는 nullptr 여선 안됩니다.");
+	debug_assert(_left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
+	debug_assert(_right.get() != nullptr, u8"인자로 받은 right는 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
@@ -80,8 +80,8 @@ mcf::ast::index_expression::index_expression(unique_expression&& left, unique_ex
 	: _left(left.release())
 	, _index(index.release()) 
 {
-	debug_assert(left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(index.get() != nullptr, u8"인자로 받은 index는 nullptr 여선 안됩니다.");
+	debug_assert(_left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
+	debug_assert(_index.get() != nullptr, u8"인자로 받은 index는 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
@@ -96,8 +96,8 @@ mcf::ast::function_parameter_expression::function_parameter_expression(const mcf
 	, _type(dataType.release())
 	, _name(name.release())
 {
-	debug_assert(dataType.get() != nullptr, u8"인자로 받은 dataType은 nullptr 여선 안됩니다.");
-	debug_assert(name.get() != nullptr, u8"인자로 받은 name은 nullptr 여선 안됩니다.");
+	debug_assert(_type.get() != nullptr, u8"인자로 받은 dataType은 nullptr 여선 안됩니다.");
+	debug_assert(_name.get() != nullptr, u8"인자로 받은 name은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::function_parameter_expression::convert_to_string(void) const noexcept
@@ -110,7 +110,7 @@ const std::string mcf::ast::function_parameter_expression::convert_to_string(voi
 mcf::ast::function_call_expression::function_call_expression(unique_expression&& function, expression_array&& parameters) noexcept
 	: _function(function.release())
 {
-	debug_assert(function.get() != nullptr, u8"인자로 받은 function은 nullptr 여선 안됩니다.");
+	debug_assert(_function.get() != nullptr, u8"인자로 받은 function은 nullptr 여선 안됩니다.");
 	const size_t size = parameters.size();
 	_parameters.reserve(size);
 	for (size_t i = 0; i < size; i++)
@@ -267,7 +267,7 @@ mcf::ast::variable_statement::variable_statement(const mcf::ast::data_type_expre
 	, _name(name.release())
 	, _initExpression(initExpression.release())
 {
-	debug_assert(name != nullptr, u8"name은 nullptr 여선 안됩니다.");
+	debug_assert(_name.get() != nullptr, u8"name은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::variable_statement::get_name(void) const noexcept
@@ -299,12 +299,12 @@ const std::string mcf::ast::variable_statement::convert_to_string(void) const no
 	return buffer;
 }
 
-mcf::ast::variable_assign_statement::variable_assign_statement(const mcf::ast::expression* name, const mcf::ast::expression* assignExpression) noexcept
-	: _name(name)
-	, _assignedExpression(assignExpression)
+mcf::ast::variable_assign_statement::variable_assign_statement(unique_expression&& name, unique_expression&& assignExpression) noexcept
+	: _name(name.release())
+	, _assignedExpression(assignExpression.release())
 {
-	debug_assert(name != nullptr, u8"name은 nullptr 여선 안됩니다.");
-	debug_assert(assignExpression != nullptr, u8"assignExpression은 nullptr 여선 안됩니다.");
+	debug_assert(_name.get() != nullptr, u8"name은 nullptr 여선 안됩니다.");
+	debug_assert(_assignedExpression.get() != nullptr, u8"assignExpression은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::variable_assign_statement::get_name(void) const noexcept
@@ -333,16 +333,16 @@ const std::string mcf::ast::variable_assign_statement::convert_to_string(void) c
 	return buffer;
 }
 
-mcf::ast::function_statement::function_statement(	const mcf::ast::expression* returnType, identifier_expression name, 
-													const mcf::ast::function_parameter_list_expression* parameters, 
-													const mcf::ast::function_block_expression* statementsBlock) noexcept
-	: _returnType(returnType)
+mcf::ast::function_statement::function_statement(	unique_expression&& returnType, identifier_expression name,
+													std::unique_ptr<const mcf::ast::function_parameter_list_expression>&& parameters, 
+													std::unique_ptr<const mcf::ast::function_block_expression>&& statementsBlock) noexcept
+	: _returnType(returnType.release())
 	, _name(name)
-	, _parameters(parameters)
-	, _statementsBlock(statementsBlock)
+	, _parameters(parameters.release())
+	, _statementsBlock(statementsBlock.release())
 {
-	debug_assert(returnType != nullptr, u8"returnType은 nullptr 여선 안됩니다.");
-	debug_assert(parameters != nullptr, u8"parameters은 nullptr 여선 안됩니다.");
+	debug_assert(_returnType.get() != nullptr, u8"returnType은 nullptr 여선 안됩니다.");
+	debug_assert(_parameters.get() != nullptr, u8"parameters은 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::function_statement::convert_to_string(void) const noexcept
@@ -367,14 +367,32 @@ const std::string mcf::ast::function_statement::convert_to_string(void) const no
 	return buffer;
 }
 
-mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name,
-	const mcf::ast::data_type_expression& dataType,
-	const mcf::ast::enum_block_expression* values) noexcept
+mcf::ast::function_call_statement::function_call_statement(mcf::ast::unique_expression&& callExpression) noexcept
+	: _callExpression(callExpression->get_expression_type() == expression_type::function_call ? static_cast<const mcf::ast::function_call_expression*>(callExpression.release()) : nullptr)
+{
+	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+}
+
+mcf::ast::function_call_statement::function_call_statement(std::unique_ptr<mcf::ast::function_call_expression>&& callExpression) noexcept
+	: _callExpression(callExpression.release())
+{
+	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+}
+
+mcf::ast::function_call_statement::function_call_statement(std::unique_ptr<const mcf::ast::function_call_expression>&& callExpression) noexcept
+	: _callExpression(callExpression.release())
+{
+	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+}
+
+mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& name,
+											const mcf::ast::data_type_expression& dataType,
+											std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept
 	: _name(name)
 	, _dataType(dataType)
-	, _values(values)
+	, _values(values.release())
 {
-	debug_assert(values != nullptr, u8"values는 nullptr 여선 안됩니다.");
+	debug_assert(_values.get() != nullptr, u8"values는 nullptr 여선 안됩니다.");
 }
 
 const std::string mcf::ast::enum_statement::convert_to_string(void) const noexcept

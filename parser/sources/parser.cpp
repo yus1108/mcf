@@ -225,7 +225,7 @@ inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_declaration
 			return nullptr;
 		}
 
-		return std::make_unique<ast::function_statement>(dataType.release(), *static_cast<const ast::identifier_expression*>(name.get()), parameters.release(), statementsBlock.release());
+		return std::make_unique<ast::function_statement>(std::move(dataType), *static_cast<const ast::identifier_expression*>(name.get()), std::move(parameters), std::move(statementsBlock));
 	}
 
 	if (statementType == ast::statement_type::function)
@@ -286,10 +286,10 @@ inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_call_or_ass
 				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
 			return nullptr;
 		}
-		return std::make_unique<mcf::ast::function_call_statement>(static_cast<const ast::function_call_expression*>(name.release()));
+		return std::make_unique<mcf::ast::function_call_statement>(std::move(name));
 	}
 
-	// 배열 타입인지 체크 (함수만 가능)
+	// 배열 타입인지 체크 (변수만 가능)
 	while (read_next_token_if(token_type::lbracket))
 	{
 		name = parse_index_expression(std::move(name));
@@ -311,7 +311,7 @@ inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_call_or_ass
 		return nullptr;
 	}
 
-	return std::make_unique<mcf::ast::variable_assign_statement>(name.release(), rightExpression.release());
+	return std::make_unique<mcf::ast::variable_assign_statement>(std::move(name), std::move(rightExpression));
 }
 
 inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_statement(void) noexcept
@@ -405,7 +405,7 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 		return nullptr;
 	}
 
-	return std::make_unique<ast::enum_statement>(name, dataType, values.release());
+	return std::make_unique<ast::enum_statement>(name, dataType, std::move(values));
 }
 
 inline std::unique_ptr<const mcf::ast::expression> mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept
