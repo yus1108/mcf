@@ -182,9 +182,24 @@ namespace UnitTest
 		return mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
 	}
 
-	inline const mcf::ast::identifier_expression* NewIdentifier(const char* const value)
+	inline std::unique_ptr<const mcf::ast::identifier_expression> NewIdentifier(const char* const value)
 	{
-		return new mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
+		return std::make_unique<mcf::ast::identifier_expression>(mcf::token{mcf::token_type::identifier, value});
+	}
+
+	inline std::unique_ptr<const mcf::ast::data_type_expression> NewDataType(bool isConst, mcf::token token)
+	{
+		return std::make_unique<mcf::ast::data_type_expression>(isConst, token);
+	}
+
+	inline std::unique_ptr<const mcf::ast::literal_expession> NewInt(int32_t value)
+	{
+		return std::make_unique<mcf::ast::literal_expession>(mcf::token{ mcf::token_type::integer, std::to_string(value) });
+	}
+
+	inline std::unique_ptr<const mcf::ast::literal_expession> NewString(const char* const value)
+	{
+		return std::make_unique<mcf::ast::literal_expession>(mcf::token{ mcf::token_type::string_utf8, std::string("\"") + value + "\"" });
 	}
 
 	const std::string convert_to_string( const mcf::token& token );

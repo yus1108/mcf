@@ -435,8 +435,8 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf;
 		using namespace mcf::ast;
 
-		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, literal_expession* literalExpression) -> std::unique_ptr<statement> {
-			return std::make_unique<variable_statement>(type, unique_expression(NewIdentifier(name)), unique_expression(literalExpression));
+		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, std::unique_ptr<const literal_expession>&& literalExpression) -> std::unique_ptr<statement> {
+			return std::make_unique<variable_statement>(type, NewIdentifier(name), std::move(literalExpression));
 			};
 
 		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
@@ -499,11 +499,6 @@ UnitTest::Parser::Parser(void) noexcept
 			return std::make_unique<function_statement>(std::move(returnType), identifier_expression({ token_type::identifier, name }), std::move(parameterList), std::move(statementBlock)); 
 			};
 
-		auto NewDataType = [](bool isConst, token token) -> std::unique_ptr<const data_type_expression> { return std::make_unique<data_type_expression>(isConst, token); };
-		auto NewIdentifier = [](const char* const value) -> std::unique_ptr<const identifier_expression> { return std::make_unique<identifier_expression>(token{ token_type::identifier, value }); };
-		auto NewInt = [](int32_t value) -> literal_expession* { return new literal_expession({ token_type::integer, std::to_string(value) }); };
-		auto NewString = [](const char* const value) -> std::unique_ptr<literal_expession> { return std::make_unique<literal_expession>(token{ token_type::string_utf8, std::string("\"") + value + "\""}); };
-
 		auto NewFunctionCallStatement = [](unique_expression&& function, std::initializer_list<const expression*> paramList) -> std::unique_ptr<function_call_statement> { 
 			expression_array parameters;
 			if (paramList.size() != 0)
@@ -520,9 +515,9 @@ UnitTest::Parser::Parser(void) noexcept
 		std::unique_ptr<mcf::ast::statement> statements[] =
 		{
 			// int32 foo = 10; 
-			LiteralVariableStatement(type_int32, "foo", NewInt(10)),
+			LiteralVariableStatement(type_int32, "foo", std::move(NewInt(10))),
 			// int32 boo = 5;							
-			LiteralVariableStatement(type_int32, "boo", NewInt(5)),
+			LiteralVariableStatement(type_int32, "boo", std::move(NewInt(5))),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
 			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
