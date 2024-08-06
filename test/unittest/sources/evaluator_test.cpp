@@ -21,7 +21,7 @@ UnitTest::Evaluator::Evaluator(void) noexcept
 			
 			std::cout << symbol_share_test << ":" << std::endl << actualProgram.convert_to_string() << std::endl;
 
-			evaluator.evaluate_program(actualProgram);
+			actualProgram.evaluate(evaluator);
 
 			return isTestPassed;
 		}

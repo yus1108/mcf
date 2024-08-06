@@ -33,18 +33,14 @@ const std::string mcf::ast::program::convert_to_string(void) const noexcept
 	return buffer;
 }
 
-const std::vector<mcf::token> mcf::ast::program::convert_to_tokens(void) const noexcept
+void mcf::ast::program::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
 {
 	const size_t size = _statements.size();
-	std::vector<token> tokens;
-
 	for (size_t i = 0; i < size; i++)
 	{
-		//debug_assert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
-		// TODO: node::convert_to_tokens() 구현 필요
-		//tokens.emplace_back(_statements->convert_to_tokens());
+		debug_assert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		_statements[i]->evaluate(inOutEvaluator);
 	}
-	return tokens;
 }
 
 mcf::ast::prefix_expression::prefix_expression(const mcf::token& prefix, unique_expression&& targetExpression) noexcept
@@ -262,6 +258,12 @@ mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const
 	}
 }
 
+void mcf::ast::macro_include_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
+}
+
 mcf::ast::variable_statement::variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
 	: _dataType(dataType)
 	, _name(name.release())
@@ -299,6 +301,12 @@ const std::string mcf::ast::variable_statement::convert_to_string(void) const no
 	return buffer;
 }
 
+void mcf::ast::variable_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
+}
+
 mcf::ast::variable_assign_statement::variable_assign_statement(unique_expression&& name, unique_expression&& assignExpression) noexcept
 	: _name(name.release())
 	, _assignedExpression(assignExpression.release())
@@ -331,6 +339,12 @@ const std::string mcf::ast::variable_assign_statement::convert_to_string(void) c
 	buffer += ";";
 
 	return buffer;
+}
+
+void mcf::ast::variable_assign_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
 }
 
 mcf::ast::function_statement::function_statement(	unique_expression&& returnType, identifier_expression name,
@@ -367,6 +381,12 @@ const std::string mcf::ast::function_statement::convert_to_string(void) const no
 	return buffer;
 }
 
+void mcf::ast::function_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
+}
+
 mcf::ast::function_call_statement::function_call_statement(mcf::ast::unique_expression&& callExpression) noexcept
 	: _callExpression(callExpression->get_expression_type() == expression_type::function_call ? static_cast<const mcf::ast::function_call_expression*>(callExpression.release()) : nullptr)
 {
@@ -385,6 +405,12 @@ mcf::ast::function_call_statement::function_call_statement(std::unique_ptr<const
 	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
 }
 
+void mcf::ast::function_call_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
+}
+
 mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& name,
 											const mcf::ast::data_type_expression& dataType,
 											std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept
@@ -399,4 +425,10 @@ const std::string mcf::ast::enum_statement::convert_to_string(void) const noexce
 {
 	debug_assert(_values.get() != nullptr, u8"_values는 nullptr 여선 안됩니다.");
 	return "enum " + _name.convert_to_string() + " : " + _dataType.convert_to_string() + "\n{\n" + _values->convert_to_string() + "\n};";
+}
+
+void mcf::ast::enum_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+{
+	inOutEvaluator;
+	debug_message("");
 }

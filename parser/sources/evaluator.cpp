@@ -3,11 +3,6 @@
 #include "evaluator.h"
 #include "framework.h"
 
-void mcf::evaluator::evaluate_program(const mcf::ast::program& program) noexcept
-{
-	program;
-}
-
 const mcf::token_type mcf::evaluator::register_custom_enum_type(std::string name) noexcept
 {
 	debug_assert(_scope.empty() == false, "");

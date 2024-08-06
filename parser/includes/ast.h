@@ -6,6 +6,7 @@
 namespace mcf
 {
 	struct parser_error;
+	class evaluator;
 
 	namespace ast
 	{
@@ -48,6 +49,8 @@ namespace mcf
 		public: 
 					virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept = 0;
 			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept override final { return mcf::ast::node_type::statement; }
+			
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept = 0;
 		};
 
 		enum class expression_type : unsigned char
@@ -109,7 +112,8 @@ namespace mcf
 					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
 
 			const std::string				convert_to_string(void) const noexcept;
-			const std::vector<mcf::token>	convert_to_tokens(void) const noexcept;
+
+			void evaluate(mcf::evaluator& inOutEvaluator) const noexcept;
 
 		private:
 			statement_array	_statements;
@@ -327,6 +331,8 @@ namespace mcf
 			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::macro_include; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
+
 			inline const std::string get_path(void) const noexcept { return _path; }
 
 		private:
@@ -348,6 +354,8 @@ namespace mcf
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
+
 		private:
 			const mcf::ast::data_type_expression				_dataType;
 			const std::unique_ptr<const mcf::ast::expression>	_name;
@@ -366,6 +374,8 @@ namespace mcf
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assign; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
+
 		private:
 			const std::unique_ptr<const mcf::ast::expression>	_name;
 			const std::unique_ptr<const mcf::ast::expression>	_assignedExpression;
@@ -382,6 +392,8 @@ namespace mcf
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
 
 		private:
 			unique_expression				_returnType;
@@ -401,6 +413,8 @@ namespace mcf
 			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function_call; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _callExpression->convert_to_string() + ";"; }
 
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
+
 		private:
 			std::unique_ptr<const mcf::ast::function_call_expression>	_callExpression;
 		};
@@ -417,6 +431,8 @@ namespace mcf
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::enum_def; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
+
+			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
 
 		private:
 			using block_statement = std::unique_ptr<const mcf::ast::enum_block_expression>;

@@ -14,8 +14,6 @@ namespace mcf
 	class evaluator final
 	{
 	public:
-		void evaluate_program(const mcf::ast::program& program) noexcept;
-
 		const mcf::token_type register_custom_enum_type(std::string name) noexcept;
 		const mcf::token_type find_datatype_registered(const std::string& tokenLiteral) const noexcept;
 

@@ -565,53 +565,6 @@ UnitTest::Parser::Parser(void) noexcept
 		return true;
 		});
 
-	_names.emplace_back("converting to tokens and compare");
-	_tests.emplace_back([&]() {
-		const struct test_case
-		{
-			const std::string				Input;
-			const std::vector<mcf::token>	Expected;
-		} testCases[] =
-		{
-			// TODO: 테스트 통과를 위해 필요한 기능 구현
-			{
-				"int32 test = 10;",
-				{
-					{mcf::token_type::keyword_int32, "int32"},
-					{mcf::token_type::identifier, "test"},
-					{mcf::token_type::assign, "="},
-					{mcf::token_type::integer, "10"},
-				},
-			},
-		};
-		constexpr const size_t testCaseCount = array_size(testCases);
-
-		for (size_t i = 0; i < testCaseCount; i++)
-		{
-			mcf::evaluator evaluator;
-			mcf::parser parser(&evaluator, testCases[i].Input, false);
-			mcf::ast::program program;
-			parser.parse_program(program);
-			if (check_parser_errors(parser) == false)
-			{
-				return false;
-			}
-
-			const std::vector<mcf::token> actual = program.convert_to_tokens();
-			fatal_assert(actual.size() == testCases[i].Expected.size(), u8"실제 토큰의 갯수와 테스트 케이스의 토큰 갯수가 맞지 않습니다. expected=`%zu`, actual=`%zu`",
-				testCases[i].Expected.size(), actual.size());
-			for (size_t j = 0; j < testCases[i].Expected.size(); j++)
-			{
-				fatal_assert(actual[j].Type == testCases[i].Expected[j].Type, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-					actual[i].Line, actual[i].Index, TOKEN_TYPES[enum_index(testCases[i].Expected[j].Type)], TOKEN_TYPES[enum_index(actual[j].Type)]);
-
-				fatal_assert(actual[j].Literal == testCases[i].Expected[j].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-					actual[j].Line, actual[j].Index, testCases[i].Expected[j].Literal.c_str(), actual[j].Literal.c_str());
-			}
-		}
-
-		return true;
-		});
 	_tests.pop_back();
 }
 
