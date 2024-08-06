@@ -260,8 +260,7 @@ mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const
 
 void mcf::ast::macro_include_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
 {
-	inOutEvaluator;
-	debug_message("");
+	_program.evaluate(inOutEvaluator);
 }
 
 mcf::ast::variable_statement::variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
@@ -429,6 +428,7 @@ const std::string mcf::ast::enum_statement::convert_to_string(void) const noexce
 
 void mcf::ast::enum_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
 {
+	//debug_assert(inOutEvaluator.is_datatype_registered_at_current_scope(_name), u8"_values는 nullptr 여선 안됩니다.");
 	inOutEvaluator;
 	debug_message("");
 }
