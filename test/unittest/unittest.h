@@ -116,6 +116,7 @@ namespace UnitTest
 		"function",
 		"function_call",
 		"enum_def",
+		"macro_include",
 	};
 	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
 	static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");

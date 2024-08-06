@@ -37,6 +37,7 @@ namespace mcf
 			function,
 			function_call,
 			enum_def,			// keyword_enum <identifier> [optional: colon <data_type>] lbrace !<enum_block> rbrace semicolon
+			macro_include,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
@@ -323,7 +324,7 @@ namespace mcf
 			explicit macro_include_statement(void) noexcept = default;
 			explicit macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept;
 
-			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
+			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::macro_include; }
 			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
 
 			inline const std::string get_path(void) const noexcept { return _path; }
