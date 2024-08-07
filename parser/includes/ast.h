@@ -144,20 +144,36 @@ namespace mcf
 			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::identifier, identifier }
 		};
 
-		class data_type_expression final : public expression
+		enum class data_type : unsigned char
+		{
+			invalid = 0,
+
+			primitive,
+
+			// 이 밑으로는 수정하면 안됩니다.
+			count,
+		};
+		class data_type_expression : public expression
+		{ 
+		public: 
+					virtual const mcf::ast::data_type		get_data_type(void) const noexcept = 0;
+			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::data_type; } 
+		};
+		using unique_data_type_expression = std::unique_ptr<mcf::ast::data_type_expression>;
+		class primitive_data_type_expression final : public data_type_expression
 		{
 		public:
-			explicit data_type_expression(void) noexcept = default;
-			explicit data_type_expression(const bool isConst, const mcf::token& token) noexcept : _token(token), _isConst(isConst) {}
+			explicit primitive_data_type_expression(void) noexcept = default;
+			explicit primitive_data_type_expression(const bool isConst, const mcf::token& token) noexcept : _token(token), _isConst(isConst) {}
 
-			inline const mcf::token_type get_type(void) const noexcept { return _token.Type; }
+			inline const mcf::token_type get_token_type(void) const noexcept { return _token.Type; }
 
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::data_type; }
-			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
+			inline	virtual const std::string			convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
+			inline	virtual const mcf::ast::data_type	get_data_type(void) const noexcept override final { return mcf::ast::data_type::primitive; }
 
 		private:
-			mcf::token	_token		= { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
-			bool		_isConst	= false; // token_type::const == true
+			mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
+			bool		_isConst = false; // token_type::const == true
 		};
 
 		class prefix_expression final : public expression
@@ -317,11 +333,11 @@ namespace mcf
 		{
 		public:
 			explicit variable_statement(void) noexcept = default;
-			explicit variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept;
+			explicit variable_statement(unique_data_type_expression&& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept;
 
-			inline	const mcf::token_type		get_type(void) const noexcept { return _dataType.get_type(); }
-					const std::string			get_name(void) const noexcept;
-			inline	const mcf::ast::expression*	get_init_expression(void) const noexcept { return _initExpression.get(); }
+			inline	const mcf::ast::data_type_expression*	get_type(void) const noexcept { return _dataType.get(); }
+					const std::string						get_name(void) const noexcept;
+			inline	const mcf::ast::expression*				get_init_expression(void) const noexcept { return _initExpression.get(); }
 
 			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
@@ -329,9 +345,9 @@ namespace mcf
 			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
 
 		private:
-			const mcf::ast::data_type_expression				_dataType;
-			const std::unique_ptr<const mcf::ast::expression>	_name;
-			const std::unique_ptr<const mcf::ast::expression>	_initExpression;
+			const mcf::ast::unique_data_type_expression	_dataType;
+			const unique_expression				_name;
+			const unique_expression				_initExpression;
 		};
 
 		class variable_assign_statement final : public statement
@@ -395,7 +411,7 @@ namespace mcf
 		{
 		public:
 			explicit enum_statement(void) noexcept = default;
-			explicit enum_statement(const mcf::ast::data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept;
+			explicit enum_statement(const mcf::ast::primitive_data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept;
 
 			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
 
@@ -405,7 +421,7 @@ namespace mcf
 			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
 
 		private:
-			const mcf::ast::data_type_expression				_name;
+			const mcf::ast::primitive_data_type_expression		_name;
 			const std::vector<mcf::ast::identifier_expression>	_values;
 		};
 	}

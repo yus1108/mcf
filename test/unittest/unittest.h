@@ -156,25 +156,32 @@ namespace UnitTest
 	const mcf::token token_unused = { mcf::token_type::keyword_unused, "unused" };
 	const mcf::token token_in = { mcf::token_type::keyword_in, "in" };
 
+	inline std::unique_ptr<mcf::ast::primitive_data_type_expression> NewPrimitiveDataType(bool isConst, mcf::token token)
+	{
+		return std::make_unique<mcf::ast::primitive_data_type_expression>(isConst, token);
+	}
 
-	const mcf::ast::data_type_expression type_int8(false, token_int8);
-	const mcf::ast::data_type_expression type_int16(false, token_int16);
-	const mcf::ast::data_type_expression type_int32(false, token_int32);
-	const mcf::ast::data_type_expression type_int64(false, token_int64);
-	const mcf::ast::data_type_expression type_uint8(false, token_uint8);
-	const mcf::ast::data_type_expression type_uint16(false, token_uint16);
-	const mcf::ast::data_type_expression type_uint32(false, token_uint32);
-	const mcf::ast::data_type_expression type_uint64(false, token_uint64);
+	inline mcf::ast::unique_data_type_expression NewTypeInt32(bool isConst)
+	{
+		return NewPrimitiveDataType(isConst, token_int32);
+	}
 
-	const mcf::ast::data_type_expression type_const_int8(true, token_int8);
-	const mcf::ast::data_type_expression type_const_int16(true, token_int16);
-	const mcf::ast::data_type_expression type_const_int32(true, token_int32);
-	const mcf::ast::data_type_expression type_const_int64(true, token_int64);
-	const mcf::ast::data_type_expression type_const_uint8(true, token_uint8);
-	const mcf::ast::data_type_expression type_const_uint16(true, token_uint16);
-	const mcf::ast::data_type_expression type_const_uint32(true, token_uint32);
-	const mcf::ast::data_type_expression type_const_uint64(true, token_uint64);
-	const mcf::ast::data_type_expression type_const_utf8(true, token_utf8);
+	const mcf::ast::primitive_data_type_expression type_int8(false, token_int8);
+	const mcf::ast::primitive_data_type_expression type_int16(false, token_int16);
+	const mcf::ast::primitive_data_type_expression type_int64(false, token_int64);
+	const mcf::ast::primitive_data_type_expression type_uint8(false, token_uint8);
+	const mcf::ast::primitive_data_type_expression type_uint16(false, token_uint16);
+	const mcf::ast::primitive_data_type_expression type_uint32(false, token_uint32);
+	const mcf::ast::primitive_data_type_expression type_uint64(false, token_uint64);
+
+	const mcf::ast::primitive_data_type_expression type_const_int8(true, token_int8);
+	const mcf::ast::primitive_data_type_expression type_const_int16(true, token_int16);
+	const mcf::ast::primitive_data_type_expression type_const_int64(true, token_int64);
+	const mcf::ast::primitive_data_type_expression type_const_uint8(true, token_uint8);
+	const mcf::ast::primitive_data_type_expression type_const_uint16(true, token_uint16);
+	const mcf::ast::primitive_data_type_expression type_const_uint32(true, token_uint32);
+	const mcf::ast::primitive_data_type_expression type_const_uint64(true, token_uint64);
+	const mcf::ast::primitive_data_type_expression type_const_utf8(true, token_utf8);
 
 	inline const mcf::ast::identifier_expression Identifier(const char* const value)
 	{
@@ -184,11 +191,6 @@ namespace UnitTest
 	inline std::unique_ptr<const mcf::ast::identifier_expression> NewIdentifier(const char* const value)
 	{
 		return std::make_unique<mcf::ast::identifier_expression>(mcf::token{mcf::token_type::identifier, value});
-	}
-
-	inline std::unique_ptr<const mcf::ast::data_type_expression> NewDataType(bool isConst, mcf::token token)
-	{
-		return std::make_unique<mcf::ast::data_type_expression>(isConst, token);
 	}
 
 	inline std::unique_ptr<const mcf::ast::literal_expession> NewInt(int32_t value)

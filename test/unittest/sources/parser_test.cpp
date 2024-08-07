@@ -435,8 +435,8 @@ UnitTest::Parser::Parser(void) noexcept
 		using namespace mcf;
 		using namespace mcf::ast;
 
-		auto LiteralVariableStatement = [&](data_type_expression type, const char* name, std::unique_ptr<const literal_expession>&& literalExpression) -> std::unique_ptr<statement> {
-			return std::make_unique<variable_statement>(type, NewIdentifier(name), std::move(literalExpression));
+		auto LiteralVariableStatement = [&](unique_data_type_expression&& type, const char* name, std::unique_ptr<const literal_expession>&& literalExpression) -> std::unique_ptr<statement> {
+			return std::make_unique<variable_statement>(std::move(type), NewIdentifier(name), std::move(literalExpression));
 			};
 
 		auto EnumStatement = [](const char* enumName, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
@@ -450,7 +450,7 @@ UnitTest::Parser::Parser(void) noexcept
 				}
 				return nameVector;
 			};
-			return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), EnumValueNames(valueNames));
+			return std::make_unique<enum_statement>(std::make_unique<primitive_data_type_expression>(false, token{ mcf::token_type::custom_enum_type, enumName }), EnumValueNames(valueNames));
 		};
 
 		auto EnumDataType = [](bool isConst, const char* const typeName) -> std::unique_ptr<data_type_expression> { return std::make_unique<data_type_expression>(isConst, token{ token_type::custom_enum_type, typeName }); };
@@ -510,7 +510,7 @@ UnitTest::Parser::Parser(void) noexcept
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
 			FunctionStatement(std::move(EnumDataType(true, "PRINT_RESULT")), "Print",
 				{
-					UnknownIndex(std::move(Parameter(token_in, NewDataType(true, token_utf8), "format"))).release(),
+					UnknownIndex(std::move(Parameter(token_in, NewPrimitiveDataType(true, token_utf8), "format"))).release(),
 					Variadic(token_invalid).release(),
 				},
 				{}),
@@ -521,10 +521,10 @@ UnitTest::Parser::Parser(void) noexcept
 						Print("%s\n", str);
 					}
 				*/
-				FunctionStatement(std::move(NewDataType(false, token_void)), "main",
+				FunctionStatement(std::move(NewPrimitiveDataType(false, token_void)), "main",
 					{
-						Parameter(token_unused, NewDataType(true, token_int32), "argc").release(),
-						UnknownIndex(UnknownIndex(std::move(Parameter(token_unused, NewDataType(true, token_utf8), "argv")))).release(),
+						Parameter(token_unused, NewPrimitiveDataType(true, token_int32), "argc").release(),
+						UnknownIndex(UnknownIndex(std::move(Parameter(token_unused, NewPrimitiveDataType(true, token_utf8), "argv")))).release(),
 					},
 					{
 						EnumStatement("PRINT_RESULT", {"NO_ERROR"}).release(),
@@ -592,8 +592,10 @@ bool UnitTest::Parser::test_variable_declaration_statement(const mcf::ast::state
 		STATEMENT_TYPES[mcf::enum_index(statement->get_statement_type())]);
 
 	const mcf::ast::variable_statement* variableDeclaration = static_cast<const mcf::ast::variable_statement*>(statement);
-	fatal_assert(variableDeclaration->get_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s",
-		TOKEN_TYPES[enum_index(expectedDataType)], TOKEN_TYPES[enum_index(variableDeclaration->get_type())]);
+	fatal_assert(variableDeclaration->get_type()->get_data_type() == mcf::ast::data_type::primitive, u8"변수 타입이 'primitive'가 아닙니다.");
+	const mcf::ast::primitive_data_type_expression* primitiveDataType = static_cast<const mcf::ast::primitive_data_type_expression*>(variableDeclaration->get_type());
+	fatal_assert(primitiveDataType->get_token_type() == expectedDataType, u8"변수 선언 타입이 '%s'가 아닙니다. 실제값=%s",
+		TOKEN_TYPES[enum_index(expectedDataType)], TOKEN_TYPES[enum_index(primitiveDataType->get_token_type())]);
 	fatal_assert(variableDeclaration->get_name() == expectedName, u8"변수 선언 이름이 '%s'가 아닙니다. 실제값=%s", expectedName.c_str(), variableDeclaration->get_name().c_str());
 	// TODO: #11 initialization 도 구현 필요
 

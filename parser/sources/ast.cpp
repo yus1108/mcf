@@ -231,11 +231,12 @@ void mcf::ast::macro_include_statement::evaluate(mcf::evaluator& inOutEvaluator)
 	_program.evaluate(inOutEvaluator);
 }
 
-mcf::ast::variable_statement::variable_statement(const mcf::ast::data_type_expression& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
-	: _dataType(dataType)
+mcf::ast::variable_statement::variable_statement(unique_data_type_expression&& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
+	: _dataType(dataType.release())
 	, _name(name.release())
 	, _initExpression(initExpression.release())
 {
+	debug_assert(_dataType.get() != nullptr, u8"dataType은 nullptr 여선 안됩니다.");
 	debug_assert(_name.get() != nullptr, u8"name은 nullptr 여선 안됩니다.");
 }
 
@@ -378,7 +379,7 @@ void mcf::ast::function_call_statement::evaluate(mcf::evaluator& inOutEvaluator)
 	debug_message("");
 }
 
-mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept
+mcf::ast::enum_statement::enum_statement(const mcf::ast::primitive_data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept
 	: _name(name)
 	, _values(values)
 {}
