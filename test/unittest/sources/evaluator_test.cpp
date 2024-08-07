@@ -17,13 +17,16 @@ UnitTest::Evaluator::Evaluator(void) noexcept
 				mcf::PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
 			parser.parse_program(actualProgram);
 			const bool isTestPassed = Parser::check_parser_errors(parser);
-			
+			if (isTestPassed == false)
+			{
+				return false;
+			}
 			
 			std::cout << symbol_share_test << ":" << std::endl << actualProgram.convert_to_string() << std::endl;
 
 			actualProgram.evaluate(evaluator);
 
-			return isTestPassed;
+			return true;
 		}
 	);
 }

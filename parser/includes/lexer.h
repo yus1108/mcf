@@ -87,16 +87,15 @@ namespace mcf
 		count
 	};
 
-	const mcf::token_type find_keyword_token_type(const std::string& tokenLiteral) noexcept;
-
 	struct token final
 	{
 		mcf::token_type	Type = mcf::token_type::invalid;
 		std::string		Literal;
-		size_t			Line	= 0;
-		size_t			Index	= 0;
+		size_t			Line = 0;
+		size_t			Index = 0;
 	};
-	inline bool operator==(const mcf::token& lhs, const mcf::token& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
+	inline bool operator==( const mcf::token& lhs, const mcf::token& rhs ) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
+	const mcf::token find_predefined_keyword(const std::string& tokenLiteral) noexcept;
 
 	// 주의: thread-safe 하지 않은 클래스입니다.
 	class lexer final {

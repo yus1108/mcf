@@ -83,9 +83,6 @@ namespace mcf
 			function_block,
 			function_call,
 
-			enum_value_increment,	// 평가기에서 default enum value 를 increment 하기 위해 있는 expression 타입입니다.
-			enum_block,				// identifier [optional: assign expression] [optional: comma !<enum_block>]
-
 			// 이 밑으로는 수정하면 안됩니다.
 			count,
 		};
@@ -274,7 +271,7 @@ namespace mcf
 			explicit function_block_expression(void) noexcept = default;
 			explicit function_block_expression(statement_array&& statements) noexcept;
 
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
+			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_block; }
 					virtual const std::string				convert_to_string(void) const noexcept override final;
 
 		private:
@@ -295,31 +292,6 @@ namespace mcf
 		private:
 			unique_expression	_function;
 			expression_array	_parameters;
-		};
-
-		class enum_value_increment final : public expression
-		{
-		public:
-			explicit enum_value_increment(void) noexcept = default;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_value_increment; }
-			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return std::string(); }
-		};
-		
-		class enum_block_expression final : public expression
-		{
-		public:
-			explicit enum_block_expression(void) noexcept = default;
-			explicit enum_block_expression(std::vector<mcf::ast::identifier_expression>& names, expression_array&& values) noexcept;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::enum_block; }
-			virtual const std::string						convert_to_string(void) const noexcept override final;
-
-		private:
-			using name_vector		= std::vector<mcf::ast::identifier_expression>;
-
-			name_vector			_names;
-			expression_array	_values;
 		};
 
 		class macro_include_statement final : public statement
@@ -423,7 +395,7 @@ namespace mcf
 		{
 		public:
 			explicit enum_statement(void) noexcept = default;
-			explicit enum_statement(const mcf::ast::data_type_expression& name, std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept;
+			explicit enum_statement(const mcf::ast::data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept;
 
 			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
 
@@ -433,9 +405,8 @@ namespace mcf
 			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
 
 		private:
-			using block_statement = std::unique_ptr<const mcf::ast::enum_block_expression>;
-			const mcf::ast::data_type_expression	_name;
-			const block_statement					_values;
+			const mcf::ast::data_type_expression				_name;
+			const std::vector<mcf::ast::identifier_expression>	_values;
 		};
 	}
 }

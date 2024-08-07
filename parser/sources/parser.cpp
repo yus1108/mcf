@@ -210,7 +210,7 @@ inline std::unique_ptr<const mcf::ast::statement> mcf::parser::parse_declaration
 		{
 			statementsBlock = parse_function_block_expression();
 
-			_evaluator->pop();
+			_evaluator->pop_scope();
 			if (read_next_token_if(token_type::rbrace) == false)
 			{
 				parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -329,7 +329,7 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 			return nullptr;
 		}
 		
-		if (_evaluator->is_datatype_registered_at_current_scope(_nextToken.Literal) == true)
+		if (_evaluator->has_keyword_at_current_scope(_nextToken.Literal) == true)
 		{
 			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"같은 스코프안에 중복되는 타입이 있습니다.. 실제 값으로 %s::%s를 받았습니다.",
 				_evaluator->convert_scope_to_string().c_str(), _nextToken.Literal.c_str());
@@ -340,7 +340,7 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 	}
 
 	// 열거형 타입을 등록하고 데이터 타입으로 받는다.
-	_currentToken.Type = _evaluator->register_custom_enum_type(_currentToken.Literal);
+	_currentToken = _evaluator->register_custom_enum_type(_currentToken);
 	if (_currentToken.Type != token_type::custom_enum_type)
 	{
 		parsing_fail_message(parser_error_id::registering_duplicated_symbol_name, _currentToken, u8"심볼이 중복되는 타입이 등록 되었습니다. 타입=%s", _currentToken.Literal.c_str());
@@ -362,14 +362,21 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 		return nullptr;
 	}
 
-	std::unique_ptr<const ast::enum_block_expression> values(parse_enum_block_expression());
-	if (values.get() == nullptr)
+	std::vector<mcf::ast::identifier_expression> values;
+	while (read_next_token_if(token_type::identifier) == true)
 	{
-		_evaluator->pop();
-		return nullptr;
+		values.emplace_back(_currentToken);
+
+		// comma 가 오면 루프를 다시 돈다.
+		if (read_next_token_if(token_type::comma))
+		{
+			continue;
+		}
+
+		break;
 	}
 
-	_evaluator->pop();
+	_evaluator->pop_scope();
 	if (read_next_token_if(token_type::rbrace) == false)
 	{
 		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `rbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -787,56 +794,6 @@ inline std::unique_ptr<const mcf::ast::function_block_expression> mcf::parser::p
 	return std::make_unique<ast::function_block_expression>(std::move(statements));
 }
 
-std::unique_ptr<const mcf::ast::enum_block_expression> mcf::parser::parse_enum_block_expression(void) noexcept
-{
-	using name_vector = std::vector<mcf::ast::identifier_expression>;
-
-	debug_assert(_currentToken.Type == token_type::lbrace, u8"이 함수가 호출될때 현재 토큰은 'lbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
-		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
-
-	name_vector	names;
-	ast::expression_array values;
-
-	while (read_next_token_if(token_type::identifier) == true)
-	{
-		names.emplace_back(_currentToken);
-
-		// assign 타입이 들어오지 않으면 enum_value_increment 를 넣고 평가 단계에서 그전값에 1을 더한다.
-		if (read_next_token_if(token_type::assign))
-		{
-			read_next_token();
-			values.emplace_back(parse_expression(mcf::parser::precedence::lowest));
-			if (values.back().get() == nullptr)
-			{
-				parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
-				return nullptr;
-			}
-		}
-		else
-		{
-			values.emplace_back(new(std::nothrow) mcf::ast::enum_value_increment());
-			if (values.back().get() == nullptr)
-			{
-				parsing_fail_message(parser_error_id::fail_expression_parsing, _nextToken, u8"파싱에 실패하였습니다.");
-				return nullptr;
-			}
-		}
-
-		// comma 가 오면 루프를 다시 돈다.
-		if (read_next_token_if(token_type::comma))
-		{
-			continue;
-		}
-
-		break;
-	}
-
-	debug_assert(_nextToken.Type == token_type::rbrace, u8"이 함수가 끝날때 다음 토큰은 'rbrace' 타입이어야만 합니다! 현재 token_type=%s(%zu) literal=`%s`",
-		internal::TOKEN_TYPES[enum_index(_currentToken.Type)], enum_index(_currentToken.Type), _currentToken.Literal.c_str());
-
-	return std::make_unique<mcf::ast::enum_block_expression>(names, std::move(values));
-}
-
 inline void mcf::parser::read_next_token(void) noexcept
 {
 	_currentToken = _nextToken;
@@ -864,7 +821,7 @@ inline const bool mcf::parser::read_next_token_if(mcf::token_type tokenType, con
 	{
 		return false;
 	}
-	_evaluator->push(scopeToPush);
+	_evaluator->push_scope(scopeToPush);
 	read_next_token();
 	return true;
 }

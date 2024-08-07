@@ -87,7 +87,7 @@ namespace mcf
 		}
 	}
 
-	const mcf::token_type mcf::find_keyword_token_type(const std::string& tokenLiteral) noexcept
+	const mcf::token mcf::find_predefined_keyword(const std::string& tokenLiteral) noexcept
 	{
 		// identifier 조건에 부합하는 키워드만 등록합니다.
 		constexpr const char* IDENTIFIER_KEYWORDS[] =
@@ -123,11 +123,11 @@ namespace mcf
 		{
 			if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
 			{
-				return mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1);
+				return token{ mcf::enum_at<mcf::token_type>(enum_index(mcf::token_type::keyword_identifier_start) + i + 1), tokenLiteral, 0, 0 };
 			}
 		}
 
-		return mcf::token_type::invalid;
+		return token{ mcf::token_type::invalid, "invalid", 0, 0 };
 	}
 }
 
@@ -683,6 +683,6 @@ inline const mcf::token mcf::lexer::read_numeric_literal(void) noexcept
 
 const mcf::token_type mcf::lexer::determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept
 {
-	const mcf::token_type tokenFound = _evaluator->find_datatype_registered(tokenLiteral);
+	const mcf::token_type tokenFound = _evaluator->find_keyword(tokenLiteral).Type;
 	return tokenFound != token_type::invalid ? tokenFound : mcf::token_type::identifier;
 }

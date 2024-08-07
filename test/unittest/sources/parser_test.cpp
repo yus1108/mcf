@@ -440,31 +440,18 @@ UnitTest::Parser::Parser(void) noexcept
 			};
 
 		auto EnumStatement = [](const char* enumName, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
-			{
-				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> std::unique_ptr<enum_block_expression> {
-					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
-						std::vector<identifier_expression> nameVector;
-						const char* const* pointer = names.begin();
-						for (size_t i = 0; i < names.size(); i++)
-						{
-							nameVector.emplace_back(token{ token_type::identifier, pointer[i]});
-						}
-						return nameVector;
-						};
-					auto EnumIncrementValues = [](size_t length) -> expression_array {
-						expression_array values;
-						values.reserve(length);
-						for (size_t i = 0; i < length; i++)
-						{
-							values.emplace_back(new enum_value_increment());
-						}
-						return std::move(values);
-						};
-					auto nameVector = EnumValueNames(names);
-					return std::make_unique<enum_block_expression>(nameVector, EnumIncrementValues(names.size()));
-					};
-				return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), std::move(BuildBlockStatement(valueNames)));
+		{
+			auto EnumValueNames = []( std::initializer_list<const char*> names ) -> std::vector<identifier_expression> {
+				std::vector<identifier_expression> nameVector;
+				const char* const* pointer = names.begin();
+				for ( size_t i = 0; i < names.size(); i++ )
+				{
+					nameVector.emplace_back( token{ token_type::identifier, pointer[i] } );
+				}
+				return nameVector;
 			};
+			return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), EnumValueNames(valueNames));
+		};
 
 		auto EnumDataType = [](bool isConst, const char* const typeName) -> std::unique_ptr<data_type_expression> { return std::make_unique<data_type_expression>(isConst, token{ token_type::custom_enum_type, typeName }); };
 
@@ -644,8 +631,6 @@ bool UnitTest::Parser::test_expression(const mcf::ast::expression* actual, const
 	case mcf::ast::expression_type::function_parameter_list: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::function_call: __COUNTER__; [[fallthrough]];
 	case mcf::ast::expression_type::function_block: __COUNTER__; [[fallthrough]];
-	case mcf::ast::expression_type::enum_block: __COUNTER__; [[fallthrough]];
-	case mcf::ast::expression_type::enum_value_increment: __COUNTER__; [[fallthrough]];
 	default:
 		fatal_error(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. expression_type=%s(%zu)",
 			EXPRESSION_TYPES[mcf::enum_index(actual->get_expression_type())], mcf::enum_index(actual->get_expression_type()));

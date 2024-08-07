@@ -200,38 +200,6 @@ const std::string mcf::ast::function_block_expression::convert_to_string(void) c
 	return buffer;
 }
 
-mcf::ast::enum_block_expression::enum_block_expression(std::vector<mcf::ast::identifier_expression>& names, expression_array&& values) noexcept
-	: _names(names)
-{
-	const size_t size = values.size();
-	debug_assert(names.size() == size, u8"names의 아이템 갯수와 values의 아이템 갯수가 같아야합니다. countof(names)=%zu, countof(values)=%zu", names.size(), size);
-
-	_values.reserve(size);
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(values[i].get() != nullptr, u8"values[%zu]는 nullptr 여선 안됩니다.", i);
-		_values.emplace_back(values[i].release());
-	}
-}
-
-const std::string mcf::ast::enum_block_expression::convert_to_string(void) const noexcept
-{
-	std::string buffer;
-	const size_t size = _names.size();
-
-	debug_assert(_values.size() == size, u8"_names의 아이템 갯수와 _values의 아이템 갯수가 같아야합니다. countof(names)=%zu, countof(values)=%zu", size, _values.size());
-
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(_values[i].get() != nullptr, u8"_values[%zu]는 nullptr 여선 안됩니다.", i);
-		buffer += "\t" + _names[i].convert_to_string();
-		buffer += _values[i]->get_expression_type() == expression_type::enum_value_increment ? "" : " = ";
-		buffer += _values[i]->convert_to_string() + ",\n";
-	}
-	buffer.erase(buffer.size() - 1);
-	return buffer;
-}
-
 mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept
 	: _token(token)
 	, _path(token.Literal.substr(sizeof("#include "), token.Literal.size() - sizeof("#include <")))
@@ -410,21 +378,38 @@ void mcf::ast::function_call_statement::evaluate(mcf::evaluator& inOutEvaluator)
 	debug_message("");
 }
 
-mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name, std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept
+mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept
 	: _name(name)
-	, _values(values.release())
-{
-	debug_assert(_values.get() != nullptr, u8"values는 nullptr 여선 안됩니다.");
-}
+	, _values(values)
+{}
 
 const std::string mcf::ast::enum_statement::convert_to_string(void) const noexcept
 {
-	debug_assert(_values.get() != nullptr, u8"_values는 nullptr 여선 안됩니다.");
-	return "enum " + _name.convert_to_string() + "\n{\n" + _values->convert_to_string() + "\n};";
+	std::string buffer;
+	buffer = "enum " + _name.convert_to_string() + "\n{\n";
+
+	const size_t size = _values.size();
+	for ( size_t i = 0; i < size; i++ )
+	{
+		buffer += "\t" + _values[i].convert_to_string() + ",\n";
+	}
+
+	buffer += "};";
+	return buffer;
 }
 
 void mcf::ast::enum_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
 {
-	debug_assert(inOutEvaluator.is_datatype_registered_at_current_scope(_name.convert_to_string()), u8"현재 스코프에 해당 enum이 존재 하지 않습니다.");
-	debug_message(u8"구현 필요");
+	const std::string enumName = _name.convert_to_string();
+
+	debug_assert(inOutEvaluator.has_keyword_at_current_scope(enumName), u8"현재 스코프에 해당 enum이 존재 하지 않습니다.");
+	inOutEvaluator.push_scope(enumName);
+
+	const size_t valueCount = _values.size();
+	for (size_t i = 0; i < valueCount; ++i)
+	{
+		inOutEvaluator.register_custom_enum_value(_values[i].convert_to_string());
+	}
+
+	inOutEvaluator.pop_scope();
 }
