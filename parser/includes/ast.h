@@ -423,9 +423,7 @@ namespace mcf
 		{
 		public:
 			explicit enum_statement(void) noexcept = default;
-			explicit enum_statement(const mcf::ast::data_type_expression& name, 
-									const mcf::ast::data_type_expression& dataType,
-									std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept;
+			explicit enum_statement(const mcf::ast::data_type_expression& name, std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept;
 
 			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
 
@@ -437,7 +435,6 @@ namespace mcf
 		private:
 			using block_statement = std::unique_ptr<const mcf::ast::enum_block_expression>;
 			const mcf::ast::data_type_expression	_name;
-			const mcf::ast::data_type_expression	_dataType;
 			const block_statement					_values;
 		};
 	}

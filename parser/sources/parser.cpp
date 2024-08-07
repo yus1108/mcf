@@ -355,27 +355,6 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 	}
 	const ast::data_type_expression name = *static_cast<const ast::data_type_expression*>(nameExpression.get());
 
-	bool isUseDefaultDataType = true;
-	if (read_next_token_if(token_type::colon) == true)
-	{
-		if (is_token_data_type(_nextToken) == false)
-		{
-			parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 데이터 타입이어야 합니다. 실제 값으로 %s를 받았습니다.",
-				internal::TOKEN_TYPES[enum_index(_nextToken.Type)]);
-			return nullptr;
-		}
-		read_next_token();
-		isUseDefaultDataType = false;
-	}
-
-	ast::unique_expression dataTypeExpression = isUseDefaultDataType ? nullptr : ast::unique_expression(parse_data_type_or_identifier_expressions());
-	if ( dataTypeExpression != nullptr && nameExpression->get_expression_type() != ast::expression_type::data_type )
-	{
-		parsing_fail_message( parser_error_id::fail_expression_parsing, _currentToken, u8"현재 토큰은 데이터 타입이어야 합니다. 타입=%s", _currentToken.Literal.c_str() );
-		return nullptr;
-	}
-	ast::data_type_expression dataType = (dataTypeExpression == nullptr) ? ast::data_type_expression(false, token{ token_type::keyword_int32, "int32" }) : *static_cast<const ast::data_type_expression*>(dataTypeExpression.get());
-
 	if (read_next_token_if(token_type::lbrace, name.convert_to_string()) == false)
 	{
 		parsing_fail_message(parser_error_id::unexpected_next_token, _nextToken, u8"다음 토큰은 `lbrace`여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -405,7 +384,7 @@ inline std::unique_ptr<const mcf::ast::enum_statement> mcf::parser::parse_enum_s
 		return nullptr;
 	}
 
-	return std::make_unique<ast::enum_statement>(name, dataType, std::move(values));
+	return std::make_unique<ast::enum_statement>(name, std::move(values));
 }
 
 inline std::unique_ptr<const mcf::ast::expression> mcf::parser::parse_expression(const mcf::parser::precedence precedence) noexcept

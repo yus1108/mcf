@@ -439,7 +439,7 @@ UnitTest::Parser::Parser(void) noexcept
 			return std::make_unique<variable_statement>(type, NewIdentifier(name), std::move(literalExpression));
 			};
 
-		auto EnumStatement = [](const char* enumName, data_type_expression enumDataType, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
+		auto EnumStatement = [](const char* enumName, std::initializer_list<const char*> valueNames) -> std::unique_ptr<enum_statement>
 			{
 				auto BuildBlockStatement = [](std::initializer_list<const char*> names) -> std::unique_ptr<enum_block_expression> {
 					auto EnumValueNames = [](std::initializer_list<const char*> names) -> std::vector<identifier_expression> {
@@ -463,7 +463,7 @@ UnitTest::Parser::Parser(void) noexcept
 					auto nameVector = EnumValueNames(names);
 					return std::make_unique<enum_block_expression>(nameVector, EnumIncrementValues(names.size()));
 					};
-				return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), enumDataType, std::move(BuildBlockStatement(valueNames)));
+				return std::make_unique<enum_statement>(data_type_expression(false, { mcf::token_type::custom_enum_type, enumName }), std::move(BuildBlockStatement(valueNames)));
 			};
 
 		auto EnumDataType = [](bool isConst, const char* const typeName) -> std::unique_ptr<data_type_expression> { return std::make_unique<data_type_expression>(isConst, token{ token_type::custom_enum_type, typeName }); };
@@ -519,7 +519,7 @@ UnitTest::Parser::Parser(void) noexcept
 			// int32 boo = 5;							
 			LiteralVariableStatement(type_int32, "boo", std::move(NewInt(5))),
 			// enum PRINT_RESULT : int32{ NO_ERROR, };
-			EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}),
+			EnumStatement("PRINT_RESULT", {"NO_ERROR"}),
 			// const PRINT_RESULT Print(in const utf8 format[], ...);
 			FunctionStatement(std::move(EnumDataType(true, "PRINT_RESULT")), "Print",
 				{
@@ -540,7 +540,7 @@ UnitTest::Parser::Parser(void) noexcept
 						UnknownIndex(UnknownIndex(std::move(Parameter(token_unused, NewDataType(true, token_utf8), "argv")))).release(),
 					},
 					{
-						EnumStatement("PRINT_RESULT", type_uint8, {"NO_ERROR"}).release(),
+						EnumStatement("PRINT_RESULT", {"NO_ERROR"}).release(),
 						new variable_statement(type_const_utf8, std::move(UnknownIndex(std::move(NewIdentifier("str")))), NewString("Hello, World!")),
 						NewFunctionCallStatement(NewIdentifier("Print"),
 							{
@@ -564,8 +564,6 @@ UnitTest::Parser::Parser(void) noexcept
 
 		return true;
 		});
-
-	_tests.pop_back();
 }
 
 const bool UnitTest::Parser::Test(void) const noexcept

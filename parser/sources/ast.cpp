@@ -410,11 +410,8 @@ void mcf::ast::function_call_statement::evaluate(mcf::evaluator& inOutEvaluator)
 	debug_message("");
 }
 
-mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& name,
-											const mcf::ast::data_type_expression& dataType,
-											std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept
+mcf::ast::enum_statement::enum_statement(const mcf::ast::data_type_expression& name, std::unique_ptr<const mcf::ast::enum_block_expression>&& values) noexcept
 	: _name(name)
-	, _dataType(dataType)
 	, _values(values.release())
 {
 	debug_assert(_values.get() != nullptr, u8"values는 nullptr 여선 안됩니다.");
@@ -423,12 +420,11 @@ mcf::ast::enum_statement::enum_statement(	const mcf::ast::data_type_expression& 
 const std::string mcf::ast::enum_statement::convert_to_string(void) const noexcept
 {
 	debug_assert(_values.get() != nullptr, u8"_values는 nullptr 여선 안됩니다.");
-	return "enum " + _name.convert_to_string() + " : " + _dataType.convert_to_string() + "\n{\n" + _values->convert_to_string() + "\n};";
+	return "enum " + _name.convert_to_string() + "\n{\n" + _values->convert_to_string() + "\n};";
 }
 
 void mcf::ast::enum_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
 {
-	//debug_assert(inOutEvaluator.is_datatype_registered_at_current_scope(_name), u8"_values는 nullptr 여선 안됩니다.");
-	inOutEvaluator;
-	debug_message("");
+	debug_assert(inOutEvaluator.is_datatype_registered_at_current_scope(_name.convert_to_string()), u8"현재 스코프에 해당 enum이 존재 하지 않습니다.");
+	debug_message(u8"구현 필요");
 }

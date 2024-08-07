@@ -1,4 +1,4 @@
-﻿enum TEST_ENUM: uint8
+﻿enum TEST_ENUM
 {
     TEST_VALUE1
 };

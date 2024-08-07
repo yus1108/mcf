@@ -5,14 +5,14 @@ int32 boo = 5;
 // Print is builtin function that prints output to console
 // TODO: command line argument 받는법 필요
 // TODO: return type for main?
-enum PRINT_RESULT : uint8
+enum PRINT_RESULT
 {
     NO_ERROR
 };
 const PRINT_RESULT Print(in const utf8 format[], ...);
 void main(unused const int32 argc, unused const utf8 argv[][]) 
 {
-    enum PRINT_RESULT : uint8
+    enum PRINT_RESULT
     {
         NO_ERROR
     };
