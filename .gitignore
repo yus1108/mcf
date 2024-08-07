@@ -1,4 +1,4 @@
-# Prerequisites
+﻿# Prerequisites
 *.d
 
 # Compiled Object files
@@ -34,5 +34,6 @@
 # Visual Studios
 .vs
 x64
+ARM64
 *.args.json
 *.vcxproj.user

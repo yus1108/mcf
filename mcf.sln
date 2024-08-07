@@ -14,24 +14,34 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "솔루션 항목", "솔루�
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|ARM64.Build.0 = Debug|ARM64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|x64.ActiveCfg = Debug|x64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|x64.Build.0 = Debug|x64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|x86.ActiveCfg = Debug|Win32
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Debug|x86.Build.0 = Debug|Win32
+		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|ARM64.ActiveCfg = Release|ARM64
+		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|ARM64.Build.0 = Release|ARM64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|x64.ActiveCfg = Release|x64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|x64.Build.0 = Release|x64
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|x86.ActiveCfg = Release|Win32
 		{F44B5B67-92BA-4144-B1AE-0A9EEA403750}.Release|x86.Build.0 = Release|Win32
+		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|ARM64.Build.0 = Debug|ARM64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|x64.ActiveCfg = Debug|x64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|x64.Build.0 = Debug|x64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|x86.ActiveCfg = Debug|Win32
 		{BBF15E00-1B82-4116-A942-479216566F00}.Debug|x86.Build.0 = Debug|Win32
+		{BBF15E00-1B82-4116-A942-479216566F00}.Release|ARM64.ActiveCfg = Release|ARM64
+		{BBF15E00-1B82-4116-A942-479216566F00}.Release|ARM64.Build.0 = Release|ARM64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Release|x64.ActiveCfg = Release|x64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Release|x64.Build.0 = Release|x64
 		{BBF15E00-1B82-4116-A942-479216566F00}.Release|x86.ActiveCfg = Release|Win32
