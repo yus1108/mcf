@@ -1,42 +1,42 @@
 ﻿#pragma once
 
-#define unused(variable) variable
-#define array_size(value) sizeof(value) / mcf::array_type_size(value)
+#define UNUSED(variable) variable
+#define ARRAY_SIZE(value) sizeof(value) / mcf::ARRAY_TYPE_SIZE(value)
 
 namespace mcf
 {
 	// ENUM
 	template<typename T>
-	constexpr const size_t enum_count(void)
+	constexpr const size_t ENUM_COUNT(void)
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum type is required for this function");
-		return static_cast<size_t>(T::count);
+		return static_cast<size_t>(T::COUNT);
 	}
 
 	template<typename T>
-	constexpr const size_t enum_count(const T value)
+	constexpr const size_t ENUM_COUNT(const T value)
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
-		return static_cast<size_t>(T::count);
+		return static_cast<size_t>(T::COUNT);
 	}
 
 	template<typename T>
-	constexpr const size_t enum_index(const T value)
+	constexpr const size_t ENUM_INDEX(const T value)
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
-		return value < T::count ? static_cast<size_t>(value) : static_cast<size_t>(T::invalid);
+		return value < T::COUNT ? static_cast<size_t>(value) : static_cast<size_t>(T::INVALID);
 	}
 
 	template<typename T>
-	constexpr const T enum_at(const size_t index)
+	constexpr const T ENUM_AT(const size_t index)
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
-		return index < mcf::enum_count<T>() ? static_cast<T>(index) : T::invalid;
+		return index < mcf::ENUM_COUNT<T>() ? static_cast<T>(index) : T::INVALID;
 	}
 
 	// ARRAY
 	template<typename T>
-	constexpr const size_t array_type_size(T array[])
+	constexpr const size_t ARRAY_TYPE_SIZE(T array[])
 	{
 		array;
 		return sizeof(T);

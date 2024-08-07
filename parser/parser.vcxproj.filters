@@ -21,37 +21,18 @@
     <ClInclude Include="internals\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="includes\parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\ast.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="includes\common.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="includes\lexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="includes\common.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="includes\evaluator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="internals\parser.ih" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="sources\parser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sources\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sources\ast.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="sources\lexer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="sources\evaluator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

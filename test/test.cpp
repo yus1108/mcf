@@ -1,7 +1,5 @@
-﻿#include <iostream>
-#include <vector>
-#include <memory>
-#include <parser/includes/common.h>
+﻿#include <Windows.h>
+#include <iostream>
 
 #include "unittest/unittest.h"
 
@@ -51,27 +49,6 @@ const int main(const size_t argc, const char* const argv[])
 			return 1;
 		}
 	}
-
-	// parser test
-	{
-		UnitTest::Parser parser;
-		if (parser.Test() == false)
-		{
-			std::cout << "`parser.Test()` Failed" << std::endl;
-			return 1;
-		}
-	}
-
-	// evaluator test
-	{
-		UnitTest::Evaluator evaluator;
-		if (evaluator.Test() == false)
-		{
-			std::cout << "`evaluator.Test()` Failed" << std::endl;
-			return 1;
-		}
-	}
-	
 
     std::cout << "All Tests Passed" << std::endl;
 	return 0;
