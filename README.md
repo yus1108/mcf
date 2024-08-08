@@ -5,7 +5,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 `...` : this can be replaced in practice as a series of any symbols (tokens|expressions|statements) with at least one symbol.
 
-`TOKEN` : the value between '\`' represents a token
+`TOKEN` : the highlighted and capitalized identifier represents a token
 
 `<Expression>` : the value between braces represents a expression
 
