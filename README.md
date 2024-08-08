@@ -4,12 +4,19 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ## Terms
 
 `TOKEN`: the value between '\`' represents a token
+
 `\<Expression>`: the value between braces represents a expression
+
 `[Statement]`: the value between brackets represents a statement
+
 { ... }: "..." can be token/expression/statement, and this represents that these "..." can be OUPTED OUT when parsing
+
 { ... }+: "..." can be token/expression/statement, and this represents that these "..." must be there at least ONE or MORE.
+
 { ... }*: "..." can be token/expression/statement, and this represents that these "..." can be there NONE or MORE.
+
 [prerequisite: ...]: "..." can be token/expression/statement, and this represents that these "..." must be required before parsing next symbol
+
 [expectnext: ...]: "..." can be token/expression/statement, and this represents that this "..." must be required for next symbol
 
 Any number after symbol name is to differentiate the same symbol with different evaluator explanations.
