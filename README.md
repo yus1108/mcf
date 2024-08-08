@@ -3,7 +3,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ## Terms
 
-`TOKEN`: the value between '`' represents a token
+`TOKEN`: the value between '\`' represents a token
 `\<Expression>`: the value between braces represents a expression
 `[Statement]`: the value between brackets represents a statement
 { ... }: "..." can be token/expression/statement, and this represents that these "..." can be OUPTED OUT when parsing
