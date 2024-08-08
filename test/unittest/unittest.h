@@ -15,20 +15,44 @@
 
 namespace UnitTest
 {
-	const mcf::Token::Data token_invalid = { mcf::Token::Type::INVALID, "invalid" };
-	const mcf::Token::Data token_const = { mcf::Token::Type::KEYWORD_CONST, "const" };
-	const mcf::Token::Data token_void = { mcf::Token::Type::KEYWORD_VOID, "void" };
-	const mcf::Token::Data token_int8 = { mcf::Token::Type::KEYWORD_INT8, "int8" };
-	const mcf::Token::Data token_int16 = { mcf::Token::Type::KEYWORD_INT16, "int16" };
-	const mcf::Token::Data token_int32 = { mcf::Token::Type::KEYWORD_INT32, "int32" };
-	const mcf::Token::Data token_int64 = { mcf::Token::Type::KEYWORD_INT64, "int64" };
-	const mcf::Token::Data token_uint8 = { mcf::Token::Type::KEYWORD_UINT8, "uint8" };
-	const mcf::Token::Data token_uint16 = { mcf::Token::Type::KEYWORD_UINT16, "uint16" };
-	const mcf::Token::Data token_uint32 = { mcf::Token::Type::KEYWORD_UINT32, "uint32" };
-	const mcf::Token::Data token_uint64 = { mcf::Token::Type::KEYWORD_UINT64, "uint64" };
-	const mcf::Token::Data token_utf8 = { mcf::Token::Type::KEYWORD_UTF8, "utf8" };
-	const mcf::Token::Data token_unused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
-	const mcf::Token::Data token_in = { mcf::Token::Type::KEYWORD_IN, "in" };
+	const mcf::Token::Data TokenInvalid = { mcf::Token::Type::INVALID, "invalid" };
+	const mcf::Token::Data TokenEOF = { mcf::Token::Type::END_OF_FILE, "\0" };
+	const mcf::Token::Data TokenVoid = { mcf::Token::Type::IDENTIFIER, "void" };
+	const mcf::Token::Data TokenByte = { mcf::Token::Type::IDENTIFIER, "byte" };
+	inline const mcf::Token::Data TokenIdentifier(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::IDENTIFIER, value }; }
+	inline const mcf::Token::Data TokenInteger(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::INTEGER, value }; }
+	inline const mcf::Token::Data TokenString(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::STRING, value }; }
+	const mcf::Token::Data TokenAssign = { mcf::Token::Type::ASSIGN, "=" };
+	const mcf::Token::Data TokenPlus = { mcf::Token::Type::PLUS, "+" };
+	const mcf::Token::Data TokenMinus = { mcf::Token::Type::MINUS, "-" };
+	const mcf::Token::Data TokenAsterisk = { mcf::Token::Type::ASTERISK, "*" };
+	const mcf::Token::Data TokenSlash = { mcf::Token::Type::SLASH, "/" };
+	const mcf::Token::Data TokenLT = { mcf::Token::Type::LT, "<" };
+	const mcf::Token::Data TokenGT = { mcf::Token::Type::GT, ">" };
+	const mcf::Token::Data TokenAmpersand = { mcf::Token::Type::AMPERSAND, "&" };
+	const mcf::Token::Data TokenLParen = { mcf::Token::Type::LPAREN, "(" };
+	const mcf::Token::Data TokenRParen = { mcf::Token::Type::RPAREN, ")" };
+	const mcf::Token::Data TokenLBrace = { mcf::Token::Type::LBRACE, "{" };
+	const mcf::Token::Data TokenRBrace = { mcf::Token::Type::RBRACE, "}" };
+	const mcf::Token::Data TokenLBracket = { mcf::Token::Type::LBRACKET, "[" };
+	const mcf::Token::Data TokenRBracket = { mcf::Token::Type::RBRACKET, "]" };
+	const mcf::Token::Data TokenColon = { mcf::Token::Type::COLON, ":" };
+	const mcf::Token::Data TokenSemicolon = { mcf::Token::Type::SEMICOLON, ";" };
+	const mcf::Token::Data TokenComma = { mcf::Token::Type::COMMA, "," };
+	const mcf::Token::Data TokenPointing = { mcf::Token::Type::POINTING, "->" };
+	const mcf::Token::Data TokenASM = { mcf::Token::Type::KEYWORD_ASM, "asm" };
+	const mcf::Token::Data TokenExtern = { mcf::Token::Type::KEYWORD_EXTERN, "extern" };
+	const mcf::Token::Data TokenTypedef = { mcf::Token::Type::KEYWORD_TYPEDEF, "typedef" };
+	const mcf::Token::Data TokenBind = { mcf::Token::Type::KEYWORD_BIND, "bind" };
+	const mcf::Token::Data TokenLet = { mcf::Token::Type::KEYWORD_LET, "let" };
+	const mcf::Token::Data TokenFunc = { mcf::Token::Type::KEYWORD_FUNC, "func" };
+	const mcf::Token::Data TokenMain = { mcf::Token::Type::KEYWORD_MAIN, "main" };
+	const mcf::Token::Data TokenReturn = { mcf::Token::Type::KEYWORD_RETURN, "return" };
+	const mcf::Token::Data TokenUnused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
+	const mcf::Token::Data TokenVariadic = { mcf::Token::Type::VARIADIC, "..." };
+	const mcf::Token::Data TokenInclude = { mcf::Token::Type::MACRO_INCLUDE, "#include" };
+	inline const mcf::Token::Data TokenComment(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT, value }; }
+	inline const mcf::Token::Data TokenCommentBlock(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT_BLOCK, value }; }
 
 	class BaseTest
 	{

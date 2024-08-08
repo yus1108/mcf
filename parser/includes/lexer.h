@@ -13,9 +13,9 @@ namespace mcf
 			END_OF_FILE, // \0
 
 			// 식별자 + 리터럴
-			IDENTIFIER,				// [_a-zA-Z]+[_a-zA-Z0-9]*
-			INTEGER,				// [0-9]+
-			STRING_UTF8,			// "[^"\n\r]*"
+			IDENTIFIER,	// [_a-zA-Z]+[_a-zA-Z0-9]*
+			INTEGER,	// [0-9]+
+			STRING,		// "[^"\n\r]*"
 
 			// 연산자
 			ASSIGN,		// =
@@ -42,41 +42,28 @@ namespace mcf
 			DOUBLE_COLON,	// ::
 			SEMICOLON,		// ;
 			COMMA,			// ,
+			POINTING,		// ->
 
 			// 식별자 키워드
 			KEYWORD_IDENTIFIER_START,	// 실제 값으로 사용되어선 안됩니다!!!
-			KEYWORD_CONST,				// const
-			KEYWORD_VOID,				// void
-			KEYWORD_INT8,				// int8
-			KEYWORD_INT16,				// int16
-			KEYWORD_INT32,				// int32
-			KEYWORD_INT64,				// int64
-			KEYWORD_UINT8,				// uint8
-			KEYWORD_UINT16,				// uint16
-			KEYWORD_UINT32,				// uint32
-			KEYWORD_UINT64,				// uint64
-			KEYWORD_UTF8,				// utf8
-			KEYWORD_ENUM,				// enum
+			KEYWORD_ASM,				// asm
+			KEYWORD_EXTERN,				// extern
+			KEYWORD_TYPEDEF,			// typedef
+			KEYWORD_BIND,				// bind
+			KEYWORD_LET,				// let
+			KEYWORD_FUNC,				// func
+			KEYWORD_MAIN,				// main
+			KEYWORD_RETURN,				// return
 			KEYWORD_UNUSED,				// unused
-			KEYWORD_IN,					// in
-			KEYWORD_OUT,				// out
-			KEYWORD_BOOL,				// bool
-			KEYWORD_TRUE,				// true
-			KEYWORD_FALSE,				// false
 			KEYWORD_IDENTIFIER_END,		// 실제 값으로 사용되어선 안됩니다!!!
 
-			CUSTOM_KEYWORD_START,	// 실제 값으로 사용되어선 안됩니다!!!
-			CUSTOM_ENUM_TYPE,		// 커스텀 열거형 타입
-			CUSTOM_KEYWORD_END,		// 실제 값으로 사용되어선 안됩니다!!!
-
 			// '.' 으로 시작하는 토큰
-			KEYWORD_VARIADIC,	// ...
+			VARIADIC,	// ...
 
-			// 매크로
-			MACRO_START,				// 실제 값으로 사용되어선 안됩니다!!!
-			MACRO_IIBRARY_FILE_INCLUDE,	// #include <[^<>\N\R]+>
-			MACRO_PROJECT_FILE_INCLUDE,	// #include "[^<>\N\R]+"
-			MACRO_END,					// 실제 값으로 사용되어선 안됩니다!!!
+			// 매크로: '#' 으로 시작하는 토큰
+			MACRO_START,	// 실제 값으로 사용되어선 안됩니다!!!
+			MACRO_INCLUDE,	// #include
+			MACRO_END,		// 실제 값으로 사용되어선 안됩니다!!!
 
 			// 주석
 			COMMENT,		// //[^\n\r]
@@ -94,7 +81,7 @@ namespace mcf
 			// 식별자 + 리터럴
 			"IDENTIFIER",
 			"INTEGER",
-			"STRING_UTF8",
+			"STRING",
 
 			// 연산자
 			"ASSIGN",
@@ -122,40 +109,27 @@ namespace mcf
 			"DOUBLE_COLON",
 			"SEMICOLON",
 			"COMMA",
+			"POINTING",
 
 			// 식별자 키워드
 			"KEYWORD_IDENTIFIER_START",
-			"KEYWORD_CONST",
-			"KEYWORD_VOID",
-			"KEYWORD_INT8",
-			"KEYWORD_INT16",
-			"KEYWORD_INT32",
-			"KEYWORD_INT64",
-			"KEYWORD_UINT8",
-			"KEYWORD_UINT16",
-			"KEYWORD_UINT32",
-			"KEYWORD_UINT64",
-			"KEYWORD_UTF8",
-			"KEYWORD_ENUM",
+			"KEYWORD_ASM",
+			"KEYWORD_EXTERN",
+			"KEYWORD_TYPEDEF",
+			"KEYWORD_BIND",
+			"KEYWORD_LET",
+			"KEYWORD_FUNC",
+			"KEYWORD_MAIN",
+			"KEYWORD_RETURN",
 			"KEYWORD_UNUSED",
-			"KEYWORD_IN",
-			"KEYWORD_OUT",
-			"KEYWORD_BOOL",
-			"KEYWORD_TRUE",
-			"KEYWORD_FALSE",
 			"KEYWORD_IDENTIFIER_END",
 
-			"CUSTOM_KEYWORD_START",
-			"CUSTOM_ENUM_TYPE",
-			"CUSTOM_KEYWORD_END",
-
 			// '.' 으로 시작하는 토큰
-			"KEYWORD_VARIADIC",
+			"VARIADIC",
 
 			// 매크로
 			"MACRO_START",
-			"MACRO_IIBRARY_FILE_INCLUDE",
-			"MACRO_PROJECT_FILE_INCLUDE",
+			"MACRO_INCLUDE",
 			"MACRO_END",
 
 			"COMMENT",

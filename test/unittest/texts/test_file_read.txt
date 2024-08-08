@@ -1,1 +1,28 @@
-﻿
+﻿#include <asm, "kernel32.lib">
+
+typedef int32: byte[4];
+typedef address: byte[4];
+
+typedef bool: byte -> bind
+{
+	false = 0,
+	true = 1,
+};
+
+#include <asm, "libcmt.lib">
+extern asm func printf(format: address, ...) -> int32;
+
+let foo: byte = 0;
+func boo(void) -> byte { return 0; }
+
+let arr: byte[] = { 0, 1, 2 };
+let arr2: byte[5] = { 0 };
+
+let intVal: int32 = 10;
+
+main(void) -> void
+{
+	unused(foo, boo, arr, arr2);
+	let message: byte[] = "Hello, World! Value=%d\n";
+	printf(&message, intVal);
+}

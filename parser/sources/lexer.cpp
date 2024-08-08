@@ -91,27 +91,15 @@ namespace mcf
 		// identifier 조건에 부합하는 키워드만 등록합니다.
 		constexpr const char* IDENTIFIER_KEYWORDS[] =
 		{
-			// TODO: #5 uint32 타입 추가 필요
-			// TODO: #6 더 많은 signed/unsigned integer 타입 추가 필요
-			// TODO: #7 decimal 타입 추가 필요
-			"const",
-			"void",
-			"int8",
-			"int16",
-			"int32",
-			"int64",
-			"uint8",
-			"uint16",
-			"uint32",
-			"uint64",
-			"utf8",
-			"enum",
+			"asm",
+			"extern",
+			"typedef",
+			"bind",
+			"let",
+			"func",
+			"main",
+			"return",
 			"unused",
-			"in",
-			"out",
-			"bool",
-			"true",
-			"false",
 		};
 		constexpr const size_t KEYWORDS_SIZE = ARRAY_SIZE(IDENTIFIER_KEYWORDS);
 		static_assert(ENUM_INDEX(mcf::Token::Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(mcf::Token::Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
@@ -213,9 +201,23 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 	case '+': __COUNTER__;
 		token = { Token::Type::PLUS, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
-	case '-': __COUNTER__;
-		token = { Token::Type::MINUS, std::string(1, _currentByte), _currentLine, _currentIndex };
-		break;
+	case '-': 
+	{
+		__COUNTER__; // count for MINUS
+		__COUNTER__; // count for POINTING
+		debug_assert( _currentByte == '-', u8"이 함수가 호출될때 '-'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
+
+		const size_t firstLetterPosition = _currentPosition;
+
+		// 연속되는 문자열이 "->" 인지 검사합니다.
+		ReadNextByte();
+		if ( _currentByte == '>' )
+		{
+			ReadNextByte();
+			return { Token::Type::POINTING, _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition ), _currentLine, _currentIndex };
+		}
+		return { Token::Type::MINUS, _input.substr( firstLetterPosition, _currentPosition - firstLetterPosition ), _currentLine, _currentIndex };
+	}
 	case '*': __COUNTER__;
 		token = { Token::Type::ASTERISK, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
@@ -292,11 +294,10 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 		token = { Token::Type::COMMA, std::string(1, _currentByte), _currentLine, _currentIndex };
 		break;
 	case '.':
-		__COUNTER__; // count for keyword_variadic
+		__COUNTER__; // count for VARIADIC
 		return ReadDotStartingToken();
 	case '#':
-		__COUNTER__; // count for MACRO_IIBRARY_FILE_INCLUDE
-		__COUNTER__; // count for MACRO_PROJECT_FILE_INCLUDE
+		__COUNTER__; // count for MACRO_INCLUDE
 		return ReadMacroToken();
 	default: 
 		// 토큰 리터럴의 시작 문자가 문자열 그룹 패턴에 속한 경우 default 에서 처리합니다.
@@ -304,25 +305,15 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 		if (internal::IS_ALPHABET(_currentByte) || _currentByte == '_')
 		{
 			__COUNTER__; // count for IDENTIFIER
-			__COUNTER__; // count for KEYWORD_CONST
-			__COUNTER__; // count for KEYWORD_VOID
-			__COUNTER__; // count for KEYWORD_INT8
-			__COUNTER__; // count for KEYWORD_INT16
-			__COUNTER__; // count for KEYWORD_INT32
-			__COUNTER__; // count for KEYWORD_INT64
-			__COUNTER__; // count for KEYWORD_UINT8
-			__COUNTER__; // count for KEYWORD_UINT16
-			__COUNTER__; // count for KEYWORD_UINT32
-			__COUNTER__; // count for KEYWORD_UINT64
-			__COUNTER__; // count for KEYWORD_UTF8
-			__COUNTER__; // count for KEYWORD_ENUM
+			__COUNTER__; // count for KEYWORD_ASM
+			__COUNTER__; // count for KEYWORD_EXTERN
+			__COUNTER__; // count for KEYWORD_TYPEDEF
+			__COUNTER__; // count for KEYWORD_BIND
+			__COUNTER__; // count for KEYWORD_LET
+			__COUNTER__; // count for KEYWORD_FUNC
+			__COUNTER__; // count for KEYWORD_MAIN
+			__COUNTER__; // count for KEYWORD_RETURN
 			__COUNTER__; // count for KEYWORD_UNUSED
-			__COUNTER__; // count for KEYWORD_IN
-			__COUNTER__; // count for KEYWORD_OUT
-			__COUNTER__; // count for KEYWORD_BOOL
-			__COUNTER__; // count for KEYWORD_TRUE
-			__COUNTER__; // count for KEYWORD_FALSE
-			__COUNTER__; // count for CUSTOM_ENUM_TYPE
 			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			token.Literal = ReadKeywordOrIdentifier(); 
 			token.Type = DetermineKeywordOrIdentifier(token.Literal);
@@ -339,8 +330,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 		{
 			__COUNTER__; // count for KEYWORD_IDENTIFIER_START
 			__COUNTER__; // count for KEYWORD_IDENTIFIER_END
-			__COUNTER__; // count for CUSTOM_KEYWORD_START
-			__COUNTER__; // count for CUSTOM_KEYWORD_END
 			__COUNTER__; // count for MACRO_START
 			__COUNTER__; // count for MACRO_END
 			token = { Token::Type::INVALID, std::string(1, _currentByte), _currentLine, _currentIndex };
@@ -527,11 +516,11 @@ const mcf::Token::Data mcf::Lexer::Object::ReadStringUtf8(void) noexcept
 	const size_t firstLetterPosition = _currentPosition;
 	ReadNextByte();
 
-	// 연속되는 문자열이 `"[^"\n\r]*"`(string_utf8) 인지 검사합니다.
+	// 연속되는 문자열이 `"[^"\n\r]*"`(STRING) 인지 검사합니다.
 	if (ReadAndValidate(nullptr, nullptr, "\"", "\n\r") == true)
 	{
 		// TODO: #24 valid utf8 문자열인지 확인 필요, 아닌 경우 INVALID 토큰을 보냅고 토큰 생성 실패 시킵니다.
-		return { Token::Type::STRING_UTF8, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+		return { Token::Type::STRING, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
 	return { Token::Type::INVALID, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
@@ -575,18 +564,18 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadDotStartingToken(void) noe
 
 	const size_t firstLetterPosition = _currentPosition;
 
-	// 연속되는 문자열이 "..."(keyword_variadic) 인지 검사합니다.
+	// 연속되는 문자열이 "..."(VARIADIC) 인지 검사합니다.
 	ReadNextByte();
 	while (_currentByte == '.')
 	{
 		ReadNextByte();
 	}
 
-	// 연속되는 문자열이 "..."(keyword_variadic) 인지 검사합니다.
+	// 연속되는 문자열이 "..."(VARIADIC) 인지 검사합니다.
 	const std::string variadicCandidate = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
 	if (variadicCandidate == "...")
 	{
-		return { Token::Type::KEYWORD_VARIADIC, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
+		return { Token::Type::VARIADIC, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
 	// "..." 보다 '.' 문자가 더 많다면 에러를 발생 시킵니다..
@@ -600,8 +589,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 	// 매크로 시작 문자열에 부합하는 키워드만 등록합니다.
 	constexpr const char* MACRO_START_WITH[] =
 	{
-		"#include", // macro_iibrary_file_include
-		"#include", // macro_project_file_include
+		"#include", // MACRO_INCLUDE
 	};
 	constexpr const size_t MACRO_START_WITH_SIZE = ARRAY_SIZE(MACRO_START_WITH);
 	static_assert(ENUM_INDEX(Token::Type::MACRO_END) - ENUM_INDEX(Token::Type::MACRO_START) - 1 == MACRO_START_WITH_SIZE,
@@ -632,23 +620,8 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 	std::string target;
 	switch (tokenType)
 	{
-	case Token::Type::MACRO_IIBRARY_FILE_INCLUDE: __COUNTER__; [[fallthrough]];
-	case Token::Type::MACRO_PROJECT_FILE_INCLUDE: __COUNTER__;
-		// 공백 문자는 스킵합니다.
-		while (_currentByte == ' ' || _currentByte == '\t')
-		{
-			ReadNextByte();
-		}
-
-		if (_currentByte == '<' && ReadAndValidate(nullptr, "<", ">", "\n\r") == true)
-		{
-			return { Token::Type::MACRO_IIBRARY_FILE_INCLUDE, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
-		}
-		else if (_currentByte == '"' && ReadAndValidate(nullptr, "\"", "\"", "\n\r") == true)
-		{
-			return { Token::Type::MACRO_PROJECT_FILE_INCLUDE, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
-		}
-		debug_break(u8"#include <target> 매크로의 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
+	case Token::Type::MACRO_INCLUDE: __COUNTER__;
+		return { Token::Type::MACRO_INCLUDE, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 
 	case Token::Type::INVALID:
 		break;
