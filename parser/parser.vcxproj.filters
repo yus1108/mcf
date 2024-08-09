@@ -27,12 +27,25 @@
     <ClInclude Include="includes\lexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="includes\parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\ast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="internals\internal_parser.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sources\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="sources\lexer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\ast.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sources\parser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

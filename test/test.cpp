@@ -3,9 +3,11 @@
 
 #include "unittest/unittest.h"
 
+#define MAIN_UNIT_TEST(NAME) { UnitTest::##NAME##Test Test##NAME##; if (UnitTest::InternalTest(#NAME, &Test##NAME##) == false) { return 1; } }
+
 const int main(const size_t argc, const char* const argv[])
 {
-	UnitTest::detect_memory_leak();
+	UnitTest::DetectMemoryLeak();
 
 	// #12 [문자열] C4566 유니코드 컴파일 경고
 	// 1. cmd 를 이용하는 경우 시스템 locale 이 .utf8 이 아닌 경우 글자가 깨지는 현상이 있어 콘솔 프로젝트에서 강제로 고정하기로 결정.
@@ -41,14 +43,10 @@ const int main(const size_t argc, const char* const argv[])
     }
 
 	// lexer test
-	{
-		UnitTest::Lexer lexer;
-		if (lexer.Test() == false)
-		{
-			std::cout << "`lexer.Test()` Failed" << std::endl;
-			return 1;
-		}
-	}
+	MAIN_UNIT_TEST(Lexer);
+
+	// parser test
+	MAIN_UNIT_TEST(Parser);
 
     std::cout << "All Tests Passed" << std::endl;
 	return 0;

@@ -1,6 +1,13 @@
 ﻿#pragma once
 
+#if defined(UNUSED)
+#undef UNUSED
+#endif
 #define UNUSED(variable) variable
+
+#if defined(ARRAY_SIZE)
+#undef ARRAY_SIZE
+#endif
 #define ARRAY_SIZE(value) sizeof(value) / mcf::ARRAY_TYPE_SIZE(value)
 
 namespace mcf

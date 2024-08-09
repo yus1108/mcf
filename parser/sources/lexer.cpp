@@ -1,8 +1,5 @@
 ﻿#include "pch.h"
-#include "parser/includes/common.h"
-
 #include "parser/includes/lexer.h"
-#include "parser/internals/framework.h"
 
 namespace mcf
 {
@@ -85,37 +82,37 @@ namespace mcf
 			return input;
 		}
 	}
+}
 
-	const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& tokenLiteral) noexcept
+const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& tokenLiteral) noexcept
+{
+	// identifier 조건에 부합하는 키워드만 등록합니다.
+	constexpr const char* IDENTIFIER_KEYWORDS[] =
 	{
-		// identifier 조건에 부합하는 키워드만 등록합니다.
-		constexpr const char* IDENTIFIER_KEYWORDS[] =
-		{
-			"asm",
-			"extern",
-			"typedef",
-			"bind",
-			"let",
-			"func",
-			"main",
-			"return",
-			"unused",
-		};
-		constexpr const size_t KEYWORDS_SIZE = ARRAY_SIZE(IDENTIFIER_KEYWORDS);
-		static_assert(ENUM_INDEX(mcf::Token::Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(mcf::Token::Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
-			"identifier keyword token_type count is changed. this array need to be changed as well.");
+		"asm",
+		"extern",
+		"typedef",
+		"bind",
+		"let",
+		"func",
+		"main",
+		"return",
+		"unused",
+	};
+	constexpr const size_t KEYWORDS_SIZE = ARRAY_SIZE(IDENTIFIER_KEYWORDS);
+	static_assert(ENUM_INDEX(Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
+		"identifier keyword TokenType count is changed. this array need to be changed as well.");
 
-		// 기본 제공 키워드 검색
-		for (size_t i = 0; i < KEYWORDS_SIZE; i++)
+	// 기본 제공 키워드 검색
+	for (size_t i = 0; i < KEYWORDS_SIZE; i++)
+	{
+		if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
 		{
-			if (tokenLiteral.compare(IDENTIFIER_KEYWORDS[i]) == 0)
-			{
-				return Token::Data{ mcf::ENUM_AT<mcf::Token::Type>(ENUM_INDEX(mcf::Token::Type::KEYWORD_IDENTIFIER_START) + i + 1), tokenLiteral, 0, 0 };
-			}
+			return Data{ mcf::ENUM_AT<Type>(ENUM_INDEX(Type::KEYWORD_IDENTIFIER_START) + i + 1), tokenLiteral, 0, 0 };
 		}
-
-		return Token::Data{ mcf::Token::Type::INVALID, "INVALID", 0, 0 };
 	}
+
+	return Data{ Type::INVALID, "INVALID", 0, 0 };
 }
 
 mcf::Lexer::Object::Object(const std::string& input, const bool isFIle) noexcept
@@ -129,11 +126,11 @@ mcf::Lexer::Object::Object(const std::string& input, const bool isFIle) noexcept
 			std::ifstream file(_name.c_str());
 			if (file.fail())
 			{
-				_tokens.push(Lexer::Error::FAIL_READ_FILE);
+				_tokens.push(Error::FAIL_READ_FILE);
 				return;
 			}
 		}
-		_tokens.push( Lexer::Error::INVALID_INPUT_LENGTH );
+		_tokens.push(Error::INVALID_INPUT_LENGTH);
 		return;
 	}
 
@@ -146,10 +143,10 @@ const mcf::Lexer::Error mcf::Lexer::Object::GetLastErrorToken(void) noexcept
 {
 	if (_tokens.empty())
 	{ 
-		return Lexer::Error::SUCCESS;
+		return Error::SUCCESS;
 	}
 
-	const mcf::Lexer::Error lError = _tokens.top();
+	const Error lError = _tokens.top();
 	_tokens.pop();
 	return lError;
 }
@@ -185,7 +182,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 	{
 		__COUNTER__; // count for ASSIGN
 		__COUNTER__; // count for EQUAL
-		debug_assert(_currentByte == '=', u8"이 함수가 호출될때 '='으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 		const size_t firstLetterPosition = _currentPosition;
 
@@ -205,7 +201,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 	{
 		__COUNTER__; // count for MINUS
 		__COUNTER__; // count for POINTING
-		debug_assert( _currentByte == '-', u8"이 함수가 호출될때 '-'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
 
 		const size_t firstLetterPosition = _currentPosition;
 
@@ -230,7 +225,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 	{
 		__COUNTER__; // count for BANG
 		__COUNTER__; // count for NOT_EQUAL
-		debug_assert(_currentByte == '!', u8"이 함수가 호출될때 '!'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 		const size_t firstLetterPosition = _currentPosition;
 
@@ -274,7 +268,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 	{
 		__COUNTER__; // count for COLON
 		__COUNTER__; // count for DOUBLE_COLON
-		debug_assert(_currentByte == ':', u8"이 함수가 호출될때 ':'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 		const size_t firstLetterPosition = _currentPosition;
 
@@ -314,7 +307,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for KEYWORD_MAIN
 			__COUNTER__; // count for KEYWORD_RETURN
 			__COUNTER__; // count for KEYWORD_UNUSED
-			// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
 			token.Literal = ReadKeywordOrIdentifier(); 
 			token.Type = DetermineKeywordOrIdentifier(token.Literal);
 			token.Line = _currentLine;
@@ -333,11 +325,11 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for MACRO_START
 			__COUNTER__; // count for MACRO_END
 			token = { Token::Type::INVALID, std::string(1, _currentByte), _currentLine, _currentIndex };
-			debug_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
+			DebugBreak(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 		}
 	}
 	constexpr const size_t TOKEN_COUNT = __COUNTER__ - TOKEN_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKEN_COUNT, "token_type count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKEN_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
 
 	ReadNextByte();
 	return token;
@@ -351,7 +343,7 @@ inline const char mcf::Lexer::Object::GetNextByte(void) const noexcept
 inline void mcf::Lexer::Object::ReadNextByte(void) noexcept
 {
 	const size_t length = _input.length();
-	debug_assert(_nextPosition <= length, u8"currentPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", length, _nextPosition);
+	DebugAssert(_nextPosition <= length, u8"currentPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", length, _nextPosition);
 
 	_currentByte = (_nextPosition > length) ? 0 : _input[_nextPosition];
 	_currentPosition = _nextPosition;
@@ -390,7 +382,7 @@ inline const bool mcf::Lexer::Object::ReadLineIfStartWith(_Outptr_opt_ std::stri
 
 inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* stringToCompare) noexcept
 {
-	debug_assert(stringToCompare != nullptr, u8"stringToCompare가 null일 수 없습니다.");
+	DebugAssert(stringToCompare != nullptr, u8"stringToCompare가 null일 수 없습니다.");
 
 	const size_t stringToCompareLength = std::strlen(stringToCompare);
 	const size_t firstLetterPosition = _currentPosition;
@@ -417,8 +409,8 @@ inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* 
 
 inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith, _In_opt_ const char* endWith, _In_opt_ const char* invalidCharList) noexcept
 {
-	debug_assert(startWith != nullptr || endWith != nullptr, u8"startWith와 endWith 둘다 null이면 안됩니다.");
-	debug_assert(endWith != nullptr || (endWith == nullptr && invalidCharList != nullptr), u8"endWith가 null인 경우 invalidCharList는 null이면 안됩니다.");
+	DebugAssert(startWith != nullptr || endWith != nullptr, u8"startWith와 endWith 둘다 null이면 안됩니다.");
+	DebugAssert(endWith != nullptr || (endWith == nullptr && invalidCharList != nullptr), u8"endWith가 null인 경우 invalidCharList는 null이면 안됩니다.");
 
 	const size_t firstLetterPosition = _currentPosition;
 
@@ -442,7 +434,7 @@ inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* 
 		// 입력의 끝에 도달 하면 바로 종료
 		if (_currentByte == 0)
 		{
-			debug_message(u8"`%s`으로 끝나기 전에 EOF에 도달하였습니다.", endWith);
+			DebugMessage(u8"`%s`으로 끝나기 전에 EOF에 도달하였습니다.", endWith);
 			if (optionalOut != nullptr)
 			{
 				*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
@@ -463,7 +455,7 @@ inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* 
 		{
 			if (_currentByte == invalidCharList[i])
 			{
-				debug_message(u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte);
+				DebugMessage(u8"들어오면 안되는 문자가 들어왔습니다. 현재 문자=%c, 값=%d", _currentByte, _currentByte);
 				if (optionalOut != nullptr)
 				{
 					*optionalOut = _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition);
@@ -482,7 +474,7 @@ inline const bool mcf::Lexer::Object::ReadAndValidate(_Outptr_opt_ std::string* 
 
 inline const std::string mcf::Lexer::Object::ReadKeywordOrIdentifier(void) noexcept
 {
-	debug_assert(internal::IS_ALPHABET(_currentByte) || _currentByte == '_', u8"키워드 혹은 식별자의 시작은 알파벳이거나 '_' 이어야만 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(internal::IS_ALPHABET(_currentByte) || _currentByte == '_', u8"키워드 혹은 식별자의 시작은 알파벳이거나 '_' 이어야만 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t firstLetterPosition = _currentPosition;
 	ReadNextByte();
@@ -497,7 +489,7 @@ inline const std::string mcf::Lexer::Object::ReadKeywordOrIdentifier(void) noexc
 
 inline const std::string mcf::Lexer::Object::ReadNumber(void) noexcept
 {
-	debug_assert(internal::IS_DIGIT(_currentByte), u8"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(internal::IS_DIGIT(_currentByte), u8"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t firstLetterPosition = _currentPosition;
 
@@ -510,7 +502,7 @@ inline const std::string mcf::Lexer::Object::ReadNumber(void) noexcept
 
 const mcf::Token::Data mcf::Lexer::Object::ReadStringUtf8(void) noexcept
 {
-	debug_assert(_currentByte == '"', u8"이 함수가 호출될때 '\"'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(_currentByte == '"', u8"이 함수가 호출될때 '\"'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	// 처음 '"'를 읽습니다.
 	const size_t firstLetterPosition = _currentPosition;
@@ -528,7 +520,7 @@ const mcf::Token::Data mcf::Lexer::Object::ReadStringUtf8(void) noexcept
 
 inline const mcf::Token::Data mcf::Lexer::Object::ReadSlashStartingToken(void) noexcept
 {
-	debug_assert(_currentByte == '/', u8"이 함수가 호출될때 '/'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(_currentByte == '/', u8"이 함수가 호출될때 '/'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	// 처음 '/'를 읽습니다.
 	const size_t firstLetterPosition = _currentPosition;
@@ -551,7 +543,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadSlashStartingToken(void) n
 	// 문자열이 "/*"로 시작 하는 상태에서 EOF로 인해 실패 하였다면 INVALID 한 토큰을 리턴합니다.
 	if ((tokenLiteral.rfind("/*", 0) == 0) && _currentByte == 0)
 	{
-		debug_message(u8"주석에서 예기치 않은 파일의 끝이 나타났습니다.");
+		DebugMessage(u8"주석에서 예기치 않은 파일의 끝이 나타났습니다.");
 		return { Token::Type::INVALID, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 	}
 
@@ -560,7 +552,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadSlashStartingToken(void) n
 
 inline const mcf::Token::Data mcf::Lexer::Object::ReadDotStartingToken(void) noexcept
 {
-	debug_assert(_currentByte == '.', u8"이 함수가 호출될때 '.'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(_currentByte == '.', u8"이 함수가 호출될때 '.'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t firstLetterPosition = _currentPosition;
 
@@ -584,7 +576,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadDotStartingToken(void) noe
 
 inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcept
 {
-	debug_assert( _currentByte == '#', u8"매크로는 '#'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
+	DebugAssert( _currentByte == '#', u8"매크로는 '#'으로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte );
 
 	// 매크로 시작 문자열에 부합하는 키워드만 등록합니다.
 	constexpr const char* MACRO_START_WITH[] =
@@ -593,7 +585,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 	};
 	constexpr const size_t MACRO_START_WITH_SIZE = ARRAY_SIZE(MACRO_START_WITH);
 	static_assert(ENUM_INDEX(Token::Type::MACRO_END) - ENUM_INDEX(Token::Type::MACRO_START) - 1 == MACRO_START_WITH_SIZE,
-		"macro token_type count is changed. this array need to be changed as well.");
+		"macro TokenType count is changed. this array need to be changed as well.");
 
 	Token::Type tokenType = Token::Type::INVALID;
 
@@ -627,26 +619,26 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 		break;
 
 	default:
-		debug_break(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
+		DebugBreak(u8"예상치 못한 바이트 값이 들어 왔습니다. 토큰 생성에 실패 하였습니다. 현재 바이트[%u], ascii[%c]", _currentByte, _currentByte);
 	}
 	constexpr const size_t MACRO_COUNT = __COUNTER__ - MACRO_COUNT_BEGIN - 1;
 	static_assert(ENUM_INDEX(Token::Type::MACRO_END) - ENUM_INDEX(Token::Type::MACRO_START) - 1 == MACRO_COUNT,
-		"macro token_type count is changed. this switch need to be changed as well.");
+		"macro TokenType count is changed. this switch need to be changed as well.");
 
 	return { Token::Type::INVALID, _input.substr(firstLetterPosition, _currentPosition - firstLetterPosition), _currentLine, _currentIndex };
 }
 
 inline const mcf::Token::Data mcf::Lexer::Object::ReadNumeric(void) noexcept
 {
-	debug_assert(internal::IS_DIGIT(_currentByte), u8"이 함수가 호출될 때 숫자로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(internal::IS_DIGIT(_currentByte), u8"이 함수가 호출될 때 숫자로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	mcf::Token::Data token;
 
 	token.Literal = ReadNumber();
 	token.Type = Token::Type::INTEGER; // 타입이 명시되지 않은 정수 리터럴의 기본 값은 64bit integer 입니다.
 
-	// TODO: #7, #9 decimal 토큰을 생성 가능하게 개선 필요
-	// TODO: #10 이후 postfix 로 타입 지정 가능하게 개선 필요
+	// TODO: #8 0x (16진수), 0 (8진수), 또는 0b (2진수) 숫자의 토큰을 생성 가능하게 개선 필요
+	// TODO: #9 decimal 토큰을 생성 가능하게 개선 필요
 	token.Line = _currentLine;
 	token.Index = _currentIndex;
 	return token;

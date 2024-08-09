@@ -263,6 +263,7 @@
   <ItemGroup>
     <ClCompile Include="test.cpp" />
     <ClCompile Include="unittest\sources\lexer_test.cpp" />
+    <ClCompile Include="unittest\sources\parser_test.cpp" />
     <ClCompile Include="unittest\sources\unittest.cpp" />
   </ItemGroup>
   <ItemGroup>

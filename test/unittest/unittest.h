@@ -4,6 +4,7 @@
 #include <functional>
 
 #include <parser/includes/lexer.h>
+#include <parser/includes/parser.h>
 
 #if defined(_DEBUG)
 #define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
@@ -58,24 +59,45 @@ namespace UnitTest
 	{
 	public:
 		virtual inline ~BaseTest(void) noexcept {}
-		virtual const bool Test(void) const noexcept = 0;
+		const bool Test(void) const noexcept;
+
+	protected:
+		std::vector<std::string>			_names;
+		std::vector<std::function<bool()>>	_tests;
 	};
 
-	class Lexer final : BaseTest
+	class LexerTest final : public BaseTest
 	{
 	public:
-		explicit Lexer(void) noexcept;
-		virtual const bool Test(void) const noexcept override final;
-
-	private:
-		std::vector<std::string> _names;
-		std::vector<std::function<bool()>> _tests;
+		explicit LexerTest(void) noexcept;
 	};
 
-	inline static void detect_memory_leak( long line = -1 )
+	class ParserTest final : public BaseTest
+	{
+	public:
+		explicit ParserTest(void) noexcept;
+
+	private:
+		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;
+	};
+
+	inline static void DetectMemoryLeak( long line = -1 )
 	{
 		//Also need this for memory leak code stuff
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		_CrtSetBreakAlloc(line); //Important!
+	}
+
+	inline static bool InternalTest(const char* const name, const UnitTest::BaseTest* const test)
+	{
+		std::cout << "`" << name << ".Test()` Begin" << std::endl;
+		if (test->Test() == false)
+		{
+			std::cout << "\t`" << name << ".Test()` Failed" << std::endl;
+			return false;
+		}
+		std::cout << "\t`" << name << ".Test()` Passed" << std::endl;
+		std::cout << "`" << name << ".Test()` End" << std::endl;
+		return true;
 	}
 }

@@ -7,9 +7,9 @@
 
 namespace UnitTest
 {
-	Lexer::Lexer(void) noexcept
+	LexerTest::LexerTest(void) noexcept
 	{
-		_names.emplace_back("test_generated_tokens_by_lexer");
+		_names.emplace_back(u8"토큰 생성 테스트");
 		_tests.emplace_back([&]() {
 			const struct test_case
 			{
@@ -271,7 +271,7 @@ namespace UnitTest
 			return true;
 		});
 
-		_names.emplace_back("./test/unittest/texts/test_file_read.txt");
+		_names.emplace_back(u8"파일 읽기 및 토큰 생성 테스트");
 		_tests.emplace_back([&]() {
 			const std::vector<mcf::Token::Data>  expectedResults =
 			{
@@ -465,7 +465,7 @@ namespace UnitTest
 			};
 			const size_t expectedResultSize = expectedResults.size();
 
-			mcf::Lexer::Object lexer(_names.back().c_str(), true);
+			mcf::Lexer::Object lexer("./test/unittest/texts/test_file_read.txt", true);
 
 			std::vector<mcf::Token::Data>  actualTokens;
 			mcf::Token::Data token = lexer.ReadNextToken();
@@ -489,19 +489,5 @@ namespace UnitTest
 
 			return true;
 			});
-	}
-
-	const bool Lexer::Test(void) const noexcept
-	{
-		for (size_t i = 0; i < _tests.size(); i++)
-		{
-			if (_tests[i]() == false)
-			{
-				std::cout << "Test[#" << i << "] `" << _names[i] << "()` Failed" << std::endl;
-				return false;
-			}
-			std::cout << "Lexer Test[#" << i << "] `" << _names[i] << "()` Passed" << std::endl;
-		}
-		return true;
 	}
 }

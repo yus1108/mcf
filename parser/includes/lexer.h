@@ -135,23 +135,23 @@ namespace mcf
 			"COMMENT",
 			"COMMENT_BLOCK",
 		};
-		constexpr const size_t TOKEN_TYPES_SIZE = ARRAY_SIZE(TYPE_STRING_ARRAY);
-		static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKEN_TYPES_SIZE, "token count not matching!");
+		constexpr const size_t TokenTypeS_SIZE = ARRAY_SIZE(TYPE_STRING_ARRAY);
+		static_assert(static_cast<size_t>(Type::COUNT) == TokenTypeS_SIZE, "token count not matching!");
 
-		constexpr const char* CONVERT_TYPE_TO_STRING(const mcf::Token::Type& value)
+		constexpr const char* CONVERT_TYPE_TO_STRING(const Type& value)
 		{
-			return mcf::Token::TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
 		}
 
 		struct Data final
 		{
-			mcf::Token::Type Type = mcf::Token::Type::INVALID;
+			Type Type = Type::INVALID;
 			std::string Literal;
 			size_t Line = 0;
 			size_t Index = 0;
 		};
-		inline bool operator==(const mcf::Token::Data& lhs, const mcf::Token::Data& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
-		static const mcf::Token::Data FindPredefinedKeyword(const std::string& tokenLiteral) noexcept;
+		inline bool operator==(const Data& lhs, const Data& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
+		static const Data FindPredefinedKeyword(const std::string& tokenLiteral) noexcept;
 	}
 
 	namespace Lexer
@@ -163,8 +163,6 @@ namespace mcf
 			SUCCESS,
 			INVALID_INPUT_LENGTH,
 			FAIL_READ_FILE,
-			FAIL_MEMORY_ALLOCATION,
-			REGISTERING_DUPLICATED_SYMBOL_NAME,
 
 			COUNT,
 		};
@@ -176,7 +174,7 @@ namespace mcf
 			explicit Object(void) noexcept = delete;
 			explicit Object(const std::string& input, const bool isFIle) noexcept;
 
-			const mcf::Lexer::Error GetLastErrorToken(void) noexcept;
+			const Error GetLastErrorToken(void) noexcept;
 			const std::string GetName(void) const noexcept { return _name; }
 
 			const mcf::Token::Data ReadNextToken(void) noexcept;
@@ -199,7 +197,7 @@ namespace mcf
 			inline const mcf::Token::Type DetermineKeywordOrIdentifier(const std::string& tokenLiteral) noexcept;
 
 		private:
-			std::stack<mcf::Lexer::Error> _tokens;
+			std::stack<Error> _tokens;
 			const std::string _input;
 			const std::string _name;
 			size_t _currentPosition = 0;

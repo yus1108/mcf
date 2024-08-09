@@ -308,12 +308,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\ast.h" />
     <ClInclude Include="includes\lexer.h" />
+    <ClInclude Include="includes\parser.h" />
     <ClInclude Include="internals\framework.h" />
     <ClInclude Include="internals\pch.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\common.h" />
+    <ClCompile Include="sources\parser.cpp" />
+    <ClCompile Include="sources\ast.cpp" />
     <ClCompile Include="sources\lexer.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -325,6 +329,11 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">Create</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="internals\internal_parser.h">
+      <FileType>Document</FileType>
+    </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

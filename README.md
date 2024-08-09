@@ -25,19 +25,24 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ## `<Expression>` :
 
-### `<Type>`
+### `<Identifier>`
 
 #### PARSER :
-1. `IDENTIFIER`
-2. `<Index>`
+`IDENTIFIER`
 
-#### EVALUATOR :
+---
 
-`IDENTIFIER`: identifier must be registered as type unless used for `[Typedef]`
+### `<Literal>`
 
-`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be either the integer or opted out.
+#### PARSER :
+`LITERAL`
 
-#### RETURN_TYPE : `TYPE_INFO`
+---
+
+### `<String>`
+
+#### PARSER :
+`STRING`
 
 ---
 
@@ -46,30 +51,42 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 #### PARSER :
 `<Expression>` {`LBRACKET` {`<Expression>`} `RBRACKET`}+
 
-#### RETURN_TYPE : `TYPE_INFO`
-
 ---
 
-## `<NonGenericExpression>` :
+## `<INTERMEDIATE>` :
 
 ### `<MapInitializer>`
 
 #### PARSER :
-`LBRACE` {`<Expression>` `ASSIGN` `<Expression>` `COMMA`}+ `RBRACE`
+`LBRACE` `<Expression>` `ASSIGN` `<Expression>` {`COMMA` {`<Expression>` `ASSIGN` `<Expression>`}}* `RBRACE`
+
+---
+
+### `<TypeSignature>`
+
+#### PARSER :
+1. `<Identifier>`
+2. `<Index>`
+
+#### EVALUATOR :
+
+`<Identifier>`: identifier must be registered as type unless used for `[Typedef]`
+
+`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be either the integer or opted out.
 
 ---
 
 ### `<VariableSignature>`
 
 #### PARSER :
-`IDENTIFIER` `COLON` `<Type>`
+`<Identifier>` `COLON` `<TypeSignature>`
 
 ---
 
 ### `<FunctionSignature>`
 
 #### PARSER :
-[prerequisite: `KEYWORD_FUNC`] `IDENTIFIER` `<FunctionParams>` `POINTING` `KEYWORD_VOID`
+[prerequisite: `KEYWORD_FUNC`] `<Identifier>` `<FunctionParams>` `POINTING` `KEYWORD_VOID`
 
 ---
 
@@ -108,8 +125,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 `KEYWORD_TYPEDEF` `<VariableSignature>` {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} `SEMICOLON`
 
 #### EVALUATOR:
-* `IDENTIFIER` : represent a new type equivalent to source type with the size specified if any and/or the values specified if any.
-* `<Type>` : represent a existing source type with a specified size of source type if any.
+* `<VariableSignature>` : represent a new type equivalent to source type with the size specified if any and/or the values specified if any.
 * {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} : represent values specified if any. If not, it will inherit values from the source type.
 * `<MapInitializer>` : for this expression, a key for each item must be identifier.
 
