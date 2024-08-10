@@ -46,6 +46,20 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Infix>`
+
+#### PARSER :
+1. `<Expression>` `EQUAL` `<Expression>`
+2. `<Expression>` `NOT_EQUAL` `<Expression>`
+3. `<Expression>` `LT` `<Expression>`
+4. `<Expression>` `GT` `<Expression>`
+5. `<Expression>` `PLUS` `<Expression>`
+6. `<Expression>` `MINUS` `<Expression>`
+7. `<Expression>` `ASTERISK` `<Expression>`
+8. `<Expression>` `SLASH` `<Expression>`
+
+---
+
 ### `<Index>`
 
 #### PARSER :
@@ -54,6 +68,13 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ---
 
 ## `<INTERMEDIATE>` :
+
+### `<Variadic>`
+
+#### PARSER :
+`VARIADIC` `<Identifier>`
+
+---
 
 ### `<MapInitializer>`
 
@@ -83,19 +104,20 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
-### `<FunctionSignature>`
-
-#### PARSER :
-[prerequisite: `KEYWORD_FUNC`] `<Identifier>` `<FunctionParams>` `POINTING` `KEYWORD_VOID`
-
----
-
 ### `<FunctionParams>`
 
 #### PARSER :
 1. `LPAREN` `KEYWORD_VOID` `RPAREN`
-2. `LPAREN` `VARIADIC` `RPAREN`
-3. `LPAREN` {`<VariableSignature>` {`COMMA`}}+ {[prerequisite: `COMMA`] `VARIADIC`} `RPAREN`
+2. `LPAREN` `<Variadic>` `RPAREN`
+3. `LPAREN` `<VariableSignature>` {`COMMA` `<VariableSignature>`}* {`COMMA` {`<Variadic>`}} `RPAREN`
+
+---
+
+### `<FunctionSignature>`
+
+#### PARSER :
+1. `KEYWORD_FUNC` `<Identifier>` `<FunctionParams>` `POINTING` `KEYWORD_VOID`
+2. `KEYWORD_FUNC` `<Identifier>` `<FunctionParams>` `POINTING` `<TypeSignature>`
 
 ---
 
@@ -134,7 +156,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Extern]`
 
 #### PARSER :
-`KEYWORD_EXTERN` `KEYWORD_ASM` `KEYWORD_FUNC` `<FunctionSignature>` `SEMICOLON`
+`KEYWORD_EXTERN` `KEYWORD_ASM` `<FunctionSignature>` `SEMICOLON`
 
 #### EVALUATOR:
 * `KEYWORD_ASM`: when calling this function, it will pass calling without function description.
@@ -155,7 +177,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Func]`
 
 #### PARSER :
-`KEYWORD_FUNC` `<FunctionSignature>` `LBRACE` `<Statements>` `RBRACE`
+`<FunctionSignature>` `LBRACE` `<Statements>` `RBRACE`
 
 #### EVALUATOR:
 * `<FunctionSignature>`: the signature is stored to code section.

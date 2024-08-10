@@ -96,6 +96,7 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 		"let",
 		"func",
 		"main",
+		"void",
 		"return",
 		"unused",
 	};
@@ -305,6 +306,7 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for KEYWORD_LET
 			__COUNTER__; // count for KEYWORD_FUNC
 			__COUNTER__; // count for KEYWORD_MAIN
+			__COUNTER__; // count for KEYWORD_VOID
 			__COUNTER__; // count for KEYWORD_RETURN
 			__COUNTER__; // count for KEYWORD_UNUSED
 			token.Literal = ReadKeywordOrIdentifier(); 

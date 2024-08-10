@@ -50,12 +50,13 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::LBRACKET: __COUNTER__;
 		return Precedence::INDEX;
 
+	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
 	case Token::Type::COMMA: __COUNTER__;
 		break;
 
-	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case Token::Type::INTEGER: __COUNTER__; [[fallthrough]];
 	case Token::Type::STRING: __COUNTER__; [[fallthrough]];
@@ -66,7 +67,6 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
 	case Token::Type::COLON: __COUNTER__; [[fallthrough]];
 	case Token::Type::DOUBLE_COLON: __COUNTER__; [[fallthrough]];
-	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
 	case Token::Type::POINTING: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_START: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
@@ -76,6 +76,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
@@ -87,7 +88,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
 	{
-		const std::string message = ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
+		const std::string message = ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
 			mcf::Token::CONVERT_TYPE_TO_STRING(token.Type), mcf::ENUM_INDEX(token.Type), token.Literal.c_str());
 		_errors.push(ErrorInfo{ ErrorID::NOT_REGISTERED_INFIX_EXPRESSION_TOKEN, _lexer.GetName(), message, token.Line, token.Index });
 		break;

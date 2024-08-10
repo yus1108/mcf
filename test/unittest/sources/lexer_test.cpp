@@ -106,7 +106,7 @@ namespace UnitTest
 					},
 				},
 				{ // 7. extern 함수 관련 토큰
-					"extern asm func printf(format: byte[4], ...) -> byte[4];",
+					"extern asm func printf(format: byte[4], ...args) -> byte[4];",
 					{
 						TokenExtern,
 						TokenASM,
@@ -121,6 +121,7 @@ namespace UnitTest
 						TokenRBracket,
 						TokenComma,
 						TokenVariadic,
+						TokenIdentifier("args"),
 						TokenRParen,
 						TokenPointing,
 						TokenByte,
@@ -336,7 +337,7 @@ namespace UnitTest
 				TokenString("\"libcmt.lib\""),
 				TokenGT,
 
-				// extern asm func printf(format: address, ...) -> int32;
+				// extern asm func printf(format: address, ...args) -> int32;
 				TokenExtern,
 				TokenASM,
 				TokenFunc,
@@ -347,6 +348,7 @@ namespace UnitTest
 				TokenIdentifier("address"),
 				TokenComma,
 				TokenVariadic,
+				TokenIdentifier("args"),
 				TokenRParen,
 				TokenPointing,
 				TokenIdentifier("int32"),

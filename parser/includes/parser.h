@@ -70,12 +70,17 @@ namespace mcf
 			mcf::AST::Statement::Pointer ParseStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseIncludeLibraryStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseTypedefStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseExternStatement(void) noexcept;
 
+			mcf::AST::Intermediate::Variadic::Pointer ParseVariadicIntermediate(void) noexcept;
 			mcf::AST::Intermediate::MapInitializer::Pointer ParseMapInitializerIntermeidate(void) noexcept;
 			mcf::AST::Intermediate::TypeSignature::Pointer ParseTypeSignatureIntermediate(void) noexcept;
-			mcf::AST::Intermediate::VariableSignature::Pointer ParseVariableSignature(void) noexcept;
+			mcf::AST::Intermediate::VariableSignature::Pointer ParseVariableSignatureIntermediate(void) noexcept;
+			mcf::AST::Intermediate::FunctionParams::Pointer ParseFunctionParamsIntermediate(void) noexcept;
+			mcf::AST::Intermediate::FunctionSignature::Pointer ParseFunctionSignatureIntermediate(void) noexcept;
 
 			mcf::AST::Expression::Pointer ParseExpression(const Precedence precedence) noexcept;
+			mcf::AST::Expression::Infix::Pointer ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Index::Pointer ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 
 			inline void ReadNextToken(void) noexcept;

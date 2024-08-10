@@ -30,7 +30,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 
 				const std::string actual = program.ConvertToString();
-				FATAL_ASSERT(actual == testCases[i].Expected, "expected=`%s`, actual=`%s`", testCases[i].Expected.c_str(), actual.c_str());
+				FATAL_ASSERT(actual == testCases[i].Expected, "\nexpected=\t`%s`\nactual=\t\t`%s`", testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
 		}
@@ -54,10 +54,10 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"typedef int32: byte[2];",
 					"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> SEMICOLON]",
 				},
-				/*{
+				{
 					"typedef int64: byte[6 + 2];",
 					"[Typedef: <VariableSignature: <Identifier: int64> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Infix: <Integer: 6> PLUS <Integer: 2>> RBRACKET>>> SEMICOLON]",
-				},*/
+				},
 				{
 					"typedef address: byte[4];",
 					"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 4> RBRACKET>>> SEMICOLON]",
@@ -68,9 +68,43 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 						"<MapInitializer: LBRACE " + 
 							"<Identifier: false> ASSIGN <Integer: 0> COMMA " +
 							"<Identifier: true> ASSIGN <Integer: 1> COMMA " +
-						"RBRACE>"
-					+" SEMICOLON]",
+						"RBRACE> " +
+					"SEMICOLON]",
 				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\nexpected=\t`%s`\nactual=\t\t`%s`", testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"2. extern 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"extern asm func printf(format: address, ...args) -> int32;",
+					std::string("[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN ") + 
+						"<VariableSignature: <Identifier: format> COLON <TypeSignature: <Identifier: address>>> COMMA " + 
+						"<Variadic: <Identifier: args>> " +
+					"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]",
+				}
 			};
 			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
 

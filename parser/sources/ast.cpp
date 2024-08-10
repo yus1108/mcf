@@ -1,6 +1,23 @@
 ﻿#include "pch.h"
 #include "parser/includes/ast.h"
 
+mcf::AST::Expression::Infix::Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept
+	: _infixOperator(infixOperator)
+	, _left(left.release())
+	, _right(right.release())
+{
+	DebugAssert(_infixOperator.Type != mcf::Token::Type::INVALID, u8"인자로 받은 _infixOperator의 타입은 INVALID여선 안됩니다.");
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Infix::ConvertToString(void) const noexcept
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+	return "<Infix: " + _left->ConvertToString() + " " + mcf::Token::CONVERT_TYPE_TO_STRING(_infixOperator.Type) + " " + _right->ConvertToString() + ">";
+}
+
 mcf::AST::Expression::Index::Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept
 	: _left(left.release())
 	, _index(index.release())
@@ -14,6 +31,18 @@ const std::string mcf::AST::Expression::Index::ConvertToString(void) const noexc
 	return (_index.get() == nullptr) ?
 		("<Index: " + _left->ConvertToString() + " LBRACKET RBRACKET>") : 
 		("<Index: " + _left->ConvertToString() + " LBRACKET " + _index->ConvertToString() + " RBRACKET>");
+}
+
+mcf::AST::Intermediate::Variadic::Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept
+	: _name(name.release())
+{
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Intermediate::Variadic::ConvertToString(void) const noexcept
+{
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
+	return "<Variadic: " + _name->ConvertToString() + ">";
 }
 
 mcf::AST::Intermediate::MapInitializer::MapInitializer(std::vector<KeyValue>&& itemList) noexcept
@@ -72,6 +101,47 @@ const std::string mcf::AST::Intermediate::VariableSignature::ConvertToString(voi
 	return "<VariableSignature: " + _name->ConvertToString() + " COLON " + _typeSignature->ConvertToString() + ">";
 }
 
+const std::string mcf::AST::Intermediate::FunctionParams::ConvertToString(void) const noexcept
+{
+	if (IsVoid())
+	{
+		return "<FunctionParams: LPAREN KEYWORD_VOID RPAREN>";
+	}
+
+	std::string buffer = "<FunctionParams: LPAREN ";
+	if (HasParams() == true)
+	{
+		const size_t paramsCount = _params.size();
+		for (size_t i = 0; i < paramsCount; i++)
+		{
+			buffer += _params[i]->ConvertToString() + " COMMA ";
+		}
+	}
+	if (HasVariadic() == true)
+	{
+		buffer += _variadic->ConvertToString() + " ";
+	}
+	buffer += "RPAREN>";
+	return buffer;
+}
+
+mcf::AST::Intermediate::FunctionSignature::FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept
+	: _name(std::move(name))
+	, _params(std::move(params))
+	, _returnType(std::move(returnType))
+{
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name은 nullptr 여선 안됩니다.");
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Intermediate::FunctionSignature::ConvertToString(void) const noexcept
+{
+	std::string buffer = "<FunctionSignature: " + _name->ConvertToString() + " " + _params->ConvertToString() + " POINTING ";
+	buffer += IsReturnVoid() ? "KEYWORD_VOID" : _returnType->ConvertToString();
+	return buffer + ">";
+}
+
+
 const std::string mcf::AST::Statement::IncludeLibrary::ConvertToString(void) const noexcept
 {
 	std::string buffer;
@@ -99,6 +169,19 @@ const std::string mcf::AST::Statement::Typedef::ConvertToString(void) const noex
 	}
 	buffer += " SEMICOLON]";
 	return buffer;
+}
+
+mcf::AST::Statement::Extern::Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept
+	: _isAssemblyFunction(isAssemblyFunction)
+	, _signature(std::move(signature))
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Extern::ConvertToString(void) const noexcept
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	return "[Extern" + std::string(_isAssemblyFunction ? " KEYWORD_ASM " : " ") + _signature->ConvertToString() + " SEMICOLON]";
 }
 
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept

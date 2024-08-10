@@ -18,7 +18,6 @@ namespace UnitTest
 {
 	const mcf::Token::Data TokenInvalid = { mcf::Token::Type::INVALID, "invalid" };
 	const mcf::Token::Data TokenEOF = { mcf::Token::Type::END_OF_FILE, "\0" };
-	const mcf::Token::Data TokenVoid = { mcf::Token::Type::IDENTIFIER, "void" };
 	const mcf::Token::Data TokenByte = { mcf::Token::Type::IDENTIFIER, "byte" };
 	inline const mcf::Token::Data TokenIdentifier(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::IDENTIFIER, value }; }
 	inline const mcf::Token::Data TokenInteger(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::INTEGER, value }; }
@@ -48,6 +47,7 @@ namespace UnitTest
 	const mcf::Token::Data TokenLet = { mcf::Token::Type::KEYWORD_LET, "let" };
 	const mcf::Token::Data TokenFunc = { mcf::Token::Type::KEYWORD_FUNC, "func" };
 	const mcf::Token::Data TokenMain = { mcf::Token::Type::KEYWORD_MAIN, "main" };
+	const mcf::Token::Data TokenVoid = { mcf::Token::Type::KEYWORD_VOID, "void" };
 	const mcf::Token::Data TokenReturn = { mcf::Token::Type::KEYWORD_RETURN, "return" };
 	const mcf::Token::Data TokenUnused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
 	const mcf::Token::Data TokenVariadic = { mcf::Token::Type::VARIADIC, "..." };

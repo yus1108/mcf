@@ -43,6 +43,7 @@ namespace mcf
 				IDENTIFIER,
 				INTEGER,
 				STRING,
+				INFIX,
 				INDEX,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -126,6 +127,27 @@ namespace mcf
 				mcf::Token::Data _token;
 			};
 
+			class Infix : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Infix>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Infix>(std::move(args)...); }
+
+			public:
+				explicit Infix(void) noexcept = default;
+				explicit Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				virtual const Type GetExpressionType(void) const noexcept override final { return Type::INFIX; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _infixOperator;
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::Pointer _right;
+			};
+
 			class Index : public Interface
 			{
 			public:
@@ -153,6 +175,7 @@ namespace mcf
 			{
 				INVALID = 0,
 
+				VARIADIC,
 				MAP_INITIALIZER,
 				TYPE_SIGNATURE,
 				VARIABLE_SIGNATURE,
@@ -183,6 +206,25 @@ namespace mcf
 
 			using Pointer = std::unique_ptr<Interface>;
 			using PointerVector = std::vector<Pointer>;
+
+			class Variadic : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Variadic>;
+
+				template <class... VariadicTemplateClass>
+				inline static Pointer Make(VariadicTemplateClass&& ...args) { return std::make_unique<Variadic>(std::move(args)...); }
+
+			public:
+				explicit Variadic(void) noexcept = default;
+				explicit Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept;
+
+				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIADIC; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::Pointer _name;
+			};
 
 			class MapInitializer : public Interface
 			{
@@ -227,6 +269,7 @@ namespace mcf
 			{
 			public:
 				using Pointer = std::unique_ptr<VariableSignature>;
+				using PointerVector = std::vector<Pointer>;
 
 				template <class... Variadic>
 				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<VariableSignature>(std::move(args)...); }
@@ -241,6 +284,54 @@ namespace mcf
 			private:
 				mcf::AST::Expression::Identifier::Pointer _name;
 				TypeSignature::Pointer _typeSignature;
+			};
+
+			class FunctionParams : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<FunctionParams>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionParams>(std::move(args)...); }
+
+			public:
+				explicit FunctionParams(void) noexcept = default;
+				explicit FunctionParams(std::vector<VariableSignature::Pointer>&& params, Variadic::Pointer&& variadic) noexcept
+					: _params(std::move(params)), _variadic(std::move(variadic)) {}
+
+				inline const bool IsVoid(void) const noexcept { return HasParams() == false && HasVariadic() == false; }
+				inline const bool HasParams(void) const noexcept { return _params.size() != 0; }
+				inline const bool HasVariadic(void) const noexcept { return _variadic.get() != nullptr; }
+
+				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				VariableSignature::PointerVector _params;
+				Variadic::Pointer _variadic;
+			};
+
+			class FunctionSignature : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<FunctionSignature>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionSignature>(std::move(args)...); }
+
+			public:
+				explicit FunctionSignature(void) noexcept = default;
+				explicit FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept;
+
+				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+
+				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::Pointer _name;
+				FunctionParams::Pointer _params;
+				TypeSignature::Pointer _returnType;
 			};
 		}
 
@@ -320,6 +411,26 @@ namespace mcf
 			private:
 				SignaturePointer _signature;
 				BindMapPointer _bindMap;
+			};
+
+			class Extern : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Extern>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Extern>(std::move(args)...); }
+
+			public:
+				explicit Extern(void) noexcept = default;
+				explicit Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept;
+
+				virtual const Type GetStatementType(void) const noexcept override final { return Type::EXTERN; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				bool _isAssemblyFunction;
+				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;
 			};
 		}
 
