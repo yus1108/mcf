@@ -432,6 +432,26 @@ namespace mcf
 				bool _isAssemblyFunction;
 				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;
 			};
+
+			class Let : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Let>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Let>(std::move(args)...); }
+
+			public:
+				explicit Let(void) noexcept = default;
+				explicit Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept;
+
+				virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::VariableSignature::Pointer _signature;
+				mcf::AST::Expression::Pointer&& _expression;
+			};
 		}
 
 		class Program final

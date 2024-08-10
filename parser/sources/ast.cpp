@@ -184,6 +184,18 @@ const std::string mcf::AST::Statement::Extern::ConvertToString(void) const noexc
 	return "[Extern" + std::string(_isAssemblyFunction ? " KEYWORD_ASM " : " ") + _signature->ConvertToString() + " SEMICOLON]";
 }
 
+mcf::AST::Statement::Let::Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept
+	: _signature(std::move(signature))
+	, _expression(std::move(expression))
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Let::ConvertToString(void) const noexcept
+{
+	return "[Let: " + _signature->ConvertToString() + " " + (_expression.get() == nullptr ? "" : _expression->ConvertToString()) + "SEMICOLON]";
+}
+
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept
 	: _statements(std::move(statements))
 {
