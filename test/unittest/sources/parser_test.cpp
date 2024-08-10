@@ -30,7 +30,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 
 				const std::string actual = program.ConvertToString();
-				FATAL_ASSERT(actual == testCases[i].Expected, "\nexpected=\t`%s`\nactual=\t\t`%s`", testCases[i].Expected.c_str(), actual.c_str());
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
 		}
@@ -82,7 +82,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 
 				const std::string actual = program.ConvertToString();
-				FATAL_ASSERT(actual == testCases[i].Expected, "\nexpected=\t`%s`\nactual=\t\t`%s`", testCases[i].Expected.c_str(), actual.c_str());
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
 		}
@@ -116,7 +116,122 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 
 				const std::string actual = program.ConvertToString();
-				FATAL_ASSERT(actual == testCases[i].Expected, "\nexpected=\t`%s`\nactual=\t\t`%s`", testCases[i].Expected.c_str(), actual.c_str());
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"3. let 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"let foo: byte = 0;",
+					"[Let: <VariableSignature: <Identifier: foo> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON]",
+				},
+				{
+					"let arr: byte[] = { 0, 1, 2 };",
+					std::string("[Let: <VariableSignature: <Identifier: arr> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN ") +
+					"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> " +
+					"SEMICOLON]",
+				},
+				{
+					"let arr2: byte[5] = { 0 };",
+					std::string("[Let: <VariableSignature: <Identifier: arr2> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 5> RBRACKET>>> ASSIGN ") +
+					"<Initializer: LBRACE <Integer: 0> COMMA RBRACE> " +
+					"SEMICOLON]",
+				},
+				{
+					"let intVal: int32 = 10;",
+					"[Let: <VariableSignature: <Identifier: intVal> COLON <TypeSignature: <Identifier: int32>>> ASSIGN <Integer: 10> SEMICOLON]",
+				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"4. block 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"{ let a : byte = 0; let b : byte[2] = 1; }",
+					std::string("[Block: LBRACE ") +
+						"[Let: <VariableSignature: <Identifier: a> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON] " +
+						"[Let: <VariableSignature: <Identifier: b> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> ASSIGN <Integer: 1> SEMICOLON] " +
+					"RBRACE]"
+				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"6. func 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"func boo(void) -> byte { return 0; }",
+					std::string("[Func: ") +
+						"<FunctionSignature: <Identifier: boo> <FunctionParams: KEYWORD_VOID> POINTING <TypeSignature: <Identifier: byte>>> " +
+						"<Statements: LBRACE <Return: <Integer: 0>> RBRACE>" +
+					"]"
+				}
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
 		}

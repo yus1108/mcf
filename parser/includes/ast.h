@@ -45,6 +45,8 @@ namespace mcf
 				STRING,
 				INFIX,
 				INDEX,
+				INITIALIZER,
+				MAP_INITIALIZER,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -167,6 +169,44 @@ namespace mcf
 				mcf::AST::Expression::Pointer _left;
 				mcf::AST::Expression::Pointer _index;
 			};
+
+			class Initializer : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Initializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Initializer>(std::move(args)...); }
+
+			public:
+				explicit Initializer(void) noexcept = default;
+				explicit Initializer(PointerVector&& keyList) noexcept;
+
+				virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
+				virtual const std::string ConvertToString(void) const noexcept override;
+
+			protected:
+				PointerVector _keyList;
+			};
+
+			class MapInitializer : public Initializer
+			{
+			public:
+				using Pointer = std::unique_ptr<MapInitializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<MapInitializer>(std::move(args)...); }
+
+			public:
+				explicit MapInitializer(void) noexcept = default;
+				explicit MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept;
+
+				virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				PointerVector _valueList;
+			};
 		}
 
 		namespace Intermediate
@@ -176,7 +216,6 @@ namespace mcf
 				INVALID = 0,
 
 				VARIADIC,
-				MAP_INITIALIZER,
 				TYPE_SIGNATURE,
 				VARIABLE_SIGNATURE,
 				FUNCTION_SIGNATURE,
@@ -224,26 +263,6 @@ namespace mcf
 
 			private:
 				mcf::AST::Expression::Identifier::Pointer _name;
-			};
-
-			class MapInitializer : public Interface
-			{
-			public:
-				using KeyValue = std::pair<mcf::AST::Expression::Pointer, mcf::AST::Expression::Pointer>;
-				using Pointer = std::unique_ptr<MapInitializer>;
-
-				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<MapInitializer>(std::move(args)...); }
-
-			public:
-				explicit MapInitializer(void) noexcept = default;
-				explicit MapInitializer(std::vector<KeyValue>&& itemList) noexcept;
-
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
-				virtual const std::string ConvertToString(void) const noexcept override final;
-
-			private:
-				std::vector<KeyValue> _itemList;
 			};
 
 			class TypeSignature : public Interface
@@ -345,8 +364,9 @@ namespace mcf
 				TYPEDEF,
 				EXTERN,
 				LET,
-				FUNC,
+				BLOCK,
 				RETURN,
+				FUNC,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -396,7 +416,7 @@ namespace mcf
 			public:
 				using Pointer = std::unique_ptr<Typedef>;
 				using SignaturePointer = mcf::AST::Intermediate::VariableSignature::Pointer;
-				using BindMapPointer = mcf::AST::Intermediate::MapInitializer::Pointer;
+				using BindMapPointer = mcf::AST::Expression::MapInitializer::Pointer;
 
 				template <class... Variadic>
 				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Typedef>(std::move(args)...); }
@@ -450,7 +470,26 @@ namespace mcf
 
 			private:
 				mcf::AST::Intermediate::VariableSignature::Pointer _signature;
-				mcf::AST::Expression::Pointer&& _expression;
+				mcf::AST::Expression::Pointer _expression;
+			};
+
+			class Block : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Block>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Block>(std::move(args)...); }
+
+			public:
+				explicit Block(void) noexcept = default;
+				explicit Block(Statement::PointerVector&& statements) noexcept;
+
+				virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				Statement::PointerVector _statements;
 			};
 		}
 

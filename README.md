@@ -67,19 +67,26 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Initializer>`
+
+#### PARSER :
+`LBRACE` `<Expression>` {`COMMA` `<Expression>`}* {`COMMA`} `RBRACE`
+
+---
+
+### `<MapInitializer>` : `<Initializer>`
+
+#### PARSER :
+`LBRACE` `<Expression>` `ASSIGN` `<Expression>` {`COMMA` `<Expression>` `ASSIGN` `<Expression>`}* {`COMMA`} `RBRACE`
+
+---
+
 ## `<INTERMEDIATE>` :
 
 ### `<Variadic>`
 
 #### PARSER :
 `VARIADIC` `<Identifier>`
-
----
-
-### `<MapInitializer>`
-
-#### PARSER :
-`LBRACE` `<Expression>` `ASSIGN` `<Expression>` {`COMMA` {`<Expression>` `ASSIGN` `<Expression>`}}* `RBRACE`
 
 ---
 
@@ -118,13 +125,6 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 #### PARSER :
 1. `KEYWORD_FUNC` `<Identifier>` `<FunctionParams>` `POINTING` `KEYWORD_VOID`
 2. `KEYWORD_FUNC` `<Identifier>` `<FunctionParams>` `POINTING` `<TypeSignature>`
-
----
-
-### `<Statements>`
-
-#### PARSER :
-[prerequisite: `LBRACE`] {`[Statement]`}* [expectnext: `RBRACE`]
 
 ---
 
@@ -174,14 +174,13 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
-### `[Func]`
+### `[Block]`
 
 #### PARSER :
-`<FunctionSignature>` `LBRACE` `<Statements>` `RBRACE`
+`LBRACE` {`[Statement]`}* `RBRACE`
 
 #### EVALUATOR:
-* `<FunctionSignature>`: the signature is stored to code section.
-* `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
+{`[Statement]`}*: scope must be pushed for these statements.
 
 ---
 
@@ -192,3 +191,16 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 #### EVALUATOR:
 `<Expression>`: this expression must have value
+
+---
+
+### `[Func]`
+
+#### PARSER :
+`<FunctionSignature>` `<Statements>`
+
+#### EVALUATOR:
+* `<FunctionSignature>`: the signature is stored to code section.
+* `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
+
+---

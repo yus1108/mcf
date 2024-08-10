@@ -33,6 +33,68 @@ const std::string mcf::AST::Expression::Index::ConvertToString(void) const noexc
 		("<Index: " + _left->ConvertToString() + " LBRACKET " + _index->ConvertToString() + " RBRACKET>");
 }
 
+mcf::AST::Expression::Initializer::Initializer(PointerVector&& keyList) noexcept
+	: _keyList(std::move(keyList))
+{
+#if defined(_DEBUG)
+	const size_t size = _keyList.size();
+	DebugAssert(size != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Expression::Initializer::ConvertToString(void) const noexcept
+{
+	const size_t keyListCount = _keyList.size();
+	DebugAssert(keyListCount != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
+
+	std::string buffer;
+	buffer = "<Initializer: LBRACE ";
+	for (size_t i = 0; i < keyListCount; i++)
+	{
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+		buffer += _keyList[i]->ConvertToString() + " COMMA ";
+	}
+	buffer += "RBRACE>";
+	return buffer;
+}
+
+mcf::AST::Expression::MapInitializer::MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept
+	: Initializer(std::move(keyist))
+	, _valueList(std::move(valueList))
+{
+#if defined(_DEBUG)
+	const size_t size = _valueList.size();
+	DebugAssert(size != 0, u8"_valueList에 값이 최소 한개 이상 있어야 합니다.");
+	DebugAssert(_keyList.size() == size, u8"_valueList의 갯수와 _keyList의 갯수가 동일 해야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_valueList[i].get() != nullptr, u8"_valueList[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Expression::MapInitializer::ConvertToString(void) const noexcept
+{
+	const size_t keyListCount = _keyList.size();
+	DebugAssert(keyListCount != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
+	DebugAssert(_valueList.size() == keyListCount, u8"_valueList의 갯수와 _keyList의 갯수가 동일 해야 합니다.");
+
+	std::string buffer;
+	buffer = "<MapInitializer: LBRACE ";
+	for (size_t i = 0; i < keyListCount; i++)
+	{
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+		DebugAssert(_valueList[i].get() != nullptr, u8"_valueList[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _keyList[i]->ConvertToString() + " ASSIGN " + _valueList[i]->ConvertToString() + " COMMA ";
+	}
+	buffer += "RBRACE>";
+	return buffer;
+}
+
 mcf::AST::Intermediate::Variadic::Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept
 	: _name(name.release())
 {
@@ -43,37 +105,6 @@ const std::string mcf::AST::Intermediate::Variadic::ConvertToString(void) const 
 {
 	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
 	return "<Variadic: " + _name->ConvertToString() + ">";
-}
-
-mcf::AST::Intermediate::MapInitializer::MapInitializer(std::vector<KeyValue>&& itemList) noexcept
-	: _itemList(std::move(itemList))
-{
-#if defined(_DEBUG)
-	const size_t size = _itemList.size();
-	DebugAssert(size != 0, u8"_itemList에 값이 최소 한개 이상 있어야 합니다.");
-	for (size_t i = 0; i < size; i++)
-	{
-		DebugAssert(_itemList[i].first.get() != nullptr, u8"_itemList[%zu].key는 nullptr 여선 안됩니다.", i);
-		DebugAssert(_itemList[i].second.get() != nullptr, u8"_itemList[%zu].value는 nullptr 여선 안됩니다.", i);
-	}
-#endif
-}
-
-const std::string mcf::AST::Intermediate::MapInitializer::ConvertToString(void) const noexcept
-{
-	const size_t itemListCount = _itemList.size();
-	DebugAssert(itemListCount != 0, u8"_itemList에 값이 최소 한개 이상 있어야 합니다.");
-
-	std::string buffer;
-	buffer = "<MapInitializer: LBRACE ";
-	for (size_t i = 0; i < itemListCount; i++)
-	{
-		DebugAssert(_itemList[i].first.get() != nullptr, u8"_itemList[%zu].key는 nullptr 여선 안됩니다.", i);
-		DebugAssert(_itemList[i].second.get() != nullptr, u8"_itemList[%zu].value는 nullptr 여선 안됩니다.", i);
-		buffer += _itemList[i].first->ConvertToString() + " ASSIGN " + _itemList[i].second->ConvertToString() + " COMMA ";
-	}
-	buffer += "RBRACE>";
-	return buffer;
 }
 
 mcf::AST::Intermediate::TypeSignature::TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept
@@ -193,7 +224,35 @@ mcf::AST::Statement::Let::Let(mcf::AST::Intermediate::VariableSignature::Pointer
 
 const std::string mcf::AST::Statement::Let::ConvertToString(void) const noexcept
 {
-	return "[Let: " + _signature->ConvertToString() + " " + (_expression.get() == nullptr ? "" : _expression->ConvertToString()) + "SEMICOLON]";
+	return "[Let: " + _signature->ConvertToString() + (_expression.get() == nullptr ? "" : (" ASSIGN " + _expression->ConvertToString())) + " SEMICOLON]";
+}
+
+mcf::AST::Statement::Block::Block(Statement::PointerVector&& statements) noexcept
+	: _statements(std::move(statements))
+{
+#if defined(_DEBUG)
+		const size_t size = _statements.size();
+		DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
+		for (size_t i = 0; i < size; i++)
+		{
+			DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		}
+#endif
+}
+
+const std::string mcf::AST::Statement::Block::ConvertToString(void) const noexcept
+{
+	const size_t size = _statements.size();
+	DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
+	std::string buffer = "[Block: LBRACE ";
+
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _statements[i]->ConvertToString() + " ";
+	}
+
+	return buffer + "RBRACE]";
 }
 
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept
