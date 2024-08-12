@@ -1,428 +1,643 @@
 ﻿#pragma once
-#include <vector>
 #include <memory>
-#include "lexer.h"
+#include <string>
+#include <vector>
+#include <parser/includes/lexer.h>
 
 namespace mcf
 {
-	struct parser_error;
-	class evaluator;
-
-	namespace ast
+	namespace AST
 	{
-		enum class node_type : unsigned char
+		namespace Node
 		{
-			invalid = 0,
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
 
-			expression,
-			statement,
+				EXPRESSION,
+				INTERMEDIATE,
+				STATEMENT,
 
-			// 이 밑으로는 수정하면 안됩니다.
-			count,
-		};
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
 
-		class node
+			class Interface
+			{
+			public:
+				virtual ~Interface(void) noexcept = default;
+				virtual const mcf::AST::Node::Type	GetNodeType(void) const noexcept = 0;
+				virtual const std::string ConvertToString(void) const noexcept = 0;
+			};
+
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+		}
+
+		namespace Expression
+		{
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
+
+				IDENTIFIER,
+				INTEGER,
+				STRING,
+				PREFIX,
+				INFIX,
+				CALL,
+				INDEX,
+				INITIALIZER,
+				MAP_INITIALIZER,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
+
+			class Interface : public mcf::AST::Node::Interface
+			{
+			public:
+				virtual const Type GetExpressionType(void) const noexcept = 0;
+				inline virtual const mcf::AST::Node::Type GetNodeType(void) const noexcept override final
+				{
+					return mcf::AST::Node::Type::EXPRESSION;
+				}
+			};
+
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
+			{
+			public:
+				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
+			};
+
+			class Identifier : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Identifier>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Identifier>(std::move(args)...); }
+
+			public:
+				explicit Identifier(void) noexcept = default;
+				explicit Identifier(const mcf::Token::Data& token) noexcept : _token(token) {}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::IDENTIFIER; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Identifier: " + _token.Literal + ">"; }
+
+			private:
+				mcf::Token::Data _token;
+			};
+
+			class Integer : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Integer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Integer>(std::move(args)...); }
+
+			public:
+				explicit Integer(void) noexcept = default;
+				explicit Integer(const mcf::Token::Data& token) noexcept : _token(token) {}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Integer: " + _token.Literal + ">"; }
+
+			private:
+				mcf::Token::Data _token;
+			};
+
+			class String : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<String>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<String>(std::move(args)...); }
+
+			public:
+				explicit String(void) noexcept = default;
+				explicit String(const mcf::Token::Data& token) noexcept : _token(token) {}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<String: " + _token.Literal + ">"; }
+
+			private:
+				mcf::Token::Data _token;
+			};
+
+			class Prefix : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Prefix>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Prefix>(std::move(args)...); }
+
+			public:
+				explicit Prefix(void) noexcept = default;
+				explicit Prefix(const mcf::Token::Data& prefixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::PREFIX; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _prefixOperator;
+				mcf::AST::Expression::Pointer _right;
+			};
+
+			class Infix : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Infix>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Infix>(std::move(args)...); }
+
+			public:
+				explicit Infix(void) noexcept = default;
+				explicit Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INFIX; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _infixOperator;
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::Pointer _right;
+			};
+
+			class Call : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Call>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Call>(std::move(args)...); }
+
+			public:
+				explicit Call(void) noexcept = default;
+				explicit Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::PointerVector _params;
+			};
+
+			class Index : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Index>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Index>(std::move(args)...); }
+
+			public:
+				explicit Index(void) noexcept = default;
+				explicit Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INDEX; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::Pointer _index;
+			};
+
+			class Initializer : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Initializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Initializer>(std::move(args)...); }
+
+			public:
+				explicit Initializer(void) noexcept = default;
+				explicit Initializer(PointerVector&& keyList) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
+				virtual const std::string ConvertToString(void) const noexcept override;
+
+			protected:
+				PointerVector _keyList;
+			};
+
+			class MapInitializer : public Initializer
+			{
+			public:
+				using Pointer = std::unique_ptr<MapInitializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<MapInitializer>(std::move(args)...); }
+
+			public:
+				explicit MapInitializer(void) noexcept = default;
+				explicit MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				PointerVector _valueList;
+			};
+		}
+
+		namespace Intermediate
+		{
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
+
+				VARIADIC,
+				TYPE_SIGNATURE,
+				VARIABLE_SIGNATURE,
+				FUNCTION_SIGNATURE,
+				FUNCTION_PARAMS,
+				STATEMENTS,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
+
+			class Interface : public mcf::AST::Node::Interface
+			{
+			public:
+				virtual const Type GetIntermediateType(void) const noexcept = 0;
+				inline virtual const mcf::AST::Node::Type GetNodeType(void) const noexcept override final
+				{
+					return mcf::AST::Node::Type::INTERMEDIATE;
+				}
+			};
+
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
+			{
+			public:
+				inline static Pointer Make(void) { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
+			};
+
+
+			class Variadic : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Variadic>;
+
+				template <class... VariadicTemplateClass>
+				inline static Pointer Make(VariadicTemplateClass&& ...args) { return std::make_unique<Variadic>(std::move(args)...); }
+
+			public:
+				explicit Variadic(void) noexcept = default;
+				explicit Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept;
+
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIADIC; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::Pointer _name;
+			};
+
+			class TypeSignature : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<TypeSignature>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<TypeSignature>(std::move(args)...); }
+
+			public:
+				explicit TypeSignature(void) noexcept = default;
+				explicit TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept;
+
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _signature;
+			};
+
+			class VariableSignature : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<VariableSignature>;
+				using PointerVector = std::vector<Pointer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<VariableSignature>(std::move(args)...); }
+
+			public:
+				explicit VariableSignature(void) noexcept = default;
+				explicit VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept;
+				
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIABLE_SIGNATURE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::Pointer _name;
+				TypeSignature::Pointer _typeSignature;
+			};
+
+			class FunctionParams : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<FunctionParams>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionParams>(std::move(args)...); }
+
+			public:
+				explicit FunctionParams(void) noexcept = default;
+				explicit FunctionParams(std::vector<VariableSignature::Pointer>&& params, Variadic::Pointer&& variadic) noexcept
+					: _params(std::move(params)), _variadic(std::move(variadic)) {}
+
+				inline const bool IsVoid(void) const noexcept { return HasParams() == false && HasVariadic() == false; }
+				inline const bool HasParams(void) const noexcept { return _params.size() != 0; }
+				inline const bool HasVariadic(void) const noexcept { return _variadic.get() != nullptr; }
+
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				VariableSignature::PointerVector _params;
+				Variadic::Pointer _variadic;
+			};
+
+			class FunctionSignature : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<FunctionSignature>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionSignature>(std::move(args)...); }
+
+			public:
+				explicit FunctionSignature(void) noexcept = default;
+				explicit FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept;
+
+				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::Pointer _name;
+				FunctionParams::Pointer _params;
+				TypeSignature::Pointer _returnType;
+			};
+		}
+
+		namespace Statement
+		{
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
+
+				INCLUDE_LIBRARY,
+				TYPEDEF,
+				EXTERN,
+				LET, 
+				BLOCK,
+				RETURN,
+				FUNC,
+				MAIN,
+				EXPRESSION,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
+
+			class Interface : public mcf::AST::Node::Interface
+			{
+			public:
+				virtual const Type GetStatementType(void) const noexcept = 0;
+				inline virtual const mcf::AST::Node::Type GetNodeType(void) const noexcept override final 
+				{ 
+					return mcf::AST::Node::Type::STATEMENT;
+				}
+			};
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
+			{
+			public:
+				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
+			};
+
+			class IncludeLibrary : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<IncludeLibrary>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<IncludeLibrary>(std::move(args)...); }
+
+			public:
+				explicit IncludeLibrary(void) noexcept = default;
+				explicit IncludeLibrary(mcf::Token::Data libPath) noexcept : _libPath(libPath) {}
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _libPath;
+				const bool _hasHeader = false;
+			};
+
+			class Typedef : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Typedef>;
+				using SignaturePointer = mcf::AST::Intermediate::VariableSignature::Pointer;
+				using BindMapPointer = mcf::AST::Expression::MapInitializer::Pointer;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Typedef>(std::move(args)...); }
+
+			public:
+				explicit Typedef(void) noexcept = default;
+				explicit Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				SignaturePointer _signature;
+				BindMapPointer _bindMap;
+			};
+
+			class Extern : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Extern>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Extern>(std::move(args)...); }
+
+			public:
+				explicit Extern(void) noexcept = default;
+				explicit Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXTERN; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				bool _isAssemblyFunction;
+				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;
+			};
+
+			class Let : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Let>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Let>(std::move(args)...); }
+
+			public:
+				explicit Let(void) noexcept = default;
+				explicit Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::VariableSignature::Pointer _signature;
+				mcf::AST::Expression::Pointer _expression;
+			};
+
+			class Block : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Block>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Block>(std::move(args)...); }
+
+			public:
+				explicit Block(void) noexcept = default;
+				explicit Block(Statement::PointerVector&& statements) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				Statement::PointerVector _statements;
+			};
+
+			class Return : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Return>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Return>(std::move(args)...); }
+
+			public:
+				explicit Return(void) noexcept = default;
+				explicit Return(mcf::AST::Expression::Pointer&& returnValue) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _returnValue;;
+			};
+
+			class Func : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Func>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Func>(std::move(args)...); }
+
+			public:
+				explicit Func(void) noexcept = default;
+				explicit Func(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature, mcf::AST::Statement::Block::Pointer&& block) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;;
+				mcf::AST::Statement::Block::Pointer _block;
+			};
+
+			class Main : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Main>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Main>(std::move(args)...); }
+
+			public:
+				explicit Main(void) noexcept = default;
+				explicit Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept;
+
+				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::MAIN; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::FunctionParams::Pointer _params;;
+				mcf::AST::Intermediate::TypeSignature::Pointer _returnType;
+				Block::Pointer _block;
+			};
+
+			class Expression : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Expression>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Expression>(std::move(args)...); }
+
+			public:
+				explicit Expression(void) noexcept = default;
+				explicit Expression(mcf::AST::Expression::Pointer&& expression) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXPRESSION; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _expression;
+			};
+		}
+
+		class Program final
 		{
 		public:
-			virtual ~node(void) noexcept {}
-			virtual const mcf::ast::node_type	get_node_type(void) const noexcept = 0;
-			virtual const std::string			convert_to_string(void) const noexcept = 0;
-		};
+			explicit Program(void) noexcept = default;
+			explicit Program(mcf::AST::Statement::PointerVector&& statements) noexcept;
 
-		enum class statement_type : unsigned char
-		{
-			invalid = 0,
+			inline const size_t GetStatementCount(void) const noexcept { return _statements.size(); }
+			inline const mcf::AST::Statement::Interface* GetUnsafeStatementPointerAt(const size_t index) const noexcept 
+			{
+				return _statements[index].get(); 
+			}
 
-			variable,			// <data_type> identifier [optional: assign <expression>] semicolon
-			variable_assign,	// identifier assign <expression> semicolon
-			function,
-			function_call,
-			enum_def,			// keyword_enum <identifier> [optional: colon <data_type>] lbrace !<enum_block> rbrace semicolon
-			macro_include,
-
-			// 이 밑으로는 수정하면 안됩니다.
-			count,
-		};
-
-		class statement : public node
-		{
-		public: 
-					virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept = 0;
-			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept override final { return mcf::ast::node_type::statement; }
-			
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept = 0;
-		};
-
-		enum class expression_type : unsigned char
-		{
-			invalid = 0,
-
-			literal,	// integer_32bit, string_utf8
-			identifier, // identifier
-			data_type,	// keyword_int32, keyword_utf8, keyword_void
-
-			// plus|minus <literal>
-			// plus|minus <identifier>
-			prefix,
-			infix,			// <expression> plus|minus|asterisk|slash <expression>
-			index_unknown,	// 평가기에서 index expression 을 평가할때 []인지 확인 하기 위해 사용되는 타입입니다.
-			index,			// <expression> lbracket [optional: <expression>] rbracket
-			
-			// unused|in|out <data_type> <identifier>
-			function_parameter,
-			// [optional: unused] function_parameter_variadic
-			function_parameter_variadic,
-			// <function_parameter>
-			// <function_parameter_variadic>
-			// <function_parameter> comma <function_parameter>
-			// <function_parameter_list> comma <function_parameter_variadic>
-			function_parameter_list,
-			// [variable] [optional: !<function_block>]
-			// [variable_assign] [optional: !<function_block>]
-			// [function_call] [optional: !<function_block>]
-			function_block,
-			function_call,
-
-			// 이 밑으로는 수정하면 안됩니다.
-			count,
-		};
-
-		class expression : public node
-		{
-		public: 
-					virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept = 0;
-			inline	virtual const mcf::ast::node_type		get_node_type(void) const noexcept override final { return mcf::ast::node_type::expression; }
-		};
-
-		using unique_statement = std::unique_ptr<const mcf::ast::statement>;
-		using unique_expression = std::unique_ptr<const mcf::ast::expression>;
-		using expression_array = std::vector<unique_expression>;
-		using statement_array = std::vector<unique_statement>;
-
-		class program final
-		{
-		public:
-			explicit program(void) noexcept = default;
-			explicit program(statement_array&& statements) noexcept;
-
-			inline	const size_t				get_statement_count(void) const noexcept { return _statements.size(); }
-					const mcf::ast::statement*	get_statement_at(const size_t index) const noexcept;
-
-			const std::string				convert_to_string(void) const noexcept;
-
-			void evaluate(mcf::evaluator& inOutEvaluator) const noexcept;
+			const std::string ConvertToString(void) const noexcept;
 
 		private:
-			statement_array	_statements;
-		};
-
-		class literal_expession final : public expression
-		{
-		public: 
-			explicit literal_expession(void) noexcept = default;
-			explicit literal_expession(const mcf::token& token) noexcept : _token(token) {}
-
-			inline const mcf::token& get_token(void) const noexcept { return _token; }
-
-			inline virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::literal; }
-			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
-
-		private:
-			const mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::integer_32bit, literal }
-		};
-
-		class identifier_expression final : public expression
-		{
-		public:
-			explicit identifier_expression(void) noexcept = default;
-			explicit identifier_expression(const mcf::token& token) noexcept : _token(token) {}
-
-			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::identifier; }
-			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
-
-		private:
-			const mcf::token _token = { token_type::invalid, std::string() }; // { token_type::identifier, identifier }
-		};
-
-		enum class data_type : unsigned char
-		{
-			invalid = 0,
-
-			primitive,
-
-			// 이 밑으로는 수정하면 안됩니다.
-			count,
-		};
-		class data_type_expression : public expression
-		{ 
-		public: 
-					virtual const mcf::ast::data_type		get_data_type(void) const noexcept = 0;
-			inline	virtual const mcf::ast::expression_type get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::data_type; } 
-		};
-		using unique_data_type_expression = std::unique_ptr<mcf::ast::data_type_expression>;
-		class primitive_data_type_expression final : public data_type_expression
-		{
-		public:
-			explicit primitive_data_type_expression(void) noexcept = default;
-			explicit primitive_data_type_expression(const bool isConst, const mcf::token& token) noexcept : _token(token), _isConst(isConst) {}
-
-			inline const mcf::token_type get_token_type(void) const noexcept { return _token.Type; }
-
-			inline	virtual const std::string			convert_to_string(void) const noexcept override final { return (_isConst == true ? "const " : "") + _token.Literal; }
-			inline	virtual const mcf::ast::data_type	get_data_type(void) const noexcept override final { return mcf::ast::data_type::primitive; }
-
-		private:
-			mcf::token	_token = { token_type::invalid, std::string() }; // { token_type::keyword, "int32" }
-			bool		_isConst = false; // token_type::const == true
-		};
-
-		class prefix_expression final : public expression
-		{
-		public:
-			explicit prefix_expression(void) noexcept = default;
-			explicit prefix_expression(const mcf::token& prefix, unique_expression&& targetExpression) noexcept;
-
-			inline const mcf::token&			get_prefix_operator_token(void) const noexcept { return _prefixOperator; }
-			inline const mcf::ast::expression*	get_target_expression(void) const noexcept { return _targetExpression.get(); }
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::prefix; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-
-			const mcf::token		_prefixOperator = { token_type::invalid, std::string() };	// { prefix_operator, literal }
-			const unique_expression _targetExpression;											// <expression>
-		};
-
-		class infix_expression final : public expression
-		{
-		public:
-			explicit infix_expression(void) noexcept = default;
-			explicit infix_expression(unique_expression&& left, const mcf::token& infix, unique_expression&& right) noexcept;
-
-			inline const mcf::token&			get_infix_operator_token(void) const noexcept { return _infixOperator; }
-			inline const mcf::ast::expression*	get_left_expression(void) const noexcept { return _left.get(); }
-			inline const mcf::ast::expression*	get_right_expression(void) const noexcept { return _right.get(); }
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::infix; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-
-			const mcf::token		_infixOperator = { token_type::invalid, std::string() };	// { infix_operator, literal }
-			const unique_expression _left;														// <expression>
-			const unique_expression _right;													// <expression>
-		};
-
-		class unknown_index_expression final : public expression
-		{
-		public:
-			explicit unknown_index_expression(void) noexcept = default;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::index_unknown; }
-			inline	virtual const std::string				convert_to_string(void) const noexcept override final { return std::string(); }
-		};
-
-		class index_expression final : public expression
-		{
-		public:
-			explicit index_expression(void) noexcept = default;
-			explicit index_expression(unique_expression&& left, unique_expression&& index) noexcept;
-
-			inline const mcf::ast::expression* get_left_expression(void) const noexcept { return _left.get(); }
-			inline const mcf::ast::expression* get_index_expression(void) const noexcept { return _index.get(); }
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::index; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			const unique_expression _left;	// <expression>
-			const unique_expression _index;	// <expression>
-		};
-
-		class function_parameter_expression final : public expression
-		{
-		public:
-			explicit function_parameter_expression(void) noexcept = default;
-			explicit function_parameter_expression(const mcf::token& dataFor, unique_expression&& dataType, unique_expression&& name) noexcept;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			token				_for;
-			unique_expression	_type;
-			unique_expression	_name;
-		};
-
-		class function_parameter_variadic_expression final : public expression
-		{
-		public:
-			explicit function_parameter_variadic_expression(void) noexcept = default;
-			explicit function_parameter_variadic_expression(const mcf::token& dataFor) noexcept : _for(dataFor) {}
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_variadic; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-			token _for;
-		};
-
-		class function_parameter_list_expression final : public expression
-		{
-		public:
-			explicit function_parameter_list_expression(void) noexcept = default;
-			explicit function_parameter_list_expression(expression_array&& list) noexcept;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_parameter_list; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			expression_array _list;
-		};
-		using unique_function_parameter_list = std::unique_ptr<const mcf::ast::function_parameter_list_expression>;
-
-		class function_block_expression final : public expression
-		{
-		public:
-			explicit function_block_expression(void) noexcept = default;
-			explicit function_block_expression(statement_array&& statements) noexcept;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_block; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			statement_array _statements;
-		};
-		using unique_function_block = std::unique_ptr<const mcf::ast::function_block_expression>;
-
-		using function_call_parameter_list = std::vector<std::pair<bool, unique_expression>>;
-		class function_call_expression final : public expression
-		{
-		public:
-			explicit function_call_expression(void) noexcept = default;
-			explicit function_call_expression(unique_expression&& function, expression_array&& parameters) noexcept;
-
-			inline	virtual const mcf::ast::expression_type	get_expression_type(void) const noexcept override final { return mcf::ast::expression_type::function_call; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-		private:
-			unique_expression	_function;
-			expression_array	_parameters;
-		};
-
-		class macro_include_statement final : public statement
-		{
-		public:
-			explicit macro_include_statement(void) noexcept = default;
-			explicit macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept;
-
-			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::macro_include; }
-			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _token.Literal; }
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-			inline const std::string get_path(void) const noexcept { return _path; }
-
-		private:
-			token		_token;
-			std::string _path;
-			program		_program;
-		};
-
-		class variable_statement final : public statement
-		{
-		public:
-			explicit variable_statement(void) noexcept = default;
-			explicit variable_statement(unique_data_type_expression&& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept;
-
-			inline	const mcf::ast::data_type_expression*	get_type(void) const noexcept { return _dataType.get(); }
-					const std::string						get_name(void) const noexcept;
-			inline	const mcf::ast::expression*				get_init_expression(void) const noexcept { return _initExpression.get(); }
-
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-		private:
-			const mcf::ast::unique_data_type_expression	_dataType;
-			const unique_expression				_name;
-			const unique_expression				_initExpression;
-		};
-
-		class variable_assign_statement final : public statement
-		{
-		public:
-			explicit variable_assign_statement(void) noexcept = default;
-			explicit variable_assign_statement(unique_expression&& name, unique_expression&& assignExpression) noexcept;
-
-					const std::string			get_name(void) const noexcept;
-			inline const mcf::ast::expression*	get_assign_expression(void) const noexcept { return _assignedExpression.get(); }
-
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::variable_assign; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-		private:
-			const std::unique_ptr<const mcf::ast::expression>	_name;
-			const std::unique_ptr<const mcf::ast::expression>	_assignedExpression;
-		};
-
-		class function_statement final : public statement
-		{
-		public:
-			explicit function_statement(void) noexcept = default;
-			explicit function_statement(unique_expression&& returnType,
-										identifier_expression name,
-										std::unique_ptr<const mcf::ast::function_parameter_list_expression>&& parameters,
-										std::unique_ptr<const mcf::ast::function_block_expression>&& statementsBlock) noexcept;
-
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-		private:
-			unique_expression				_returnType;
-			identifier_expression			_name;
-			unique_function_parameter_list	_parameters;
-			unique_function_block			_statementsBlock;
-		};
-
-		class function_call_statement final : public statement
-		{
-		public:
-			explicit function_call_statement(void) noexcept = default;
-			explicit function_call_statement(mcf::ast::unique_expression&& callExpression) noexcept;
-			explicit function_call_statement(std::unique_ptr<mcf::ast::function_call_expression>&& callExpression) noexcept;
-			explicit function_call_statement(std::unique_ptr<const mcf::ast::function_call_expression>&& callExpression) noexcept;
-
-			inline virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::function_call; }
-			inline virtual const std::string				convert_to_string(void) const noexcept override final { return _callExpression->convert_to_string() + ";"; }
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-		private:
-			std::unique_ptr<const mcf::ast::function_call_expression>	_callExpression;
-		};
-
-		class enum_statement final : public statement
-		{
-		public:
-			explicit enum_statement(void) noexcept = default;
-			explicit enum_statement(const mcf::ast::primitive_data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept;
-
-			inline const std::string& get_name(void) const noexcept { return _name.convert_to_string(); }
-
-			inline	virtual const mcf::ast::statement_type	get_statement_type(void) const noexcept override final { return mcf::ast::statement_type::enum_def; }
-					virtual const std::string				convert_to_string(void) const noexcept override final;
-
-			virtual void evaluate(mcf::evaluator& inOutEvaluator) const noexcept override final;
-
-		private:
-			const mcf::ast::primitive_data_type_expression		_name;
-			const std::vector<mcf::ast::identifier_expression>	_values;
+			mcf::AST::Statement::PointerVector _statements;
 		};
 	}
 }

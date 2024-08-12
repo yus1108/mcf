@@ -1,154 +1,212 @@
 ﻿#pragma once
 #include <stack>
-#include <vector>
-#include <unordered_map>
 #include <string>
+#include <parser/includes/common.h>
 
 namespace mcf
 {
-	class evaluator;
-
-	enum class token_type : unsigned char
+	namespace Token
 	{
-		invalid = 0,
-		eof,		// \0
-
-		// 식별자 + 리터럴
-		identifier,				// [_a-zA-Z]+[_a-zA-Z0-9]*
-		integer,				// [0-9]+
-		string_utf8,			// "[^"\n\r]*"
-
-		// 연산자
-		assign,		// =
-		plus,		// +
-		minus,		// -
-		asterisk,	// *
-		slash,		// /
-		bang,		// !
-		equal,		// ==
-		not_equal,	// !=
-		lt,			// <
-		gt,			// >
-		ampersand,	// &
-
-		lparen,		// (
-		rparen,		// )
-		lbrace,		// {
-		rbrace,		// }
-		lbracket,	// [
-		rbracket,	// ]
-
-		// 구분자
-		colon,			// :
-		double_colon,	// ::
-		semicolon,		// ;
-		comma,			// ,
-
-		// 식별자 키워드
-		keyword_identifier_start,	// 실제 값으로 사용되어선 안됩니다!!!
-		keyword_const,				// const
-		keyword_void,				// void
-		keyword_int8,				// int8
-		keyword_int16,				// int16
-		keyword_int32,				// int32
-		keyword_int64,				// int64
-		keyword_uint8,				// uint8
-		keyword_uint16,				// uint16
-		keyword_uint32,				// uint32
-		keyword_uint64,				// uint64
-		keyword_utf8,				// utf8
-		keyword_enum,				// enum
-		keyword_unused,				// unused
-		keyword_in,					// in
-		keyword_out,				// out
-		keyword_bool,				// bool
-		keyword_true,				// true
-		keyword_false,				// false
-		keyword_identifier_end,		// 실제 값으로 사용되어선 안됩니다!!!
-
-		custom_keyword_start,	// 실제 값으로 사용되어선 안됩니다!!!
-		custom_enum_type,		// 커스텀 열거형 타입
-		custom_keyword_end,		// 실제 값으로 사용되어선 안됩니다!!!
-
-		// '.' 으로 시작하는 토큰
-		keyword_variadic,	// ...
-
-		// 매크로
-		macro_start,				// 실제 값으로 사용되어선 안됩니다!!!
-		macro_iibrary_file_include,	// #include <[^<>\n\r]+>
-		macro_project_file_include,	// #include "[^<>\n\r]+"
-		macro_end,					// 실제 값으로 사용되어선 안됩니다!!!
-
-		// 주석
-		comment,		// //[^\n\r]
-		comment_block,	// /*[^"*/"]*/
-
-		// 이 밑으로는 수정하면 안됩니다.
-		count
-	};
-
-	struct token final
-	{
-		mcf::token_type	Type = mcf::token_type::invalid;
-		std::string		Literal;
-		size_t			Line = 0;
-		size_t			Index = 0;
-	};
-	inline bool operator==( const mcf::token& lhs, const mcf::token& rhs ) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
-	const mcf::token find_predefined_keyword(const std::string& tokenLiteral) noexcept;
-
-	// 주의: thread-safe 하지 않은 클래스입니다.
-	class lexer final {
-	public:
-		enum class error_token : unsigned char
+		enum class Type : unsigned char
 		{
-			invalid = 0,
+			INVALID = 0,
+			END_OF_FILE, // \0
 
-			no_error,
-			invalid_input_length,
-			fail_read_file,
-			fail_memory_allocation,
-			registering_duplicated_symbol_name,
+			// 식별자 + 리터럴
+			IDENTIFIER,	// [_a-zA-Z]+[_a-zA-Z0-9]*
+			INTEGER,	// [0-9]+
+			STRING,		// "[^"\n\r]*"
 
-			count,
+			// 연산자
+			ASSIGN,		// =
+			PLUS,		// +
+			MINUS,		// -
+			ASTERISK,	// *
+			SLASH,		// /
+			BANG,		// !
+			EQUAL,		// ==
+			NOT_EQUAL,	// !=
+			LT,			// <
+			GT,			// >
+			AMPERSAND,	// &
+
+			LPAREN,		// (
+			RPAREN,		// )
+			LBRACE,		// {
+			RBRACE,		// }
+			LBRACKET,	// [
+			RBRACKET,	// ]
+
+			// 구분자
+			COLON,			// :
+			DOUBLE_COLON,	// ::
+			SEMICOLON,		// ;
+			COMMA,			// ,
+			POINTING,		// ->
+
+			// 식별자 키워드
+			KEYWORD_IDENTIFIER_START,	// 실제 값으로 사용되어선 안됩니다!!!
+			KEYWORD_ASM,				// asm
+			KEYWORD_EXTERN,				// extern
+			KEYWORD_TYPEDEF,			// typedef
+			KEYWORD_BIND,				// bind
+			KEYWORD_LET,				// let
+			KEYWORD_FUNC,				// func
+			KEYWORD_MAIN,				// main
+			KEYWORD_VOID,				// void
+			KEYWORD_RETURN,				// return
+			KEYWORD_UNUSED,				// unused
+			KEYWORD_IDENTIFIER_END,		// 실제 값으로 사용되어선 안됩니다!!!
+
+			// '.' 으로 시작하는 토큰
+			VARIADIC,	// ...
+
+			// 매크로: '#' 으로 시작하는 토큰
+			MACRO_START,	// 실제 값으로 사용되어선 안됩니다!!!
+			MACRO_INCLUDE,	// #include
+			MACRO_END,		// 실제 값으로 사용되어선 안됩니다!!!
+
+			// 주석
+			COMMENT,		// //[^\n\r]
+			COMMENT_BLOCK,	// /*[^"*/"]*/
+
+			// 이 밑으로는 수정하면 안됩니다.
+			COUNT
 		};
 
-	public:
-		explicit lexer(void) noexcept = delete;
-		explicit lexer(const evaluator* const evaluator, const std::string& input, const bool isFIle) noexcept;
+		constexpr const char* TYPE_STRING_ARRAY[] =
+		{
+			"INVALID",
+			"END_OF_FILE",
 
-		const mcf::lexer::error_token	get_last_error_token(void) noexcept;
-		const std::string				get_name(void) const noexcept { return _name; }
+			// 식별자 + 리터럴
+			"IDENTIFIER",
+			"INTEGER",
+			"STRING",
 
-		const mcf::token		read_next_token(void) noexcept;
+			// 연산자
+			"ASSIGN",
+			"PLUS",
+			"MINUS",
+			"ASTERISK",
+			"SLASH",
+			"BANG",
+			"EQUAL",
+			"NOT_EQUAL",
+			"LT",
+			"GT",
+			"AMPERSAND",
 
-	private:
-		const char get_next_byte(void) const noexcept;
+			"LPAREN",
+			"RPAREN",
+			"LBRACE",
+			"RBRACE",
+			"LBRACKET",
+			"RBRACKET",
 
-		void				read_next_byte(void) noexcept;
-		const bool			read_line_if_start_with(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith) noexcept;
-		const bool			read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* stringToCompare) noexcept;
-		const bool			read_and_validate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith, _In_opt_ const char* endWith, _In_opt_ const char* invalidCharList) noexcept;
-		const std::string	read_keyword_or_identifier(void) noexcept;
-		const std::string	read_number(void) noexcept;
-		const mcf::token	read_string_utf8(void) noexcept;
-		const mcf::token	read_slash_starting_token(void) noexcept;
-		const mcf::token	read_dot_starting_token(void) noexcept;
-		const mcf::token	read_macro_token(void) noexcept; 
-		const mcf::token	read_numeric_literal(void) noexcept; 
 
-		const mcf::token_type determine_keyword_or_identifier(const std::string& tokenLiteral) noexcept;
+			// 구분자
+			"COLON",
+			"DOUBLE_COLON",
+			"SEMICOLON",
+			"COMMA",
+			"POINTING",
 
-	private:
-		const evaluator* _evaluator;
+			// 식별자 키워드
+			"KEYWORD_IDENTIFIER_START",
+			"KEYWORD_ASM",
+			"KEYWORD_EXTERN",
+			"KEYWORD_TYPEDEF",
+			"KEYWORD_BIND",
+			"KEYWORD_LET",
+			"KEYWORD_FUNC",
+			"KEYWORD_MAIN",
+			"KEYWORD_VOID",
+			"KEYWORD_RETURN",
+			"KEYWORD_UNUSED",
+			"KEYWORD_IDENTIFIER_END",
 
-		std::stack<lexer::error_token>	_tokens;
-		const std::string				_input;
-		const std::string				_name;
-		size_t							_currentPosition	= 0;
-		size_t							_nextPosition		= 0;
-		size_t							_currentLine		= 1; // 코드 명령줄은 항상 1부터 시작합니다.
-		size_t							_currentIndex		= 0;
-		char							_currentByte		= 0;
-	};
+			// '.' 으로 시작하는 토큰
+			"VARIADIC",
+
+			// 매크로
+			"MACRO_START",
+			"MACRO_INCLUDE",
+			"MACRO_END",
+
+			"COMMENT",
+			"COMMENT_BLOCK",
+		};
+		constexpr const size_t TokenTypeS_SIZE = ARRAY_SIZE(TYPE_STRING_ARRAY);
+		static_assert(static_cast<size_t>(Type::COUNT) == TokenTypeS_SIZE, "token count not matching!");
+
+		constexpr const char* CONVERT_TYPE_TO_STRING(const Type& value)
+		{
+			return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+		}
+
+		struct Data final
+		{
+			Type Type = Type::INVALID;
+			std::string Literal;
+			size_t Line = 0;
+			size_t Index = 0;
+		};
+		inline bool operator==(const Data& lhs, const Data& rhs) { return (lhs.Type == rhs.Type) && (lhs.Literal == rhs.Literal); }
+		static const Data FindPredefinedKeyword(const std::string& tokenLiteral) noexcept;
+	}
+
+	namespace Lexer
+	{
+		enum class Error : unsigned char
+		{
+			INVALID = 0,
+
+			SUCCESS,
+			INVALID_INPUT_LENGTH,
+			FAIL_READ_FILE,
+
+			COUNT,
+		};
+
+		// 주의: thread-safe 하지 않은 클래스입니다.
+		class Object final 
+		{
+		public:
+			explicit Object(void) noexcept = delete;
+			explicit Object(const std::string& input, const bool isFIle) noexcept;
+
+			const Error GetLastErrorToken(void) noexcept;
+			const std::string GetName(void) const noexcept { return _name; }
+
+			const mcf::Token::Data ReadNextToken(void) noexcept;
+
+		private:
+			inline const char GetNextByte(void) const noexcept;
+
+			inline void ReadNextByte(void) noexcept;
+			inline const bool ReadLineIfStartWith(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith) noexcept;
+			inline const bool ReadAndValidate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* stringToCompare) noexcept;
+			inline const bool ReadAndValidate(_Outptr_opt_ std::string* optionalOut, _In_opt_ const char* startWith, _In_opt_ const char* endWith, _In_opt_ const char* invalidCharList) noexcept;
+			inline const std::string ReadKeywordOrIdentifier(void) noexcept;
+			inline const std::string ReadNumber(void) noexcept;
+			inline const mcf::Token::Data ReadStringUtf8(void) noexcept;
+			inline const mcf::Token::Data ReadSlashStartingToken(void) noexcept;
+			inline const mcf::Token::Data ReadDotStartingToken(void) noexcept;
+			inline const mcf::Token::Data ReadMacroToken(void) noexcept;
+			inline const mcf::Token::Data ReadNumeric(void) noexcept;
+
+			inline const mcf::Token::Type DetermineKeywordOrIdentifier(const std::string& tokenLiteral) noexcept;
+
+		private:
+			std::stack<Error> _tokens;
+			const std::string _input;
+			const std::string _name;
+			size_t _currentPosition = 0;
+			size_t _nextPosition = 0;
+			size_t _currentLine = 1; // 코드 명령줄은 항상 1부터 시작합니다.
+			size_t _currentIndex = 0;
+			char _currentByte = 0;
+		};
+	}
 }

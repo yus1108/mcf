@@ -2,320 +2,269 @@
 #include <vector>
 #include <string>
 
+
 #include "../unittest.h"
 
 namespace UnitTest
 {
-	Lexer::Lexer(void) noexcept
+	LexerTest::LexerTest(void) noexcept
 	{
-		_names.emplace_back("test_generated_tokens_by_lexer");
+		_names.emplace_back(u8"토큰 생성 테스트");
 		_tests.emplace_back([&]() {
 			const struct test_case
 			{
 				const std::string                   Input;
-				const std::vector<mcf::token>  ExpectedResults;
+				const std::vector<mcf::Token::Data>  ExpectedResults;
 			} testCases[] =
 			{
 				{ // 0. 연산자, 구분자, 및 블록 지정자
-					"=+-*/<>(){}[]:;,",
+					"=+-*/<>&(){}[]:;,->",
 					{
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::plus, "+"},
-						{mcf::token_type::minus, "-"},
-						{mcf::token_type::asterisk, "*"},
-						{mcf::token_type::slash, "/"},
-						{mcf::token_type::lt, "<"},
-						{mcf::token_type::gt, ">"},
-						{mcf::token_type::lparen, "("},
-						{mcf::token_type::rparen, ")"},
-						{mcf::token_type::lbrace, "{"},
-						{mcf::token_type::rbrace, "}"},
-						{mcf::token_type::lbracket, "["},
-						{mcf::token_type::rbracket, "]"},
-						{mcf::token_type::colon, ":"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::eof, "\0"},
+						TokenAssign,
+						TokenPlus,
+						TokenMinus,
+						TokenAsterisk,
+						TokenSlash,
+						TokenLT,
+						TokenGT,
+						TokenAmpersand,
+						TokenLParen,
+						TokenRParen,
+						TokenLBrace,
+						TokenRBrace,
+						TokenLBracket,
+						TokenRBracket,
+						TokenColon,
+						TokenSemicolon,
+						TokenComma,
+						TokenPointing,
+						TokenEOF,
 					},
 				},
 				{ // 1. 리터럴
 					"12345 \"hello, world!\"",
 					{
-						{mcf::token_type::integer, "12345"},
-						{mcf::token_type::string_utf8, "\"hello, world!\""},
-						{mcf::token_type::eof, "\0"},
+						TokenInteger("12345"),
+						TokenString("\"hello, world!\""),
+						TokenEOF,
 					},
 				},
 				{ // 2. 식별자 키워드
-					"const void int8 int16 int32 int64 uint8 uint16 uint32 uint64 utf8 enum unused",
+					"void unused",
 					{
-						token_const,
-						token_void,
-						token_int8,
-						token_int16,
-						token_int32,
-						token_int64,
-						token_uint8,
-						token_uint16,
-						token_uint32,
-						token_uint64,
-						token_utf8,
-						{mcf::token_type::keyword_enum, "enum"},
-						{mcf::token_type::keyword_unused, "unused"},
-						{mcf::token_type::eof, "\0"},
+						TokenVoid,
+						TokenUnused,
+						TokenEOF,
 					},
 				},
 				{ // 3. '.' 으로 시작하는 토큰
 					"...",
 					{
-						{mcf::token_type::keyword_variadic, "..."},
-						{mcf::token_type::eof, "\0"},
+						TokenVariadic,
+						TokenEOF,
 					},
 				},
 				{ // 4. 매크로
-					"#include <hello, world!>\n#include \"custom_file.hmcf\"",
+					"#include <asm, \"kernel32.lib\">",
 					{
-						{mcf::token_type::macro_iibrary_file_include, "#include <hello, world!>"},
-						{mcf::token_type::macro_project_file_include, "#include \"custom_file.hmcf\""},
-						{mcf::token_type::eof, "\0"},
+						TokenInclude,
+						TokenLT,
+						TokenASM,
+						TokenComma,
+						TokenString("\"kernel32.lib\""),
+						TokenGT,
+						TokenEOF,
 					},
 				},
 				{ // 5. 주석
 					u8"// 한줄 주석입니다.\n/* 여러 줄을 주석\n 처리\n 할수 있습니다. */",
 					{
-						{mcf::token_type::comment, u8"// 한줄 주석입니다."},
-						{mcf::token_type::comment_block, u8"/* 여러 줄을 주석\n 처리\n 할수 있습니다. */"},
-						{mcf::token_type::eof, "\0"},
+						TokenComment(u8"// 한줄 주석입니다."),
+						TokenCommentBlock(u8"/* 여러 줄을 주석\n 처리\n 할수 있습니다. */"),
+						TokenEOF,
 					},
 				},
 				{ // 6. 변수 관련 토큰
-					"int32 foo = 1;uint8 boo = -7;",
+					"let foo: byte = 1;let boo: byte = -7;",
 					{
-						{mcf::token_type::keyword_int32, "int32"},
-						{mcf::token_type::identifier, "foo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "1"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_uint8, "uint8"},
-						{mcf::token_type::identifier, "boo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::minus, "-"},
-						{mcf::token_type::integer, "7"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
+						TokenLet,
+						TokenIdentifier("foo"),
+						TokenColon,
+						TokenByte,
+						TokenAssign,
+						TokenInteger("1"),
+						TokenSemicolon,
+						TokenLet,
+						TokenIdentifier("boo"),
+						TokenColon,
+						TokenByte,
+						TokenAssign,
+						TokenMinus,
+						TokenInteger("7"),
+						TokenSemicolon,
+						TokenEOF,
 					},
 				},
-				{ // 7. enum 관련 토큰
-					"enum PRINT_RESULT : uint8{NO_ERROR};enum PRINT_RESULT2 : int8{INVALID,ERROR1=1,ERROR2};enum PRINT_RESULT3 : int8{INVALID=0,ERROR1,ERROR2,COUNT,};",
+				{ // 7. extern 함수 관련 토큰
+					"extern asm func printf(format: byte[4], ...args) -> byte[4];",
 					{
-						{mcf::token_type::keyword_enum, "enum"},
-						{mcf::token_type::identifier, "PRINT_RESULT"},
-						{mcf::token_type::colon, ":"},
-						{mcf::token_type::keyword_uint8, "uint8"},
-						{mcf::token_type::lbrace, "{"},
-						{mcf::token_type::identifier, "NO_ERROR"},
-						{mcf::token_type::rbrace, "}"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_enum, "enum"},
-						{mcf::token_type::identifier, "PRINT_RESULT2"},
-						{mcf::token_type::colon, ":"},
-						{mcf::token_type::keyword_int8, "int8"},
-						{mcf::token_type::lbrace, "{"},
-						{mcf::token_type::identifier, "INVALID"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "ERROR1"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "1"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "ERROR2"},
-						{mcf::token_type::rbrace, "}"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_enum, "enum"},
-						{mcf::token_type::identifier, "PRINT_RESULT3"},
-						{mcf::token_type::colon, ":"},
-						{mcf::token_type::keyword_int8, "int8"},
-						{mcf::token_type::lbrace, "{"},
-						{mcf::token_type::identifier, "INVALID"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "0"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "ERROR1"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "ERROR2"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "COUNT"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::rbrace, "}"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
+						TokenExtern,
+						TokenASM,
+						TokenFunc,
+						TokenIdentifier("printf"),
+						TokenLParen,
+						TokenIdentifier("format"),
+						TokenColon,
+						TokenByte,
+						TokenLBracket,
+						TokenInteger("4"),
+						TokenRBracket,
+						TokenComma,
+						TokenVariadic,
+						TokenIdentifier("args"),
+						TokenRParen,
+						TokenPointing,
+						TokenByte,
+						TokenLBracket,
+						TokenInteger("4"),
+						TokenRBracket,
+						TokenSemicolon,
+						TokenEOF,
 					},
 				},
-				{ // 8. 함수 전방 선언 관련 토큰
-					"const PRINT_RESULT Print(const utf8 format[], ...) const;",
+				{ // 8. 메인 선언 토큰
+					"main(void) -> void { printf(&\"Hello, World!\\n\"); }",
 					{
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::identifier, "PRINT_RESULT"},
-						{mcf::token_type::identifier, "Print"},
-						{mcf::token_type::lparen, "("},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_utf8, "utf8"},
-						{mcf::token_type::identifier, "format"},
-						{mcf::token_type::lbracket, "["},
-						{mcf::token_type::rbracket, "]"},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::keyword_variadic, "..."},
-						{mcf::token_type::rparen, ")"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
+						TokenMain,
+						TokenLParen,
+						TokenVoid,
+						TokenRParen,
+						TokenPointing,
+						TokenVoid,
+						TokenLBrace,
+						TokenIdentifier("printf"),
+						TokenLParen,
+						TokenAmpersand,
+						TokenString("\"Hello, World!\\n\""),
+						TokenRParen,
+						TokenSemicolon,
+						TokenRBrace,
+						TokenEOF,
 					},
 				},
-				{ // 9. #include 메크로
-					"#include <builtins> // include vector, string, print",
+				{ // 9. 문자열
+					"let str: byte[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
 					{
-						{mcf::token_type::macro_iibrary_file_include, "#include <builtins>"},
-						{mcf::token_type::comment, "// include vector, string, print"},
-						{mcf::token_type::eof, "\0"},
+						TokenLet,
+						TokenIdentifier("str"),
+						TokenColon,
+						TokenByte,
+						TokenLBracket,
+						TokenRBracket,
+						TokenAssign,
+						TokenString("\"Hello, World!\""),
+						TokenSemicolon,
+						TokenComment("// default string literal is static array of utf8 in mcf"),
+						TokenEOF,
 					},
 				},
-				{ // 10. 함수 선언 토큰
-					"void main(void) { const utf8 str[] = \"Hello, World!\"; /* default string literal is static array of utf8 in mcf */ Print(\"%s\\n\", str); }",
-					{
-						{mcf::token_type::keyword_void, "void"},
-						{mcf::token_type::identifier, "main"},
-						{mcf::token_type::lparen, "("},
-						{mcf::token_type::keyword_void, "void"},
-						{mcf::token_type::rparen, ")"},
-						{mcf::token_type::lbrace, "{"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_utf8, "utf8"},
-						{mcf::token_type::identifier, "str"},
-						{mcf::token_type::lbracket, "["},
-						{mcf::token_type::rbracket, "]"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::string_utf8, "\"Hello, World!\""},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::comment_block, "/* default string literal is static array of utf8 in mcf */"},
-						{mcf::token_type::identifier, "Print"},
-						{mcf::token_type::lparen, "("},
-						{mcf::token_type::string_utf8, "\"%s\\n\""},
-						{mcf::token_type::comma, ","},
-						{mcf::token_type::identifier, "str"},
-						{mcf::token_type::rparen, ")"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::rbrace, "}"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
-				{ // 11. 문자열
-					"const utf8 str[] = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
-					{
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_utf8, "utf8"},
-						{mcf::token_type::identifier, "str"},
-						{mcf::token_type::lbracket, "["},
-						{mcf::token_type::rbracket, "]"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::string_utf8, "\"Hello, World!\""},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::comment, "// default string literal is static array of utf8 in mcf"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
-				{ // 12. slash eof
+				{ // 10. SLASH END_OF_FILE
 					"/",
 					{
-						{mcf::token_type::slash, "/"},
-						{mcf::token_type::eof, "\0"},
+						TokenSlash,
+						TokenEOF,
 					},
 				},
-				{ // 13. 주석 eof
+				{ // 11. 주석 END_OF_FILE
 					"//",
 					{
-						{mcf::token_type::comment, "//"},
-						{mcf::token_type::eof, "\0"},
+						TokenComment("//"),
+						TokenEOF,
 					},
 				},
-				{ // 14. 주석 블록
-					"const /* utf8  */ int32 comment_block_test = 5;",
+				{ // 12. 주석 블록
+					"let str: byte[] /* utf8 */ = \"Hello, World!\"; // default string literal is static array of utf8 in mcf",
 					{
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::comment_block, "/* utf8  */"},
-						{mcf::token_type::keyword_int32, "int32"},
-						{mcf::token_type::identifier, "comment_block_test"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::integer, "5"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
+						TokenLet,
+						TokenIdentifier("str"),
+						TokenColon,
+						TokenByte,
+						TokenLBracket,
+						TokenRBracket,
+						TokenCommentBlock("/* utf8 */"),
+						TokenAssign,
+						TokenString("\"Hello, World!\""),
+						TokenSemicolon,
+						TokenComment("// default string literal is static array of utf8 in mcf"),
+						TokenEOF,
 					},
 				},
-				{ // 15. bool 변수 및 비교/논리 연산자
-					"const bool foo = false; const bool boo = true; const bool jar = foo == boo; const bool bar = jar != boo; const bool tar = !jar;",
-					{
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_bool, "bool"},
-						{mcf::token_type::identifier, "foo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::keyword_false, "false"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_bool, "bool"},
-						{mcf::token_type::identifier, "boo"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::keyword_true, "true"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_bool, "bool"},
-						{mcf::token_type::identifier, "jar"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::identifier, "foo"},
-						{mcf::token_type::equal, "=="},
-						{mcf::token_type::identifier, "boo"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_bool, "bool"},
-						{mcf::token_type::identifier, "bar"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::identifier, "jar"},
-						{mcf::token_type::not_equal, "!="},
-						{mcf::token_type::identifier, "boo"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::keyword_const, "const"},
-						{mcf::token_type::keyword_bool, "bool"},
-						{mcf::token_type::identifier, "tar"},
-						{mcf::token_type::assign, "="},
-						{mcf::token_type::bang, "!"},
-						{mcf::token_type::identifier, "jar"},
-						{mcf::token_type::semicolon, ";"},
-						{mcf::token_type::eof, "\0"},
-					},
-				},
+				//{ // 13. bool 변수 및 비교/논리 연산자
+				//	"const bool foo = false; const bool boo = true; const bool jar = foo == boo; const bool bar = jar != boo; const bool tar = !jar;",
+				//	{
+				//		{mcf::Token::Type::IDENTIFIER, "const"},
+				//		{mcf::Token::Type::KEYWORD_BOOL, "bool"},
+				//		{mcf::Token::Type::IDENTIFIER, "foo"},
+				//		token_assign,
+				//		{mcf::Token::Type::KEYWORD_FALSE, "false"},
+				//		token_semicolon,
+				//		{mcf::Token::Type::IDENTIFIER, "const"},
+				//		{mcf::Token::Type::KEYWORD_BOOL, "bool"},
+				//		{mcf::Token::Type::IDENTIFIER, "boo"},
+				//		token_assign,
+				//		{mcf::Token::Type::KEYWORD_TRUE, "true"},
+				//		token_semicolon,
+				//		{mcf::Token::Type::IDENTIFIER, "const"},
+				//		{mcf::Token::Type::KEYWORD_BOOL, "bool"},
+				//		{mcf::Token::Type::IDENTIFIER, "jar"},
+				//		token_assign,
+				//		{mcf::Token::Type::IDENTIFIER, "foo"},
+				//		{mcf::Token::Type::EQUAL, "=="},
+				//		{mcf::Token::Type::IDENTIFIER, "boo"},
+				//		token_semicolon,
+				//		{mcf::Token::Type::IDENTIFIER, "const"},
+				//		{mcf::Token::Type::KEYWORD_BOOL, "bool"},
+				//		{mcf::Token::Type::IDENTIFIER, "bar"},
+				//		token_assign,
+				//		{mcf::Token::Type::IDENTIFIER, "jar"},
+				//		{mcf::Token::Type::NOT_EQUAL, "!="},
+				//		{mcf::Token::Type::IDENTIFIER, "boo"},
+				//		token_semicolon,
+				//		{mcf::Token::Type::IDENTIFIER, "const"},
+				//		{mcf::Token::Type::KEYWORD_BOOL, "bool"},
+				//		{mcf::Token::Type::IDENTIFIER, "tar"},
+				//		token_assign,
+				//		{mcf::Token::Type::BANG, "!"},
+				//		{mcf::Token::Type::IDENTIFIER, "jar"},
+				//		token_semicolon,
+				//		token_eof,
+				//	},
+				//},
 			};
-			constexpr const size_t testCaseCount = array_size(testCases);
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
 				const size_t expectedResultSize = testCases[i].ExpectedResults.size();
-				mcf::evaluator evaluator;
-				mcf::lexer lexer(&evaluator, testCases[i].Input, false);
+				mcf::Lexer::Object lexer(testCases[i].Input, false);
 
-				std::vector<mcf::token>  actualTokens;
-				mcf::token token = lexer.read_next_token();
+				std::vector<mcf::Token::Data>  actualTokens;
+				mcf::Token::Data token = lexer.ReadNextToken();
 				actualTokens.emplace_back(token);
-				while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
+				while (token.Type != mcf::Token::Type::END_OF_FILE || token.Type == mcf::Token::Type::INVALID)
 				{
-					token = lexer.read_next_token();
+					token = lexer.ReadNextToken();
 					actualTokens.emplace_back(token);
 				}
 				const size_t actualTokenCount = actualTokens.size();
-				fatal_assert(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
+				FATAL_ASSERT(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
 				for (size_t j = 0; j < expectedResultSize; j++)
 				{
-					fatal_assert(actualTokens[j].Type == testCases[i].ExpectedResults[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-						i, j, TOKEN_TYPES[enum_index(testCases[i].ExpectedResults[j].Type)], TOKEN_TYPES[enum_index(actualTokens[j].Type)]);
+					FATAL_ASSERT(actualTokens[j].Type == testCases[i].ExpectedResults[j].Type, u8"tests[%zu-%zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+						i, j, mcf::Token::CONVERT_TYPE_TO_STRING(testCases[i].ExpectedResults[j].Type), mcf::Token::CONVERT_TYPE_TO_STRING(actualTokens[j].Type));
 
-					fatal_assert(actualTokens[j].Literal == testCases[i].ExpectedResults[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+					FATAL_ASSERT(actualTokens[j].Literal == testCases[i].ExpectedResults[j].Literal, u8"tests[%zu-%zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
 						i, j, testCases[i].ExpectedResults[j].Literal.c_str(), actualTokens[j].Literal.c_str());
 				}
 			}
@@ -323,135 +272,224 @@ namespace UnitTest
 			return true;
 		});
 
-		_names.emplace_back("./test/unittest/texts/test_file_read.txt");
+		_names.emplace_back(u8"파일 읽기 및 토큰 생성 테스트");
 		_tests.emplace_back([&]() {
-			struct expected_result final
+			const std::vector<mcf::Token::Data>  expectedResults =
 			{
-				const mcf::token_type   Type;
-				const char*				Literal;
-			};
+				// #include <asm, "kernel32.lib">
+				TokenInclude,
+				TokenLT,
+				TokenASM,
+				TokenComma,
+				TokenString("\"kernel32.lib\""),
+				TokenGT,
 
-			const std::vector<expected_result>  expectedResults =
-			{
-					{mcf::token_type::keyword_int32, "int32"},
-					{mcf::token_type::identifier, "foo"},
-					{mcf::token_type::assign, "="},
-					{mcf::token_type::integer, "10"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::comment, "//\\"},
-					{mcf::token_type::comment, u8"// TODO: 주석의 마지막이 \"\\\\n\" 라면 \\n을 escape 한다. 해당 구현 완료되면 이 주석의 \"//\"를 제거 하세요."},
-					{mcf::token_type::keyword_int32, "int32"},
-					{mcf::token_type::identifier, "boo"},
-					{mcf::token_type::assign, "="},
-					{mcf::token_type::integer, "5"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::comment, u8"// unused parameters must be set as unused"},
-					{mcf::token_type::comment, u8"// Print is builtin function that prints output to console"},
-					{mcf::token_type::comment, u8"// TODO: command line argument 받는법 필요"},
-					{mcf::token_type::comment, u8"// TODO: return type for main?"},
-					{mcf::token_type::keyword_enum, u8"enum"},
-					{mcf::token_type::identifier, "PRINT_RESULT"},
-					{mcf::token_type::lbrace, "{"},
-					{mcf::token_type::identifier, "NO_ERROR"},
-					{mcf::token_type::rbrace, "}"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::keyword_const, "const"},
-					{mcf::token_type::identifier, "PRINT_RESULT"},
-					{mcf::token_type::identifier, "Print"},
-					{mcf::token_type::lparen, "("},
-					{mcf::token_type::keyword_in, "in"},
-					{mcf::token_type::keyword_const, "const"},
-					{mcf::token_type::keyword_utf8, "utf8"},
-					{mcf::token_type::identifier, "format"},
-					{mcf::token_type::lbracket, "["},
-					{mcf::token_type::rbracket, "]"},
-					{mcf::token_type::comma, ","},
-					{mcf::token_type::keyword_variadic, "..."},
-					{mcf::token_type::rparen, ")"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::keyword_void, "void"},
-					{mcf::token_type::identifier, "main"},
-					{mcf::token_type::lparen, "("},
-					{mcf::token_type::keyword_unused, "unused"},
-					{mcf::token_type::keyword_const, "const"},
-					{mcf::token_type::keyword_int32, "int32"},
-					{mcf::token_type::identifier, "argc"},
-					{mcf::token_type::comma, ","},
-					{mcf::token_type::keyword_unused, "unused"},
-					{mcf::token_type::keyword_const, "const"},
-					{mcf::token_type::keyword_utf8, "utf8"},
-					{mcf::token_type::identifier, "argv"},
-					{mcf::token_type::lbracket, "["},
-					{mcf::token_type::rbracket, "]"},
-					{mcf::token_type::lbracket, "["},
-					{mcf::token_type::rbracket, "]"},
-					{mcf::token_type::rparen, ")"},
-					{mcf::token_type::lbrace, "{"},
-					{mcf::token_type::keyword_enum, u8"enum"},
-					{mcf::token_type::identifier, "PRINT_RESULT"},
-					{mcf::token_type::lbrace, "{"},
-					{mcf::token_type::identifier, "NO_ERROR"},
-					{mcf::token_type::rbrace, "}"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::keyword_const, "const"},
-					{mcf::token_type::keyword_utf8, "utf8"},
-					{mcf::token_type::identifier, "str"},
-					{mcf::token_type::lbracket, "["},
-					{mcf::token_type::rbracket, "]"},
-					{mcf::token_type::assign, "="},
-					{mcf::token_type::string_utf8, "\"Hello, World!\""},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::comment, "// default string literal is static array of utf8 in mcf"},
-					{mcf::token_type::identifier, "Print"},
-					{mcf::token_type::lparen, "("},
-					{mcf::token_type::string_utf8, "\"%s\\n\""},
-					{mcf::token_type::comma, ","},
-					{mcf::token_type::identifier, "str"},
-					{mcf::token_type::rparen, ")"},
-					{mcf::token_type::semicolon, ";"},
-					{mcf::token_type::rbrace, "}"},
-					{mcf::token_type::eof, "\0"},
+				// typedef int32: byte[4];
+				TokenTypedef,
+				TokenIdentifier("int32"),
+				TokenColon,
+				TokenByte,
+				TokenLBracket,
+				TokenInteger("4"),
+				TokenRBracket,
+				TokenSemicolon,
+
+				// typedef address: byte[4];
+				TokenTypedef,
+				TokenIdentifier("address"),
+				TokenColon,
+				TokenByte,
+				TokenLBracket,
+				TokenInteger("4"),
+				TokenRBracket,
+				TokenSemicolon,
+
+				/*
+				* typedef bool: byte -> bind
+				* {
+				*	false = 0,
+				*	true = 1,
+				* };
+				*/
+				TokenTypedef,
+				TokenIdentifier("bool"),
+				TokenColon,
+				TokenByte,
+				TokenPointing,
+				TokenBind,
+				TokenLBrace,
+				TokenIdentifier("false"),
+				TokenAssign,
+				TokenInteger("0"),
+				TokenComma,
+				TokenIdentifier("true"),
+				TokenAssign,
+				TokenInteger("1"),
+				TokenComma,
+				TokenRBrace,
+				TokenSemicolon,
+
+				// #include <asm, "libcmt.lib">
+				TokenInclude,
+				TokenLT,
+				TokenASM,
+				TokenComma,
+				TokenString("\"libcmt.lib\""),
+				TokenGT,
+
+				// extern asm func printf(format: address, ...args) -> int32;
+				TokenExtern,
+				TokenASM,
+				TokenFunc,
+				TokenIdentifier("printf"),
+				TokenLParen,
+				TokenIdentifier("format"),
+				TokenColon,
+				TokenIdentifier("address"),
+				TokenComma,
+				TokenVariadic,
+				TokenIdentifier("args"),
+				TokenRParen,
+				TokenPointing,
+				TokenIdentifier("int32"),
+				TokenSemicolon,
+
+				// let foo: byte = 0;
+				TokenLet,
+				TokenIdentifier("foo"),
+				TokenColon,
+				TokenByte,
+				TokenAssign,
+				TokenInteger("0"),
+				TokenSemicolon,
+
+				// func boo(void) -> byte { return 0; }
+				TokenFunc,
+				TokenIdentifier("boo"),
+				TokenLParen,
+				TokenVoid,
+				TokenRParen,
+				TokenPointing,
+				TokenByte,
+				TokenLBrace,
+				TokenReturn,
+				TokenInteger("0"),
+				TokenSemicolon,
+				TokenRBrace,
+
+				// let arr: byte[] = { 0, 1, 2 };
+				TokenLet,
+				TokenIdentifier("arr"),
+				TokenColon,
+				TokenByte,
+				TokenLBracket,
+				TokenRBracket,
+				TokenAssign,
+				TokenLBrace,
+				TokenInteger("0"),
+				TokenComma,
+				TokenInteger("1"),
+				TokenComma,
+				TokenInteger("2"),
+				TokenRBrace,
+				TokenSemicolon,
+
+				// let arr2: byte[5] = { 0 };
+				TokenLet,
+				TokenIdentifier("arr2"),
+				TokenColon,
+				TokenByte,
+				TokenLBracket,
+				TokenInteger("5"),
+				TokenRBracket,
+				TokenAssign,
+				TokenLBrace,
+				TokenInteger("0"),
+				TokenRBrace,
+				TokenSemicolon,
+
+				// let intVal: int32 = 10;
+				TokenLet,
+				TokenIdentifier("intVal"),
+				TokenColon,
+				TokenIdentifier("int32"),
+				TokenAssign,
+				TokenInteger("10"),
+				TokenSemicolon,
+			
+				/*
+				* main(void) -> void
+				* {
+				*	unused(foo, boo, arr, arr2);
+				*	let message: byte[] = "Hello, World! Value=%d\n";
+				*	printf(&message, intVal);
+				* }
+				*/
+				TokenMain,
+				TokenLParen,
+				TokenVoid,
+				TokenRParen,
+				TokenPointing,
+				TokenVoid,
+				TokenLBrace,
+				TokenUnused,
+				TokenLParen,
+				TokenIdentifier("foo"),
+				TokenComma,
+				TokenIdentifier("boo"),
+				TokenComma,
+				TokenIdentifier("arr"),
+				TokenComma,
+				TokenIdentifier("arr2"),
+				TokenRParen,
+				TokenSemicolon,
+				TokenLet,
+				TokenIdentifier("message"),
+				TokenColon,
+				TokenByte,
+				TokenLBracket,
+				TokenRBracket,
+				TokenAssign,
+				TokenString("\"Hello, World! Value=%d\\n\""),
+				TokenSemicolon,
+				TokenIdentifier("printf"),
+				TokenLParen,
+				TokenAmpersand,
+				TokenIdentifier("message"),
+				TokenComma,
+				TokenIdentifier("intVal"),
+				TokenRParen,
+				TokenSemicolon,
+				TokenRBrace,
+
+				// EOF
+				TokenEOF,
 			};
 			const size_t expectedResultSize = expectedResults.size();
 
-			mcf::evaluator evaluator;
-			mcf::lexer lexer(&evaluator, _names.back().c_str(), true);
+			mcf::Lexer::Object lexer("./test/unittest/texts/test_file_read.txt", true);
 
-			std::vector<mcf::token>  actualTokens;
-			mcf::token token = lexer.read_next_token();
+			std::vector<mcf::Token::Data>  actualTokens;
+			mcf::Token::Data token = lexer.ReadNextToken();
 			actualTokens.emplace_back(token);
-			while (token.Type != mcf::token_type::eof || token.Type == mcf::token_type::invalid)
+			while (token.Type != mcf::Token::Type::END_OF_FILE || token.Type == mcf::Token::Type::INVALID)
 			{
-				token = lexer.read_next_token();
+				token = lexer.ReadNextToken();
 				actualTokens.emplace_back(token);
 			}
 			const size_t actualTokenCount = actualTokens.size();
-			fatal_assert(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
+			FATAL_ASSERT(expectedResultSize == actualTokenCount, u8"기대값의 갯수와 실제 생성된 토큰의 갯수가 같아야 합니다. 예상값=%zu, 실제값=%zu", expectedResultSize, actualTokenCount);
 
 			for (size_t i = 0; i < actualTokenCount; i++)
 			{
-				fatal_assert(actualTokens[i].Type == expectedResults[i].Type, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
-					actualTokens[i].Line, actualTokens[i].Index, TOKEN_TYPES[enum_index(expectedResults[i].Type)], TOKEN_TYPES[enum_index(actualTokens[i].Type)]);
+				FATAL_ASSERT(actualTokens[i].Type == expectedResults[i].Type, u8"tests[line: %zu, index: %zu] - 토큰 타입이 틀렸습니다. 예상값=%s, 실제값=%s",
+					actualTokens[i].Line, actualTokens[i].Index, mcf::Token::CONVERT_TYPE_TO_STRING(expectedResults[i].Type), mcf::Token::CONVERT_TYPE_TO_STRING(actualTokens[i].Type));
 
-				fatal_assert(actualTokens[i].Literal == expectedResults[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
-					actualTokens[i].Line, actualTokens[i].Index, expectedResults[i].Literal, actualTokens[i].Literal.c_str());
+				FATAL_ASSERT(actualTokens[i].Literal == expectedResults[i].Literal, u8"tests[line: %zu, index: %zu] - 토큰 리터럴이 틀렸습니다. 예상값=%s, 실제값=%s",
+					actualTokens[i].Line, actualTokens[i].Index, expectedResults[i].Literal.c_str(), actualTokens[i].Literal.c_str());
 			}
 
 			return true;
 			});
-	}
-
-	const bool Lexer::Test(void) const noexcept
-	{
-		for (size_t i = 0; i < _tests.size(); i++)
-		{
-			if (_tests[i]() == false)
-			{
-				std::cout << "Test[#" << i << "] `" << _names[i] << "()` Failed" << std::endl;
-				return false;
-			}
-			std::cout << "Lexer Test[#" << i << "] `" << _names[i] << "()` Passed" << std::endl;
-		}
-		return true;
 	}
 }

@@ -1,10 +1,16 @@
-﻿#include "test/unittest/unittest.h"
+﻿#include <iostream>
+#include "test/unittest/unittest.h"
 
-const std::string UnitTest::convert_to_string(const mcf::token& token)
+const bool UnitTest::BaseTest::Test(void) const noexcept
 {
-	std::string result;
-	result += "mcf::token{Type : ";
-	result += TOKEN_TYPES[mcf::enum_index(token.Type)];
-	result += ", Literal : " + token.Literal + "}";
-	return result;
+	for (size_t i = 0; i < _tests.size(); i++)
+	{
+		if (_tests[i]() == false)
+		{
+			std::cout << "\tTest[#" << i << "] `" << _names[i] << "` Failed" << std::endl;
+			return false;
+		}
+		std::cout << "\tTest[#" << i << "] `" << _names[i] << "` Passed" << std::endl;
+	}
+	return true;
 }

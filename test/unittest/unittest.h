@@ -1,261 +1,103 @@
 ﻿#pragma once
-#include <stdlib.h>
 #include <crtdbg.h>
-#include <Windows.h>
 #include <string>
 #include <functional>
 
-#include <parser/includes/common.h>
-#include <parser/includes/ast.h>
 #include <parser/includes/lexer.h>
 #include <parser/includes/parser.h>
-#include <parser/includes/evaluator.h>
 
 #if defined(_DEBUG)
-#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
-#define fatal_error(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
+#define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
+#define FATAL_ERROR(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
 #else
-#define fatal_assert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
-#define fatal_error(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
-#endif
-
-#define error_message_begin(ERROR_COUNT) printf(u8"[Error][Parser]: %s(Line: %d) %zu개의 에러 메시지가 있습니다.\n", ##__FILE__, ##__LINE__, ERROR_COUNT)
-#define error_message(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); ((void)0)
-#if defined(_DEBUG)
-#define error_message_end __debugbreak();
-#else
-#define error_message_end
+#define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
+#define FATAL_ERROR(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
 #endif
 
 namespace UnitTest
 {
-	constexpr const char* TOKEN_TYPES[] =
-	{
-		"invalid",
-		"eof",
+	const mcf::Token::Data TokenInvalid = { mcf::Token::Type::INVALID, "invalid" };
+	const mcf::Token::Data TokenEOF = { mcf::Token::Type::END_OF_FILE, "\0" };
+	const mcf::Token::Data TokenByte = { mcf::Token::Type::IDENTIFIER, "byte" };
+	inline const mcf::Token::Data TokenIdentifier(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::IDENTIFIER, value }; }
+	inline const mcf::Token::Data TokenInteger(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::INTEGER, value }; }
+	inline const mcf::Token::Data TokenString(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::STRING, value }; }
+	const mcf::Token::Data TokenAssign = { mcf::Token::Type::ASSIGN, "=" };
+	const mcf::Token::Data TokenPlus = { mcf::Token::Type::PLUS, "+" };
+	const mcf::Token::Data TokenMinus = { mcf::Token::Type::MINUS, "-" };
+	const mcf::Token::Data TokenAsterisk = { mcf::Token::Type::ASTERISK, "*" };
+	const mcf::Token::Data TokenSlash = { mcf::Token::Type::SLASH, "/" };
+	const mcf::Token::Data TokenLT = { mcf::Token::Type::LT, "<" };
+	const mcf::Token::Data TokenGT = { mcf::Token::Type::GT, ">" };
+	const mcf::Token::Data TokenAmpersand = { mcf::Token::Type::AMPERSAND, "&" };
+	const mcf::Token::Data TokenLParen = { mcf::Token::Type::LPAREN, "(" };
+	const mcf::Token::Data TokenRParen = { mcf::Token::Type::RPAREN, ")" };
+	const mcf::Token::Data TokenLBrace = { mcf::Token::Type::LBRACE, "{" };
+	const mcf::Token::Data TokenRBrace = { mcf::Token::Type::RBRACE, "}" };
+	const mcf::Token::Data TokenLBracket = { mcf::Token::Type::LBRACKET, "[" };
+	const mcf::Token::Data TokenRBracket = { mcf::Token::Type::RBRACKET, "]" };
+	const mcf::Token::Data TokenColon = { mcf::Token::Type::COLON, ":" };
+	const mcf::Token::Data TokenSemicolon = { mcf::Token::Type::SEMICOLON, ";" };
+	const mcf::Token::Data TokenComma = { mcf::Token::Type::COMMA, "," };
+	const mcf::Token::Data TokenPointing = { mcf::Token::Type::POINTING, "->" };
+	const mcf::Token::Data TokenASM = { mcf::Token::Type::KEYWORD_ASM, "asm" };
+	const mcf::Token::Data TokenExtern = { mcf::Token::Type::KEYWORD_EXTERN, "extern" };
+	const mcf::Token::Data TokenTypedef = { mcf::Token::Type::KEYWORD_TYPEDEF, "typedef" };
+	const mcf::Token::Data TokenBind = { mcf::Token::Type::KEYWORD_BIND, "bind" };
+	const mcf::Token::Data TokenLet = { mcf::Token::Type::KEYWORD_LET, "let" };
+	const mcf::Token::Data TokenFunc = { mcf::Token::Type::KEYWORD_FUNC, "func" };
+	const mcf::Token::Data TokenMain = { mcf::Token::Type::KEYWORD_MAIN, "main" };
+	const mcf::Token::Data TokenVoid = { mcf::Token::Type::KEYWORD_VOID, "void" };
+	const mcf::Token::Data TokenReturn = { mcf::Token::Type::KEYWORD_RETURN, "return" };
+	const mcf::Token::Data TokenUnused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
+	const mcf::Token::Data TokenVariadic = { mcf::Token::Type::VARIADIC, "..." };
+	const mcf::Token::Data TokenInclude = { mcf::Token::Type::MACRO_INCLUDE, "#include" };
+	inline const mcf::Token::Data TokenComment(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT, value }; }
+	inline const mcf::Token::Data TokenCommentBlock(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT_BLOCK, value }; }
 
-		// 식별자 + 리터럴
-		"identifier",
-		"integer",
-		"string_utf8",
-
-		// 연산자
-		"assign",
-		"plus",
-		"minus",
-		"asterisk",
-		"slash",
-		"bang",
-		"equal",
-		"not_equal",
-		"lt",
-		"gt",
-		"ampersand",
-
-		"lparen",
-		"rparen",
-		"lbrace",
-		"rbrace",
-		"lbracket",
-		"rbracket",
-
-
-		// 구분자
-		"colon",
-		"double_colon",
-		"semicolon",
-		"comma",
-
-		// 식별자 키워드
-		"keyword_identifier_start",
-		"keyword_const",
-		"keyword_void",
-		"keyword_int8",
-		"keyword_int16",
-		"keyword_int32",
-		"keyword_int64",
-		"keyword_uint8",
-		"keyword_uint16",
-		"keyword_uint32",
-		"keyword_uint64",
-		"keyword_utf8",
-		"keyword_enum",
-		"keyword_unused",
-		"keyword_in",
-		"keyword_out",
-		"keyword_bool",
-		"keyword_true",
-		"keyword_false",
-		"keyword_identifier_end",
-
-		"custom_keyword_start",
-		"custom_enum_type",
-		"custom_keyword_end",
-
-		// '.' 으로 시작하는 토큰
-		"keyword_variadic",
-
-		// 매크로
-		"macro_start",
-		"macro_iibrary_file_include",
-		"macro_project_file_include",
-		"macro_end",
-
-		"comment",
-		"comment_block",
-	};
-	constexpr const size_t TOKEN_TYPES_SIZE = array_size( TOKEN_TYPES );
-	static_assert(static_cast<size_t>(mcf::token_type::count) == TOKEN_TYPES_SIZE, "token count not matching!");
-
-	constexpr const char* STATEMENT_TYPES[] =
-	{
-		"invalid",
-
-		"variable",
-		"variable_assign",
-		"function",
-		"function_call",
-		"enum_def",
-		"macro_include",
-	};
-	constexpr const size_t STATEMENT_TYPES_SIZE = array_size( STATEMENT_TYPES );
-	static_assert(static_cast<size_t>(mcf::ast::statement_type::count) == STATEMENT_TYPES_SIZE, "statement_type count not matching");
-
-	constexpr const char* EXPRESSION_TYPES[] =
-	{
-		"invalid",
-
-		"literal",
-		"identifier",
-		"data_type",
-		"prefix",
-		"infix",
-		"index_unknown",
-		"index",
-		"function_parameter",
-		"function_parameter_variadic",
-		"function_parameter_list",
-		"function_block",
-		"function_call",
-	};
-	constexpr const size_t EXPRESSION_TYPES_SIZE = array_size( EXPRESSION_TYPES );
-	static_assert(static_cast<size_t>(mcf::ast::expression_type::count) == EXPRESSION_TYPES_SIZE, "expression_type count not matching");
-
-	const mcf::token token_invalid = { mcf::token_type::invalid, "invalid" };
-	const mcf::token token_const = { mcf::token_type::keyword_const, "const" };
-	const mcf::token token_void = { mcf::token_type::keyword_void, "void" };
-	const mcf::token token_int8 = { mcf::token_type::keyword_int8, "int8" };
-	const mcf::token token_int16 = { mcf::token_type::keyword_int16, "int16" };
-	const mcf::token token_int32 = { mcf::token_type::keyword_int32, "int32" };
-	const mcf::token token_int64 = { mcf::token_type::keyword_int64, "int64" };
-	const mcf::token token_uint8 = { mcf::token_type::keyword_uint8, "uint8" };
-	const mcf::token token_uint16 = { mcf::token_type::keyword_uint16, "uint16" };
-	const mcf::token token_uint32 = { mcf::token_type::keyword_uint32, "uint32" };
-	const mcf::token token_uint64 = { mcf::token_type::keyword_uint64, "uint64" };
-	const mcf::token token_utf8 = { mcf::token_type::keyword_utf8, "utf8" };
-	const mcf::token token_unused = { mcf::token_type::keyword_unused, "unused" };
-	const mcf::token token_in = { mcf::token_type::keyword_in, "in" };
-
-	inline std::unique_ptr<mcf::ast::primitive_data_type_expression> NewPrimitiveDataType(bool isConst, mcf::token token)
-	{
-		return std::make_unique<mcf::ast::primitive_data_type_expression>(isConst, token);
-	}
-
-	inline mcf::ast::unique_data_type_expression NewTypeInt32(bool isConst)
-	{
-		return NewPrimitiveDataType(isConst, token_int32);
-	}
-
-	const mcf::ast::primitive_data_type_expression type_int8(false, token_int8);
-	const mcf::ast::primitive_data_type_expression type_int16(false, token_int16);
-	const mcf::ast::primitive_data_type_expression type_int64(false, token_int64);
-	const mcf::ast::primitive_data_type_expression type_uint8(false, token_uint8);
-	const mcf::ast::primitive_data_type_expression type_uint16(false, token_uint16);
-	const mcf::ast::primitive_data_type_expression type_uint32(false, token_uint32);
-	const mcf::ast::primitive_data_type_expression type_uint64(false, token_uint64);
-
-	const mcf::ast::primitive_data_type_expression type_const_int8(true, token_int8);
-	const mcf::ast::primitive_data_type_expression type_const_int16(true, token_int16);
-	const mcf::ast::primitive_data_type_expression type_const_int64(true, token_int64);
-	const mcf::ast::primitive_data_type_expression type_const_uint8(true, token_uint8);
-	const mcf::ast::primitive_data_type_expression type_const_uint16(true, token_uint16);
-	const mcf::ast::primitive_data_type_expression type_const_uint32(true, token_uint32);
-	const mcf::ast::primitive_data_type_expression type_const_uint64(true, token_uint64);
-	const mcf::ast::primitive_data_type_expression type_const_utf8(true, token_utf8);
-
-	inline const mcf::ast::identifier_expression Identifier(const char* const value)
-	{
-		return mcf::ast::identifier_expression({ mcf::token_type::identifier, value });
-	}
-
-	inline std::unique_ptr<const mcf::ast::identifier_expression> NewIdentifier(const char* const value)
-	{
-		return std::make_unique<mcf::ast::identifier_expression>(mcf::token{mcf::token_type::identifier, value});
-	}
-
-	inline std::unique_ptr<const mcf::ast::literal_expession> NewInt(int32_t value)
-	{
-		return std::make_unique<mcf::ast::literal_expession>(mcf::token{ mcf::token_type::integer, std::to_string(value) });
-	}
-
-	inline std::unique_ptr<const mcf::ast::literal_expession> NewString(const char* const value)
-	{
-		return std::make_unique<mcf::ast::literal_expession>(mcf::token{ mcf::token_type::string_utf8, std::string("\"") + value + "\"" });
-	}
-
-	const std::string convert_to_string( const mcf::token& token );
-
-	class UnitTest
+	class BaseTest
 	{
 	public:
-		virtual inline ~UnitTest(void) noexcept {}
-		virtual const bool Test(void) const noexcept = 0;
-	};
+		virtual inline ~BaseTest(void) noexcept {}
+		const bool Test(void) const noexcept;
 
-	class Lexer final : UnitTest
-	{
-	public:
-		explicit Lexer(void) noexcept;
-		virtual const bool Test(void) const noexcept override final;
-
-	private:
+	protected:
 		std::vector<std::string>			_names;
 		std::vector<std::function<bool()>>	_tests;
 	};
 
-	class Parser final : UnitTest
+	class LexerTest final : public BaseTest
 	{
 	public:
-		explicit Parser(void) noexcept;
-		virtual const bool Test(void) const noexcept override final;
-
-		static bool check_parser_errors(mcf::parser& parser) noexcept;
-	private:
-		static bool test_variable_declaration_statement(const mcf::ast::statement* statement, const mcf::token_type expectedDataType, const std::string& expectedName) noexcept;
-		static bool test_expression(const mcf::ast::expression* actual, const mcf::ast::expression* expected) noexcept;
-		static bool test_literal(const mcf::ast::expression* expression, const mcf::token& expectedToken) noexcept;
-		static bool test_identifier(const mcf::ast::expression* targetExpression, const std::string expectedValue) noexcept;
-
-	private:
-		std::vector<std::string>			_names;
-		std::vector<std::function<bool()>>	_tests;
+		explicit LexerTest(void) noexcept;
 	};
 
-	class Evaluator final : UnitTest
+	class ParserTest final : public BaseTest
 	{
 	public:
-		explicit Evaluator(void) noexcept;
-		virtual const bool Test(void) const noexcept override final;
+		explicit ParserTest(void) noexcept;
 
 	private:
-		std::vector<std::string>			_names;
-		std::vector<std::function<bool()>>	_tests;
+		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;
 	};
 
-	inline static void detect_memory_leak( long line = -1 )
+	inline static void DetectMemoryLeak( long line = -1 )
 	{
 		//Also need this for memory leak code stuff
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 		_CrtSetBreakAlloc(line); //Important!
+	}
+
+	inline static bool InternalTest(const char* const name, const UnitTest::BaseTest* const test)
+	{
+		std::cout << "`" << name << ".Test()` Begin" << std::endl;
+		if (test->Test() == false)
+		{
+			std::cout << "\t`" << name << ".Test()` Failed" << std::endl;
+			return false;
+		}
+		std::cout << "\t`" << name << ".Test()` Passed" << std::endl;
+		std::cout << "`" << name << ".Test()` End" << std::endl;
+		return true;
 	}
 }

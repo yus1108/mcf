@@ -1,416 +1,384 @@
 ﻿#include "pch.h"
-#include "ast.h"
-#include "parser.h"
-#include "evaluator.h"
+#include "parser/includes/ast.h"
 
-mcf::ast::program::program(statement_array&& statements) noexcept
+mcf::AST::Expression::Prefix::Prefix(const mcf::Token::Data& prefixOperator, mcf::AST::Expression::Pointer&& right) noexcept
+	: _prefixOperator(prefixOperator)
+	, _right(std::move(right))
 {
-	const size_t size = statements.size();
-	_statements.reserve(size);
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Prefix::ConvertToString(void) const noexcept
+{
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+	return std::string("<Prefix: ") + mcf::Token::CONVERT_TYPE_TO_STRING(_prefixOperator.Type) + " " + _right->ConvertToString() + ">";
+}
+
+mcf::AST::Expression::Infix::Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept
+	: _infixOperator(infixOperator)
+	, _left(std::move(left))
+	, _right(std::move(right))
+{
+	DebugAssert(_infixOperator.Type != mcf::Token::Type::INVALID, u8"인자로 받은 _infixOperator의 타입은 INVALID여선 안됩니다.");
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Infix::ConvertToString(void) const noexcept
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+	return "<Infix: " + _left->ConvertToString() + " " + mcf::Token::CONVERT_TYPE_TO_STRING(_infixOperator.Type) + " " + _right->ConvertToString() + ">";
+}
+
+mcf::AST::Expression::Call::Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept
+	: _left(std::move(left))
+	, _params(std::move(params))
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+#if defined(_DEBUG)
+	const size_t paramsCount = _params.size();
+	for (size_t i = 0; i < paramsCount; i++)
+	{
+		DebugAssert(_params[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Expression::Call::ConvertToString(void) const noexcept
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	std::string buffer = "<Call: " + _left->ConvertToString() + " LPAREN ";
+	const size_t paramsCount = _params.size();
+	for (size_t i = 0; i < paramsCount; i++)
+	{
+		DebugAssert(_params[i].get() != nullptr, u8"_params[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _params[i]->ConvertToString() + " COMMA ";
+	}
+	return buffer + "RPAREN>";
+}
+
+mcf::AST::Expression::Index::Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept
+	: _left(std::move(left))
+	, _index(std::move(index))
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Index::ConvertToString(void) const noexcept
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	return (_index.get() == nullptr) ?
+		("<Index: " + _left->ConvertToString() + " LBRACKET RBRACKET>") : 
+		("<Index: " + _left->ConvertToString() + " LBRACKET " + _index->ConvertToString() + " RBRACKET>");
+}
+
+mcf::AST::Expression::Initializer::Initializer(PointerVector&& keyList) noexcept
+	: _keyList(std::move(keyList))
+{
+#if defined(_DEBUG)
+	const size_t size = _keyList.size();
+	DebugAssert(size != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
 	for (size_t i = 0; i < size; i++)
 	{
-		debug_assert(statements[i].get() != nullptr, u8"statements[%zu]는 nullptr 여선 안됩니다.", i);
-		_statements.emplace_back(statements[i].release());
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu]는 nullptr 여선 안됩니다.", i);
 	}
+#endif
 }
 
-const mcf::ast::statement* mcf::ast::program::get_statement_at(const size_t index) const noexcept
+const std::string mcf::AST::Expression::Initializer::ConvertToString(void) const noexcept
 {
-	return _statements[index].get();
-}
+	const size_t keyListCount = _keyList.size();
+	DebugAssert(keyListCount != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
 
-const std::string mcf::ast::program::convert_to_string(void) const noexcept
-{
-	const size_t size = _statements.size();
 	std::string buffer;
-
-	for (size_t i = 0; i < size; i++)
+	buffer = "<Initializer: LBRACE ";
+	for (size_t i = 0; i < keyListCount; i++)
 	{
-		debug_assert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
-		buffer += (i == 0 ? "" : "\n") + _statements[i]->convert_to_string();
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+		buffer += _keyList[i]->ConvertToString() + " COMMA ";
 	}
-
+	buffer += "RBRACE>";
 	return buffer;
 }
 
-void mcf::ast::program::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+mcf::AST::Expression::MapInitializer::MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept
+	: Initializer(std::move(keyist))
+	, _valueList(std::move(valueList))
 {
-	const size_t size = _statements.size();
+#if defined(_DEBUG)
+	const size_t size = _valueList.size();
+	DebugAssert(size != 0, u8"_valueList에 값이 최소 한개 이상 있어야 합니다.");
+	DebugAssert(_keyList.size() == size, u8"_valueList의 갯수와 _keyList의 갯수가 동일 해야 합니다.");
 	for (size_t i = 0; i < size; i++)
 	{
-		debug_assert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
-		_statements[i]->evaluate(inOutEvaluator);
+		DebugAssert(_valueList[i].get() != nullptr, u8"_valueList[%zu]는 nullptr 여선 안됩니다.", i);
 	}
+#endif
 }
 
-mcf::ast::prefix_expression::prefix_expression(const mcf::token& prefix, unique_expression&& targetExpression) noexcept
-	: _prefixOperator(prefix)
-	, _targetExpression(targetExpression.release()) 
+const std::string mcf::AST::Expression::MapInitializer::ConvertToString(void) const noexcept
 {
-	debug_assert(_targetExpression.get() != nullptr, u8"인자로 받은 targetExpression은 nullptr 여선 안됩니다.");
-}
+	const size_t keyListCount = _keyList.size();
+	DebugAssert(keyListCount != 0, u8"_keyList에 값이 최소 한개 이상 있어야 합니다.");
+	DebugAssert(_valueList.size() == keyListCount, u8"_valueList의 갯수와 _keyList의 갯수가 동일 해야 합니다.");
 
-const std::string mcf::ast::prefix_expression::convert_to_string(void) const noexcept
-{
-	debug_assert(_targetExpression.get() != nullptr, u8"_targetExpression은 nullptr 여선 안됩니다.");
-	return "(" + _prefixOperator.Literal + _targetExpression->convert_to_string() + ")";
-}
-
-mcf::ast::infix_expression::infix_expression(unique_expression&& left, const mcf::token& infix, unique_expression&& right) noexcept
-	: _left(left.release())
-	, _infixOperator(infix)
-	, _right(right.release())
-{
-	debug_assert(_left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(_right.get() != nullptr, u8"인자로 받은 right는 nullptr 여선 안됩니다.");
-}
-
-const std::string mcf::ast::infix_expression::convert_to_string(void) const noexcept
-{
-	debug_assert(_left.get() != nullptr, u8"_left는 nullptr 여선 안됩니다.");
-	debug_assert(_right.get() != nullptr, u8"_right는 nullptr 여선 안됩니다.");
-	return "(" + _left->convert_to_string() + " " + _infixOperator.Literal + " " + _right->convert_to_string() + ")";
-}
-
-mcf::ast::index_expression::index_expression(unique_expression&& left, unique_expression&& index) noexcept
-	: _left(left.release())
-	, _index(index.release()) 
-{
-	debug_assert(_left.get() != nullptr, u8"인자로 받은 left는 nullptr 여선 안됩니다.");
-	debug_assert(_index.get() != nullptr, u8"인자로 받은 index는 nullptr 여선 안됩니다.");
-}
-
-const std::string mcf::ast::index_expression::convert_to_string(void) const noexcept
-{
-	debug_assert(_left.get() != nullptr, u8"_left는 nullptr 여선 안됩니다.");
-	debug_assert(_index.get() != nullptr, u8"_index는 nullptr 여선 안됩니다.");
-	return _left->convert_to_string() + "[" + _index->convert_to_string() + "]";
-}
-
-mcf::ast::function_parameter_expression::function_parameter_expression(const mcf::token& dataFor, unique_expression&& dataType, unique_expression&& name) noexcept
-	: _for(dataFor)
-	, _type(dataType.release())
-	, _name(name.release())
-{
-	debug_assert(_type.get() != nullptr, u8"인자로 받은 dataType은 nullptr 여선 안됩니다.");
-	debug_assert(_name.get() != nullptr, u8"인자로 받은 name은 nullptr 여선 안됩니다.");
-}
-
-const std::string mcf::ast::function_parameter_expression::convert_to_string(void) const noexcept
-{
-	debug_assert(_type.get() != nullptr, u8"_type은 nullptr 여선 안됩니다.");
-	debug_assert(_name.get() != nullptr, u8"_name은 nullptr 여선 안됩니다.");
-	return _for.Literal + " " + _type->convert_to_string() + " " + _name->convert_to_string();
-}
-
-mcf::ast::function_call_expression::function_call_expression(unique_expression&& function, expression_array&& parameters) noexcept
-	: _function(function.release())
-{
-	debug_assert(_function.get() != nullptr, u8"인자로 받은 function은 nullptr 여선 안됩니다.");
-	const size_t size = parameters.size();
-	_parameters.reserve(size);
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(parameters[i].get() != nullptr, u8"parameters[%zu]는 nullptr 여선 안됩니다.", i);
-		_parameters.emplace_back(parameters[i].release());
-	}
-}
-
-const std::string mcf::ast::function_call_expression::convert_to_string(void) const noexcept
-{
-	debug_assert(_function.get() != nullptr, u8"_function은 nullptr 여선 안됩니다.");
-
-	const size_t size = _parameters.size();
 	std::string buffer;
-
-	buffer += _function->convert_to_string();
-	buffer += "(";
-	for (size_t i = 0; i < size; i++)
+	buffer = "<MapInitializer: LBRACE ";
+	for (size_t i = 0; i < keyListCount; i++)
 	{
-		debug_assert(_parameters[i].get() != nullptr, u8"_parameters[%zu]는 nullptr 여선 안됩니다.", i);
-		buffer += (i == 0 ? "" : ", ") + _parameters[i]->convert_to_string();
+		DebugAssert(_keyList[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+		DebugAssert(_valueList[i].get() != nullptr, u8"_valueList[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _keyList[i]->ConvertToString() + " ASSIGN " + _valueList[i]->ConvertToString() + " COMMA ";
 	}
-	buffer += ")";
-	
+	buffer += "RBRACE>";
 	return buffer;
 }
 
-const std::string mcf::ast::function_parameter_variadic_expression::convert_to_string(void) const noexcept
+mcf::AST::Intermediate::Variadic::Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept
+	: _name(std::move(name))
 {
-	std::string buffer;
-	switch (_for.Type)
-	{
-	case token_type::keyword_in:
-		buffer += "in ";
-		break;
-	case token_type::invalid:
-		break;
-	default:
-		debug_message(u8"variadic은 토큰타입이 invalid거나 in이어야 합니다.");
-		break;
-	}
-	buffer += "...";
-	return buffer;
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::function_parameter_list_expression::function_parameter_list_expression(expression_array&& list) noexcept
+const std::string mcf::AST::Intermediate::Variadic::ConvertToString(void) const noexcept
 {
-	const size_t size = list.size();
-	_list.reserve(size);
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(list[i].get() != nullptr, u8"list[%zu]는 nullptr 여선 안됩니다.", i);
-		_list.emplace_back(list[i].release());
-	}
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
+	return "<Variadic: " + _name->ConvertToString() + ">";
 }
 
-const std::string mcf::ast::function_parameter_list_expression::convert_to_string(void) const noexcept
+mcf::AST::Intermediate::TypeSignature::TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept
+	: _signature(std::move(signature))
 {
-	std::string buffer;
-	const size_t size = _list.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(_list[i].get() != nullptr, u8"_list[%zu]는 nullptr 여선 안됩니다.", i);
-		buffer += (i == 0 ? "" : ", ") + _list[i]->convert_to_string();
-	}
-	return buffer;
+	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::function_block_expression::function_block_expression(statement_array&& statements) noexcept
+const std::string mcf::AST::Intermediate::TypeSignature::ConvertToString(void) const noexcept
 {
-	const size_t size = statements.size();
-	_statements.reserve(size);
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(statements[i].get() != nullptr, u8"statements[%zu]는 nullptr 여선 안됩니다.", i);
-		_statements.emplace_back(statements[i].release());
-	}
+	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
+	return "<TypeSignature: " + _signature->ConvertToString() + ">";
 }
 
-const std::string mcf::ast::function_block_expression::convert_to_string(void) const noexcept
+mcf::AST::Intermediate::VariableSignature::VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept
+	: _name(std::move(name))
+	, _typeSignature(std::move(typeSignature))
 {
-	const size_t size = _statements.size();
-	std::string buffer;
-	for (size_t i = 0; i < size; i++)
-	{
-		debug_assert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
-		buffer += "\t" + _statements[i]->convert_to_string() + "\n";
-	}
-	buffer.erase(buffer.size()  - 1);
-	return buffer;
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name은 nullptr 여선 안됩니다.");
+	DebugAssert(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::macro_include_statement::macro_include_statement(mcf::evaluator* const outEvaluator, std::stack<mcf::parser_error>& outErrors, mcf::token token) noexcept
-	: _token(token)
-	, _path(token.Literal.substr(sizeof("#include "), token.Literal.size() - sizeof("#include <")))
+const std::string mcf::AST::Intermediate::VariableSignature::ConvertToString(void) const noexcept
 {
-	debug_assert(outEvaluator->include_project_file(_path), u8"파일 include에 실패하였습니다.");
-	mcf::parser parser(outEvaluator, _path, true);
-	mcf::parser_error parserInitError = parser.get_last_error();
-	debug_assert(parserInitError.ID == mcf::parser_error_id::no_error, u8"파일 include에 실패하였습니다. ID=`%s`, File=`%s`(%zu, %zu)\n%s",
-		PARSER_ERROR_ID[enum_index(parserInitError.ID)], parserInitError.Name.c_str(), parserInitError.Line, parserInitError.Index, parserInitError.Message.c_str());
-	parser.parse_program(_program);
-	const size_t errorCount = parser.get_error_count();
-	if (errorCount > 0)
+	return "<VariableSignature: " + _name->ConvertToString() + " COLON " + _typeSignature->ConvertToString() + ">";
+}
+
+const std::string mcf::AST::Intermediate::FunctionParams::ConvertToString(void) const noexcept
+{
+	if (IsVoid())
 	{
-		std::stack<mcf::parser_error> errors;
-		for ( int i = 0; i < errorCount; ++i )
+		return "<FunctionParams: LPAREN KEYWORD_VOID RPAREN>";
+	}
+
+	std::string buffer = "<FunctionParams: LPAREN ";
+	if (HasParams() == true)
+	{
+		const size_t paramsCount = _params.size();
+		for (size_t i = 0; i < paramsCount; i++)
 		{
-			errors.push(parser.get_last_error());
-		}
-		for (int i = 0; i < errorCount; ++i)
-		{
-			outErrors.push(errors.top());
-			errors.pop();
+			buffer += _params[i]->ConvertToString() + " COMMA ";
 		}
 	}
-}
-
-void mcf::ast::macro_include_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
-{
-	_program.evaluate(inOutEvaluator);
-}
-
-mcf::ast::variable_statement::variable_statement(unique_data_type_expression&& dataType, unique_expression&& name, unique_expression&& initExpression) noexcept
-	: _dataType(dataType.release())
-	, _name(name.release())
-	, _initExpression(initExpression.release())
-{
-	debug_assert(_dataType.get() != nullptr, u8"dataType은 nullptr 여선 안됩니다.");
-	debug_assert(_name.get() != nullptr, u8"name은 nullptr 여선 안됩니다.");
-}
-
-const std::string mcf::ast::variable_statement::get_name(void) const noexcept
-{
-	debug_assert(_name.get() != nullptr, u8"_name은 nullptr 여선 안됩니다.");
-	const expression* curr = _name.get();
-	while (curr->get_expression_type() == expression_type::index)
+	if (HasVariadic() == true)
 	{
-		curr = static_cast<const index_expression*>(curr)->get_left_expression();
+		buffer += _variadic->ConvertToString() + " ";
 	}
-
-	return static_cast<const identifier_expression*>(curr)->convert_to_string();
-}
-
-const std::string mcf::ast::variable_statement::convert_to_string(void) const noexcept
-{
-	debug_assert(_name.get() != nullptr, u8"_name은 nullptr 여선 안됩니다.");
-
-	std::string buffer;
-
-	buffer += _dataType.convert_to_string();
-	buffer += " " + _name->convert_to_string();
-	if (_initExpression.get() != nullptr)
-	{
-		buffer += " = " + _initExpression->convert_to_string();
-	}
-	buffer += ";";
-
+	buffer += "RPAREN>";
 	return buffer;
 }
 
-void mcf::ast::variable_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+mcf::AST::Intermediate::FunctionSignature::FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept
+	: _name(std::move(name))
+	, _params(std::move(params))
+	, _returnType(std::move(returnType))
 {
-	inOutEvaluator;
-	debug_message("");
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name은 nullptr 여선 안됩니다.");
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::variable_assign_statement::variable_assign_statement(unique_expression&& name, unique_expression&& assignExpression) noexcept
-	: _name(name.release())
-	, _assignedExpression(assignExpression.release())
+const std::string mcf::AST::Intermediate::FunctionSignature::ConvertToString(void) const noexcept
 {
-	debug_assert(_name.get() != nullptr, u8"name은 nullptr 여선 안됩니다.");
-	debug_assert(_assignedExpression.get() != nullptr, u8"assignExpression은 nullptr 여선 안됩니다.");
+	std::string buffer = "<FunctionSignature: " + _name->ConvertToString() + " " + _params->ConvertToString() + " POINTING ";
+	buffer += IsReturnVoid() ? "KEYWORD_VOID" : _returnType->ConvertToString();
+	return buffer + ">";
 }
 
-const std::string mcf::ast::variable_assign_statement::get_name(void) const noexcept
+
+const std::string mcf::AST::Statement::IncludeLibrary::ConvertToString(void) const noexcept
 {
-	debug_assert(_name.get() != nullptr, u8"_name은 nullptr 여선 안됩니다.");
-	const expression* curr = _name.get();
-	while (curr->get_expression_type() == expression_type::index)
-	{
-		curr = static_cast<const index_expression*>(curr)->get_left_expression();
-	}
-
-	return static_cast<const identifier_expression*>(curr)->convert_to_string();
-}
-
-const std::string mcf::ast::variable_assign_statement::convert_to_string(void) const noexcept
-{
-	debug_assert(_name.get() != nullptr, u8"_name은 nullptr 여선 안됩니다.");
-	debug_assert(_assignedExpression.get() != nullptr, u8"_assignedExpression은 nullptr 여선 안됩니다.");
-
 	std::string buffer;
-
-	buffer += _name->convert_to_string();
-	buffer += " = " + _assignedExpression->convert_to_string();
-	buffer += ";";
-
+	buffer = "[IncludeLibrary: LT ";
+	buffer += "asm COMMA " + _libPath.Literal;
+	buffer += " GT]";
 	return buffer;
 }
 
-void mcf::ast::variable_assign_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+mcf::AST::Statement::Typedef::Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept
+	: _signature(std::move(signature))
+	, _bindMap(std::move(bindMap))
 {
-	inOutEvaluator;
-	debug_message("");
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::function_statement::function_statement(	unique_expression&& returnType, identifier_expression name,
-													std::unique_ptr<const mcf::ast::function_parameter_list_expression>&& parameters, 
-													std::unique_ptr<const mcf::ast::function_block_expression>&& statementsBlock) noexcept
-	: _returnType(returnType.release())
-	, _name(name)
-	, _parameters(parameters.release())
-	, _statementsBlock(statementsBlock.release())
+const std::string mcf::AST::Statement::Typedef::ConvertToString(void) const noexcept
 {
-	debug_assert(_returnType.get() != nullptr, u8"returnType은 nullptr 여선 안됩니다.");
-	debug_assert(_parameters.get() != nullptr, u8"parameters은 nullptr 여선 안됩니다.");
-}
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 
-const std::string mcf::ast::function_statement::convert_to_string(void) const noexcept
-{
-	debug_assert(_returnType.get() != nullptr, u8"_returnType은 nullptr 여선 안됩니다.");
-	debug_assert(_parameters.get() != nullptr, u8"_parameters은 nullptr 여선 안됩니다.");
-
-	std::string buffer;
-
-	buffer = _returnType->convert_to_string();
-	buffer += " " + _name.convert_to_string();
-	buffer += "(" + _parameters->convert_to_string() + ")";
-	if (_statementsBlock.get() == nullptr)
+	std::string buffer = "[Typedef: " + _signature->ConvertToString();
+	if (_bindMap.get() != nullptr)
 	{
-		buffer += ";";
+		buffer += " POINTING KEYWORD_BIND " + _bindMap->ConvertToString();;
 	}
-	else
-	{
-		buffer += "\n{\n" + _statementsBlock->convert_to_string() + "\n}";
-	}
-
+	buffer += " SEMICOLON]";
 	return buffer;
 }
 
-void mcf::ast::function_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+mcf::AST::Statement::Extern::Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept
+	: _isAssemblyFunction(isAssemblyFunction)
+	, _signature(std::move(signature))
 {
-	inOutEvaluator;
-	debug_message("");
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::function_call_statement::function_call_statement(mcf::ast::unique_expression&& callExpression) noexcept
-	: _callExpression(callExpression->get_expression_type() == expression_type::function_call ? static_cast<const mcf::ast::function_call_expression*>(callExpression.release()) : nullptr)
+const std::string mcf::AST::Statement::Extern::ConvertToString(void) const noexcept
 {
-	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	return "[Extern" + std::string(_isAssemblyFunction ? " KEYWORD_ASM " : " ") + _signature->ConvertToString() + " SEMICOLON]";
 }
 
-mcf::ast::function_call_statement::function_call_statement(std::unique_ptr<mcf::ast::function_call_expression>&& callExpression) noexcept
-	: _callExpression(callExpression.release())
+mcf::AST::Statement::Let::Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept
+	: _signature(std::move(signature))
+	, _expression(std::move(expression))
 {
-	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 }
 
-mcf::ast::function_call_statement::function_call_statement(std::unique_ptr<const mcf::ast::function_call_expression>&& callExpression) noexcept
-	: _callExpression(callExpression.release())
+const std::string mcf::AST::Statement::Let::ConvertToString(void) const noexcept
 {
-	debug_assert(_callExpression.get() != nullptr, u8"_callExpression는 nullptr 여선 안됩니다.");
+	return "[Let: " + _signature->ConvertToString() + (_expression.get() == nullptr ? "" : (" ASSIGN " + _expression->ConvertToString())) + " SEMICOLON]";
 }
 
-void mcf::ast::function_call_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
+mcf::AST::Statement::Block::Block(Statement::PointerVector&& statements) noexcept
+	: _statements(std::move(statements))
 {
-	inOutEvaluator;
-	debug_message("");
+#if defined(_DEBUG)
+		const size_t size = _statements.size();
+		DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
+		for (size_t i = 0; i < size; i++)
+		{
+			DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		}
+#endif
 }
 
-mcf::ast::enum_statement::enum_statement(const mcf::ast::primitive_data_type_expression& name, const std::vector<mcf::ast::identifier_expression>& values) noexcept
-	: _name(name)
-	, _values(values)
-{}
-
-const std::string mcf::ast::enum_statement::convert_to_string(void) const noexcept
+const std::string mcf::AST::Statement::Block::ConvertToString(void) const noexcept
 {
+	const size_t size = _statements.size();
+	DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
+	std::string buffer = "[Block: LBRACE ";
+
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _statements[i]->ConvertToString() + " ";
+	}
+
+	return buffer + "RBRACE]";
+}
+
+mcf::AST::Statement::Return::Return(mcf::AST::Expression::Pointer&& returnValue) noexcept
+	: _returnValue(std::move(returnValue))
+{
+	DebugAssert(_returnValue.get() != nullptr, u8"인자로 받은 _returnValue은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Return::ConvertToString(void) const noexcept
+{
+	DebugAssert(_returnValue.get() != nullptr, u8"인자로 받은 _returnValue은 nullptr 여선 안됩니다.");
+	return "[Return: " + _returnValue->ConvertToString() + " SEMICOLON]";
+}
+
+mcf::AST::Statement::Func::Func(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature, mcf::AST::Statement::Block::Pointer&& block) noexcept
+	: _signature(std::move(signature))
+	, _block(std::move(block))
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Func::ConvertToString(void) const noexcept
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+	return "[Func: " + _signature->ConvertToString() + " " + _block->ConvertToString() + "]";
+}
+
+mcf::AST::Statement::Main::Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept
+	: _params(std::move(params))
+	, _returnType(std::move(returnType))
+	, _block(std::move(block))
+{
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Main::ConvertToString(void) const noexcept
+{
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+
+	if (IsReturnVoid())
+	{
+		return "[Main: " + _params->ConvertToString() + " POINTING KEYWORD_VOID " + _block->ConvertToString() + "]";
+	}
+	return "[Main: " + _params->ConvertToString() + " POINTING " + _returnType->ConvertToString() + " " + _block->ConvertToString() + "]";
+}
+
+mcf::AST::Statement::Expression::Expression(mcf::AST::Expression::Pointer&& expression) noexcept
+	: _expression(std::move(expression))
+{
+	DebugAssert(_expression.get() != nullptr, u8"인자로 받은 _expression은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Expression::ConvertToString(void) const noexcept
+{
+	DebugAssert(_expression.get() != nullptr, u8"인자로 받은 _expression은 nullptr 여선 안됩니다.");
+	return "[Expression: " + _expression->ConvertToString() + " SEMICOLON]";
+}
+
+mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept
+	: _statements(std::move(statements))
+{
+#if defined(_DEBUG)
+	const size_t size = _statements.size();
+	DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Program::ConvertToString(void) const noexcept
+{
+	const size_t size = _statements.size();
+	DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
 	std::string buffer;
-	buffer = "enum " + _name.convert_to_string() + "\n{\n";
 
-	const size_t size = _values.size();
-	for ( size_t i = 0; i < size; i++ )
+	for (size_t i = 0; i < size; i++)
 	{
-		buffer += "\t" + _values[i].convert_to_string() + ",\n";
+		DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += (i == 0 ? "" : "\n") + _statements[i]->ConvertToString();
 	}
 
-	buffer += "};";
 	return buffer;
-}
-
-void mcf::ast::enum_statement::evaluate(mcf::evaluator& inOutEvaluator) const noexcept
-{
-	const std::string enumName = _name.convert_to_string();
-
-	debug_assert(inOutEvaluator.has_keyword_at_current_scope(enumName), u8"현재 스코프에 해당 enum이 존재 하지 않습니다.");
-	inOutEvaluator.push_scope(enumName);
-
-	const size_t valueCount = _values.size();
-	for (size_t i = 0; i < valueCount; ++i)
-	{
-		inOutEvaluator.register_custom_enum_value(_values[i].convert_to_string());
-	}
-
-	inOutEvaluator.pop_scope();
 }

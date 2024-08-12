@@ -19,7 +19,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "common.h"
+#include "parser/includes/common.h"
 #include "framework.h"
 
 #endif //PCH_H
