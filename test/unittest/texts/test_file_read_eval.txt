@@ -1,0 +1,31 @@
+﻿; compileOption: kernel32.lib libcmt.lib
+
+; compileType: int32 dword
+; compileType: address unsigned qword
+
+; compileType: bool byte { false = 0, true = 1 }
+
+	section .data
+	foo		db	0				; byte
+	arr		db	0, 1, 2			; byte[3]
+	arr2	db	0, 0, 0, 0, 0	; byte[5]
+	int32	dd	10				; int32 -> dword
+
+	section .text
+	extern printf ; compileFunction: (format: address, ...args) -> int32
+
+boo:	; compileFunction: (void) -> byte
+	xor rax, rax
+	mov rax, 0
+	ret
+
+
+
+let intVal: int32 = 10;
+
+main(void) -> void
+{
+	unused(foo, boo, arr, arr2);
+	let message: byte[] = "Hello, World! Value=%d\n";
+	printf(&message, intVal);
+}
