@@ -43,7 +43,9 @@ namespace mcf
 				IDENTIFIER,
 				INTEGER,
 				STRING,
+				PREFIX,
 				INFIX,
+				CALL,
 				INDEX,
 				INITIALIZER,
 				MAP_INITIALIZER,
@@ -130,6 +132,26 @@ namespace mcf
 				mcf::Token::Data _token;
 			};
 
+			class Prefix : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Prefix>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Prefix>(std::move(args)...); }
+
+			public:
+				explicit Prefix(void) noexcept = default;
+				explicit Prefix(const mcf::Token::Data& prefixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::PREFIX; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _prefixOperator;
+				mcf::AST::Expression::Pointer _right;
+			};
+
 			class Infix : public Interface
 			{
 			public:
@@ -149,6 +171,26 @@ namespace mcf
 				mcf::Token::Data _infixOperator;
 				mcf::AST::Expression::Pointer _left;
 				mcf::AST::Expression::Pointer _right;
+			};
+
+			class Call : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Call>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Call>(std::move(args)...); }
+
+			public:
+				explicit Call(void) noexcept = default;
+				explicit Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::PointerVector _params;
 			};
 
 			class Index : public Interface

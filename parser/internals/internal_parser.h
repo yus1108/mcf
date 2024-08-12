@@ -52,6 +52,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
 	case Token::Type::RBRACKET: __COUNTER__; [[fallthrough]];
 	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
@@ -63,7 +64,6 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::STRING: __COUNTER__; [[fallthrough]];
 	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
 	case Token::Type::AMPERSAND: __COUNTER__; [[fallthrough]];
-	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
 	case Token::Type::LBRACE: __COUNTER__; [[fallthrough]];
 	case Token::Type::COLON: __COUNTER__; [[fallthrough]];
 	case Token::Type::DOUBLE_COLON: __COUNTER__; [[fallthrough]];

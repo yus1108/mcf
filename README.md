@@ -46,6 +46,15 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Prefix>`
+
+#### PARSER :
+1. `MINUS` `<Expression>`
+2. `BANG` `<Expression>`
+3. `AMPERSAND` `<Expression>`
+
+---
+
 ### `<Infix>`
 
 #### PARSER :
@@ -60,10 +69,17 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Call>`
+
+#### PARSER :
+`<Expression>` `LPAREN` {`<Expression>` {`COMMA` `<Expression>`}* {`COMMA`}} `RPAREN`
+
+---
+
 ### `<Index>`
 
 #### PARSER :
-`<Expression>` {`LBRACKET` {`<Expression>`} `RBRACKET`}+
+`<Expression>` `LBRACKET` {`<Expression>`} `RBRACKET`
 
 ---
 
@@ -197,23 +213,23 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Func]`
 
 #### PARSER :
-`<FunctionSignature>` `[Statements]`
+`<FunctionSignature>` `[Block]`
 
 #### EVALUATOR:
 * `<FunctionSignature>`: the signature is stored to code section.
-* `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
+* `<Block>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
 
 ---
 
 ### `[Main]`
 
 #### PARSER :
-1. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `KEYWORD_VOID` `[Statements]`
-2. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `<TypeSignature>` `[Statements]`
+1. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `KEYWORD_VOID` `[Block]`
+2. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `<TypeSignature>` `[Block]`
 
 #### EVALUATOR:
 * `<FunctionParams>`: params are stored to bss section.
-* `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
+* `<Block>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
 
 ---
 

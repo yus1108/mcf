@@ -137,6 +137,10 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Let: <VariableSignature: <Identifier: foo> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON]",
 				},
 				{
+					"let foo: byte = -5;",
+					"[Let: <VariableSignature: <Identifier: foo> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Prefix: MINUS <Integer: 5>> SEMICOLON]",
+				},
+				{
 					"let arr: byte[] = { 0, 1, 2 };",
 					"[Let: <VariableSignature: <Identifier: arr> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN "
 						"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> "
@@ -180,10 +184,11 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			} testCases[] =
 			{
 				{
-					"{ let a : byte = 0; let b : byte[2] = 1; }",
+					"{ let a : byte = 0; let b : byte[2] = 1; let c : bool = !false; }",
 					"[Block: LBRACE "
 						"[Let: <VariableSignature: <Identifier: a> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON] "
 						"[Let: <VariableSignature: <Identifier: b> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> ASSIGN <Integer: 1> SEMICOLON] "
+						"[Let: <VariableSignature: <Identifier: c> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Prefix: BANG <Identifier: false>> SEMICOLON] "
 					"RBRACE]"
 				},
 			};
@@ -377,14 +382,14 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"foo + boo * 5;",
 					"[Expression: <Infix: <Identifier: foo> PLUS <Infix: <Identifier: boo> ASTERISK <Integer: 5>>> SEMICOLON]"
 				},
-				/*{
+				{
 					"boo();",
-					"[Expression: <Call: <Identifier: boo> RPAREN LAPREN> SEMICOLON]"
+					"[Expression: <Call: <Identifier: boo> LPAREN RPAREN> SEMICOLON]"
 				},
 				{
 					"printf(&message, intVal);",
-					"[Expression: <Call: <Identifier: printf> RPAREN <Address: <Identifier: message>> COMMA <Identifier: intVal> LAPREN> SEMICOLON]"
-				},*/
+					"[Expression: <Call: <Identifier: printf> LPAREN <Prefix: AMPERSAND <Identifier: message>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON]"
+				},
 			};
 			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
 

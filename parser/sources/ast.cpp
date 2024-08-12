@@ -1,10 +1,23 @@
 ﻿#include "pch.h"
 #include "parser/includes/ast.h"
 
+mcf::AST::Expression::Prefix::Prefix(const mcf::Token::Data& prefixOperator, mcf::AST::Expression::Pointer&& right) noexcept
+	: _prefixOperator(prefixOperator)
+	, _right(std::move(right))
+{
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Prefix::ConvertToString(void) const noexcept
+{
+	DebugAssert(_right.get() != nullptr, u8"인자로 받은 _right는 nullptr 여선 안됩니다.");
+	return std::string("<Prefix: ") + mcf::Token::CONVERT_TYPE_TO_STRING(_prefixOperator.Type) + " " + _right->ConvertToString() + ">";
+}
+
 mcf::AST::Expression::Infix::Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept
 	: _infixOperator(infixOperator)
-	, _left(left.release())
-	, _right(right.release())
+	, _left(std::move(left))
+	, _right(std::move(right))
 {
 	DebugAssert(_infixOperator.Type != mcf::Token::Type::INVALID, u8"인자로 받은 _infixOperator의 타입은 INVALID여선 안됩니다.");
 	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
@@ -18,9 +31,36 @@ const std::string mcf::AST::Expression::Infix::ConvertToString(void) const noexc
 	return "<Infix: " + _left->ConvertToString() + " " + mcf::Token::CONVERT_TYPE_TO_STRING(_infixOperator.Type) + " " + _right->ConvertToString() + ">";
 }
 
+mcf::AST::Expression::Call::Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept
+	: _left(std::move(left))
+	, _params(std::move(params))
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+#if defined(_DEBUG)
+	const size_t paramsCount = _params.size();
+	for (size_t i = 0; i < paramsCount; i++)
+	{
+		DebugAssert(_params[i].get() != nullptr, u8"_keyList[%zu].key는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Expression::Call::ConvertToString(void) const noexcept
+{
+	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	std::string buffer = "<Call: " + _left->ConvertToString() + " LPAREN ";
+	const size_t paramsCount = _params.size();
+	for (size_t i = 0; i < paramsCount; i++)
+	{
+		DebugAssert(_params[i].get() != nullptr, u8"_params[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _params[i]->ConvertToString() + " COMMA ";
+	}
+	return buffer + "RPAREN>";
+}
+
 mcf::AST::Expression::Index::Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept
-	: _left(left.release())
-	, _index(index.release())
+	: _left(std::move(left))
+	, _index(std::move(index))
 {
 	DebugAssert(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
 }
@@ -96,7 +136,7 @@ const std::string mcf::AST::Expression::MapInitializer::ConvertToString(void) co
 }
 
 mcf::AST::Intermediate::Variadic::Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept
-	: _name(name.release())
+	: _name(std::move(name))
 {
 	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name는 nullptr 여선 안됩니다.");
 }
@@ -108,7 +148,7 @@ const std::string mcf::AST::Intermediate::Variadic::ConvertToString(void) const 
 }
 
 mcf::AST::Intermediate::TypeSignature::TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept
-	: _signature(signature.release())
+	: _signature(std::move(signature))
 {
 	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
 }
@@ -120,8 +160,8 @@ const std::string mcf::AST::Intermediate::TypeSignature::ConvertToString(void) c
 }
 
 mcf::AST::Intermediate::VariableSignature::VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept
-	: _name(name.release())
-	, _typeSignature(typeSignature.release())
+	: _name(std::move(name))
+	, _typeSignature(std::move(typeSignature))
 {
 	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name은 nullptr 여선 안됩니다.");
 	DebugAssert(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");

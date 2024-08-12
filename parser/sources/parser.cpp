@@ -704,8 +704,10 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		expression = mcf::AST::Expression::String::Make(_currentToken);
 		break;
 
+	case Token::Type::MINUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
 	case Token::Type::AMPERSAND: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		expression = ParsePrefixExpression();
 		break;
 
 	case Token::Type::LBRACE: __COUNTER__;
@@ -715,10 +717,8 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	case Token::Type::PLUS: __COUNTER__; [[fallthrough]];
-	case Token::Type::MINUS: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASTERISK: __COUNTER__; [[fallthrough]];
 	case Token::Type::SLASH: __COUNTER__; [[fallthrough]];
-	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
 	case Token::Type::EQUAL: __COUNTER__; [[fallthrough]];
 	case Token::Type::NOT_EQUAL: __COUNTER__; [[fallthrough]];
 	case Token::Type::LT: __COUNTER__; [[fallthrough]];
@@ -781,7 +781,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 
 		case Token::Type::LPAREN: __COUNTER__;
 			ReadNextToken();
-			DebugMessage(u8"구현 필요");
+			expression = ParseCallExpression(std::move(expression));
 			break;
 
 		case Token::Type::LBRACKET: __COUNTER__;
@@ -837,6 +837,21 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	return expression.get() == nullptr ? mcf::AST::Expression::Invalid::Make() : std::move(expression);
 }
 
+mcf::AST::Expression::Prefix::Pointer mcf::Parser::Object::ParsePrefixExpression(void) noexcept
+{
+	const mcf::Token::Data prefixOperator = _currentToken;
+	ReadNextToken();
+	mcf::AST::Expression::Pointer right = ParseExpression(Precedence::PREFIX);
+	if (right.get() == nullptr || right->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+	{
+		const std::string message = ErrorMessage(u8"Prefix 표현식 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return nullptr;
+	}
+	return mcf::AST::Expression::Prefix::Make(prefixOperator, std::move(right));
+}
+
 mcf::AST::Expression::Infix::Pointer mcf::Parser::Object::ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept
 {
 	const mcf::Token::Data infixOperator = _currentToken;
@@ -851,6 +866,64 @@ mcf::AST::Expression::Infix::Pointer mcf::Parser::Object::ParseInfixExpression(m
 		return nullptr;
 	}
 	return mcf::AST::Expression::Infix::Make(std::move(left), infixOperator, std::move(right));
+}
+
+mcf::AST::Expression::Call::Pointer mcf::Parser::Object::ParseCallExpression(mcf::AST::Expression::Pointer&& left) noexcept
+{
+	DebugAssert(_currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
+
+	mcf::AST::Expression::PointerVector params;
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == true)
+	{
+		return mcf::AST::Expression::Call::Make(std::move(left), std::move(params));
+	}
+
+	ReadNextToken();
+	params.emplace_back(ParseExpression(Precedence::LOWEST));
+	if (params.back().get() == nullptr || params.back()->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+	{
+		const std::string message = ErrorMessage(u8"Call 표현식 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return nullptr;
+	}
+
+	while (ReadNextTokenIf(mcf::Token::Type::COMMA) == true)
+	{
+		if (ReadNextTokenIf(mcf::Token::Type::END_OF_FILE) == true)
+		{
+			const std::string message = ErrorMessage(u8"Call 표현식 파싱중 파일의 끝에 도달 했습니다. Call 표현식은 반드시 RPAREN(')')로 끝나야 합니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+			return nullptr;
+		}
+
+		if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == true)
+		{
+			return mcf::AST::Expression::Call::Make(std::move(left), std::move(params));
+		}
+
+		ReadNextToken();
+		params.emplace_back(ParseExpression(Precedence::LOWEST));
+		if (params.back().get() == nullptr || params.back()->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+		{
+			const std::string message = ErrorMessage(u8"Call 표현식 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+			return nullptr;
+		}
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `RPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	return mcf::AST::Expression::Call::Make(std::move(left), std::move(params));
 }
 
 mcf::AST::Expression::Index::Pointer mcf::Parser::Object::ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept
