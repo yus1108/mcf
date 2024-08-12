@@ -36,11 +36,8 @@ namespace mcf
 			FAIL_EXPRESSION_PARSING,
 			FAIL_INTERMEDIATE_PARSING,
 			FAIL_STATEMENT_PARSING,
-			UNEXPECTED_CURRENT_TOKEN,
 			UNEXPECTED_NEXT_TOKEN,
-			NOT_REGISTERED_STATEMENT_TOKEN,
 			NOT_REGISTERED_EXPRESSION_TOKEN,
-			NOT_REGISTERED_INFIX_EXPRESSION_TOKEN,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			COUNT,
@@ -73,6 +70,10 @@ namespace mcf
 			mcf::AST::Statement::Pointer ParseExternStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseLetStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseBlockStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseReturnStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseFuncStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseMainStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseExpressionStatement(void) noexcept;
 
 			mcf::AST::Intermediate::Variadic::Pointer ParseVariadicIntermediate(void) noexcept;
 			mcf::AST::Intermediate::TypeSignature::Pointer ParseTypeSignatureIntermediate(void) noexcept;

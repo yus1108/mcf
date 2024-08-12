@@ -87,12 +87,8 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::COMMENT: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
-	{
-		const std::string message = ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
+		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
 			mcf::Token::CONVERT_TYPE_TO_STRING(token.Type), mcf::ENUM_INDEX(token.Type), token.Literal.c_str());
-		_errors.push(ErrorInfo{ ErrorID::NOT_REGISTERED_INFIX_EXPRESSION_TOKEN, _lexer.GetName(), message, token.Line, token.Index });
-		break;
-	}
 	}
 	constexpr const size_t PRECEDENCE_COUNT = __COUNTER__ - PRECEDENCE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == PRECEDENCE_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");

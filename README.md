@@ -197,10 +197,33 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Func]`
 
 #### PARSER :
-`<FunctionSignature>` `<Statements>`
+`<FunctionSignature>` `[Statements]`
 
 #### EVALUATOR:
 * `<FunctionSignature>`: the signature is stored to code section.
 * `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
 
 ---
+
+### `[Main]`
+
+#### PARSER :
+1. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `KEYWORD_VOID` `[Statements]`
+2. `KEYWORD_MAIN` `<FunctionParams>` `POINTING` `<TypeSignature>` `[Statements]`
+
+#### EVALUATOR:
+* `<FunctionParams>`: params are stored to bss section.
+* `<Statements>`: `[Return]` is required at the end of statements if the signature has return type, and both type must be matched.
+
+---
+
+### `[Expression]` :
+
+#### PARSER :
+`<Expression>` `SEMICOLON`
+
+#### EVALUATOR:
+`<Expression>`: expressions like function call can be statement.
+
+---
+

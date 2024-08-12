@@ -255,6 +255,66 @@ const std::string mcf::AST::Statement::Block::ConvertToString(void) const noexce
 	return buffer + "RBRACE]";
 }
 
+mcf::AST::Statement::Return::Return(mcf::AST::Expression::Pointer&& returnValue) noexcept
+	: _returnValue(std::move(returnValue))
+{
+	DebugAssert(_returnValue.get() != nullptr, u8"인자로 받은 _returnValue은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Return::ConvertToString(void) const noexcept
+{
+	DebugAssert(_returnValue.get() != nullptr, u8"인자로 받은 _returnValue은 nullptr 여선 안됩니다.");
+	return "[Return: " + _returnValue->ConvertToString() + " SEMICOLON]";
+}
+
+mcf::AST::Statement::Func::Func(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature, mcf::AST::Statement::Block::Pointer&& block) noexcept
+	: _signature(std::move(signature))
+	, _block(std::move(block))
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Func::ConvertToString(void) const noexcept
+{
+	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+	return "[Func: " + _signature->ConvertToString() + " " + _block->ConvertToString() + "]";
+}
+
+mcf::AST::Statement::Main::Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept
+	: _params(std::move(params))
+	, _returnType(std::move(returnType))
+	, _block(std::move(block))
+{
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Main::ConvertToString(void) const noexcept
+{
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	DebugAssert(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+
+	if (IsReturnVoid())
+	{
+		return "[Main: " + _params->ConvertToString() + " POINTING KEYWORD_VOID " + _block->ConvertToString() + "]";
+	}
+	return "[Main: " + _params->ConvertToString() + " POINTING " + _returnType->ConvertToString() + " " + _block->ConvertToString() + "]";
+}
+
+mcf::AST::Statement::Expression::Expression(mcf::AST::Expression::Pointer&& expression) noexcept
+	: _expression(std::move(expression))
+{
+	DebugAssert(_expression.get() != nullptr, u8"인자로 받은 _expression은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::Expression::ConvertToString(void) const noexcept
+{
+	DebugAssert(_expression.get() != nullptr, u8"인자로 받은 _expression은 nullptr 여선 안됩니다.");
+	return "[Expression: " + _expression->ConvertToString() + " SEMICOLON]";
+}
+
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept
 	: _statements(std::move(statements))
 {

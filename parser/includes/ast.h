@@ -68,8 +68,9 @@ namespace mcf
 			class Invalid : public Interface
 			{
 			public:
-				using Pointer = std::unique_ptr<Invalid>;
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
+				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
 
 			class Identifier : public Interface
@@ -84,7 +85,7 @@ namespace mcf
 				explicit Identifier(void) noexcept = default;
 				explicit Identifier(const mcf::Token::Data& token) noexcept : _token(token) {}
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::IDENTIFIER; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::IDENTIFIER; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Identifier: " + _token.Literal + ">"; }
 
 			private:
@@ -103,7 +104,7 @@ namespace mcf
 				explicit Integer(void) noexcept = default;
 				explicit Integer(const mcf::Token::Data& token) noexcept : _token(token) {}
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Integer: " + _token.Literal + ">"; }
 
 			private:
@@ -122,7 +123,7 @@ namespace mcf
 				explicit String(void) noexcept = default;
 				explicit String(const mcf::Token::Data& token) noexcept : _token(token) {}
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<String: " + _token.Literal + ">"; }
 
 			private:
@@ -141,7 +142,7 @@ namespace mcf
 				explicit Infix(void) noexcept = default;
 				explicit Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::INFIX; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INFIX; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -162,7 +163,7 @@ namespace mcf
 				explicit Index(void) noexcept = default;
 				explicit Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept;
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::INDEX; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INDEX; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -182,7 +183,7 @@ namespace mcf
 				explicit Initializer(void) noexcept = default;
 				explicit Initializer(PointerVector&& keyList) noexcept;
 
-				virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
+				inline virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
 				virtual const std::string ConvertToString(void) const noexcept override;
 
 			protected:
@@ -201,7 +202,7 @@ namespace mcf
 				explicit MapInitializer(void) noexcept = default;
 				explicit MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept;
 
-				virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -236,15 +237,17 @@ namespace mcf
 				}
 			};
 
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
 			class Invalid : public Interface
 			{
 			public:
-				using Pointer = std::unique_ptr<Invalid>;
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::INVALID; }
+				inline static Pointer Make(void) { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
 
-			using Pointer = std::unique_ptr<Interface>;
-			using PointerVector = std::vector<Pointer>;
 
 			class Variadic : public Interface
 			{
@@ -258,7 +261,7 @@ namespace mcf
 				explicit Variadic(void) noexcept = default;
 				explicit Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept;
 
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIADIC; }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIADIC; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -277,7 +280,7 @@ namespace mcf
 				explicit TypeSignature(void) noexcept = default;
 				explicit TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept;
 
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -297,7 +300,7 @@ namespace mcf
 				explicit VariableSignature(void) noexcept = default;
 				explicit VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept;
 				
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIABLE_SIGNATURE; }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIABLE_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -322,7 +325,7 @@ namespace mcf
 				inline const bool HasParams(void) const noexcept { return _params.size() != 0; }
 				inline const bool HasVariadic(void) const noexcept { return _variadic.get() != nullptr; }
 
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -344,7 +347,7 @@ namespace mcf
 
 				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
 
-				virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -363,10 +366,12 @@ namespace mcf
 				INCLUDE_LIBRARY,
 				TYPEDEF,
 				EXTERN,
-				LET,
+				LET, 
 				BLOCK,
 				RETURN,
 				FUNC,
+				MAIN,
+				EXPRESSION,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -387,8 +392,9 @@ namespace mcf
 			class Invalid : public Interface
 			{
 			public:
-				using Pointer = std::unique_ptr<Invalid>;
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::INVALID; }
+				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
 
 			class IncludeLibrary : public Interface
@@ -403,7 +409,7 @@ namespace mcf
 				explicit IncludeLibrary(void) noexcept = default;
 				explicit IncludeLibrary(mcf::Token::Data libPath) noexcept : _libPath(libPath) {}
 
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -425,7 +431,7 @@ namespace mcf
 				explicit Typedef(void) noexcept = default;
 				explicit Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept;
 
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -445,7 +451,7 @@ namespace mcf
 				explicit Extern(void) noexcept = default;
 				explicit Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept;
 
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::EXTERN; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXTERN; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -465,7 +471,7 @@ namespace mcf
 				explicit Let(void) noexcept = default;
 				explicit Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept;
 
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -485,11 +491,92 @@ namespace mcf
 				explicit Block(void) noexcept = default;
 				explicit Block(Statement::PointerVector&& statements) noexcept;
 
-				virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
 				Statement::PointerVector _statements;
+			};
+
+			class Return : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Return>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Return>(std::move(args)...); }
+
+			public:
+				explicit Return(void) noexcept = default;
+				explicit Return(mcf::AST::Expression::Pointer&& returnValue) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _returnValue;;
+			};
+
+			class Func : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Func>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Func>(std::move(args)...); }
+
+			public:
+				explicit Func(void) noexcept = default;
+				explicit Func(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature, mcf::AST::Statement::Block::Pointer&& block) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;;
+				mcf::AST::Statement::Block::Pointer _block;
+			};
+
+			class Main : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Main>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Main>(std::move(args)...); }
+
+			public:
+				explicit Main(void) noexcept = default;
+				explicit Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept;
+
+				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::MAIN; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Intermediate::FunctionParams::Pointer _params;;
+				mcf::AST::Intermediate::TypeSignature::Pointer _returnType;
+				Block::Pointer _block;
+			};
+
+			class Expression : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Expression>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Expression>(std::move(args)...); }
+
+			public:
+				explicit Expression(void) noexcept = default;
+				explicit Expression(mcf::AST::Expression::Pointer&& expression) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXPRESSION; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _expression;
 			};
 		}
 

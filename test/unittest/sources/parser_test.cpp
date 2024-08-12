@@ -64,11 +64,11 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				},
 				{
 					"typedef bool: byte -> bind { false = 0, true = 1, };",
-					std::string("[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND ") +
-						"<MapInitializer: LBRACE " + 
-							"<Identifier: false> ASSIGN <Integer: 0> COMMA " +
-							"<Identifier: true> ASSIGN <Integer: 1> COMMA " +
-						"RBRACE> " +
+					"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND "
+						"<MapInitializer: LBRACE "
+							"<Identifier: false> ASSIGN <Integer: 0> COMMA "
+							"<Identifier: true> ASSIGN <Integer: 1> COMMA "
+						"RBRACE> "
 					"SEMICOLON]",
 				},
 			};
@@ -100,9 +100,9 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			{
 				{
 					"extern asm func printf(format: address, ...args) -> int32;",
-					std::string("[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN ") + 
-						"<VariableSignature: <Identifier: format> COLON <TypeSignature: <Identifier: address>>> COMMA " + 
-						"<Variadic: <Identifier: args>> " +
+					"[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
+						"<VariableSignature: <Identifier: format> COLON <TypeSignature: <Identifier: address>>> COMMA "
+						"<Variadic: <Identifier: args>> "
 					"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]",
 				}
 			};
@@ -138,14 +138,14 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				},
 				{
 					"let arr: byte[] = { 0, 1, 2 };",
-					std::string("[Let: <VariableSignature: <Identifier: arr> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN ") +
-					"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> " +
+					"[Let: <VariableSignature: <Identifier: arr> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN "
+						"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> "
 					"SEMICOLON]",
 				},
 				{
 					"let arr2: byte[5] = { 0 };",
-					std::string("[Let: <VariableSignature: <Identifier: arr2> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 5> RBRACKET>>> ASSIGN ") +
-					"<Initializer: LBRACE <Integer: 0> COMMA RBRACE> " +
+					"[Let: <VariableSignature: <Identifier: arr2> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 5> RBRACKET>>> ASSIGN "
+						"<Initializer: LBRACE <Integer: 0> COMMA RBRACE> "
 					"SEMICOLON]",
 				},
 				{
@@ -181,10 +181,81 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			{
 				{
 					"{ let a : byte = 0; let b : byte[2] = 1; }",
-					std::string("[Block: LBRACE ") +
-						"[Let: <VariableSignature: <Identifier: a> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON] " +
-						"[Let: <VariableSignature: <Identifier: b> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> ASSIGN <Integer: 1> SEMICOLON] " +
+					"[Block: LBRACE "
+						"[Let: <VariableSignature: <Identifier: a> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON] "
+						"[Let: <VariableSignature: <Identifier: b> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> ASSIGN <Integer: 1> SEMICOLON] "
 					"RBRACE]"
+				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"5. return 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"return 0;",
+					"[Return: <Integer: 0> SEMICOLON]"
+				},
+				{
+					"return 2 == 2;",
+					"[Return: <Infix: <Integer: 2> EQUAL <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 != 2;",
+					"[Return: <Infix: <Integer: 2> NOT_EQUAL <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 < 2;",
+					"[Return: <Infix: <Integer: 2> LT <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 > 2;",
+					"[Return: <Infix: <Integer: 2> GT <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 == 2 < 2 == 2;",
+					"[Return: <Infix: <Infix: <Integer: 2> EQUAL <Infix: <Integer: 2> LT <Integer: 2>>> EQUAL <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 + 2;",
+					"[Return: <Infix: <Integer: 2> PLUS <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 - 2;",
+					"[Return: <Infix: <Integer: 2> MINUS <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 * 2;",
+					"[Return: <Infix: <Integer: 2> ASTERISK <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 / 2;",
+					"[Return: <Infix: <Integer: 2> SLASH <Integer: 2>> SEMICOLON]"
+				},
+				{
+					"return 2 == 2 < 2 + 2;",
+					"[Return: <Infix: <Integer: 2> EQUAL <Infix: <Integer: 2> LT <Infix: <Integer: 2> PLUS <Integer: 2>>>> SEMICOLON]"
 				},
 			};
 			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
@@ -215,11 +286,105 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			{
 				{
 					"func boo(void) -> byte { return 0; }",
-					std::string("[Func: ") +
-						"<FunctionSignature: <Identifier: boo> <FunctionParams: KEYWORD_VOID> POINTING <TypeSignature: <Identifier: byte>>> " +
-						"<Statements: LBRACE <Return: <Integer: 0>> RBRACE>" +
+					"[Func: "
+						"<FunctionSignature: <Identifier: boo> <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING <TypeSignature: <Identifier: byte>>> "
+						"[Block: LBRACE [Return: <Integer: 0> SEMICOLON] RBRACE]"
 					"]"
-				}
+				},
+				{
+					"func boo(void) -> byte { let a : byte = 2; return a + 5 * 3; }",
+					"[Func: "
+						"<FunctionSignature: <Identifier: boo> <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING <TypeSignature: <Identifier: byte>>> "
+						"[Block: LBRACE "
+							"[Let: <VariableSignature: <Identifier: a> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 2> SEMICOLON] "
+							"[Return: <Infix: <Identifier: a> PLUS <Infix: <Integer: 5> ASTERISK <Integer: 3>>> SEMICOLON] "
+						"RBRACE]"
+					"]"
+				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"7. main 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"main(void) -> byte { let foo: byte = 5; return 0; }",
+					"[Main: "
+						"<FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING <TypeSignature: <Identifier: byte>> "
+						"[Block: LBRACE "
+							"[Let: <VariableSignature: <Identifier: foo> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 5> SEMICOLON] "
+							"[Return: <Integer: 0> SEMICOLON] "
+						"RBRACE]"
+					"]"
+				},
+			};
+			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"8.. expression 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"foo;",
+					"[Expression: <Identifier: foo> SEMICOLON]"
+				},
+				{
+					"foo + boo;",
+					"[Expression: <Infix: <Identifier: foo> PLUS <Identifier: boo>> SEMICOLON]"
+				},
+				{
+					"foo + boo * 5;",
+					"[Expression: <Infix: <Identifier: foo> PLUS <Infix: <Identifier: boo> ASTERISK <Integer: 5>>> SEMICOLON]"
+				},
+				/*{
+					"boo();",
+					"[Expression: <Call: <Identifier: boo> RPAREN LAPREN> SEMICOLON]"
+				},
+				{
+					"printf(&message, intVal);",
+					"[Expression: <Call: <Identifier: printf> RPAREN <Address: <Identifier: message>> COMMA <Identifier: intVal> LAPREN> SEMICOLON]"
+				},*/
 			};
 			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
 
