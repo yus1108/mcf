@@ -1,31 +1,57 @@
-﻿; compileOption: kernel32.lib libcmt.lib
+﻿option casemap :none ; make the file case sensitive
 
-; compileType: int32 dword
-; compileType: address unsigned qword
+.data
+?0	db "Hello, Worlld! Value=%d\n", 0   ; "Hello, World! Value=%d\n"; 25 bytes
 
-; compileType: bool byte { false = 0, true = 1 }
+includelib "kernel32.lib"
 
-	section .data
-	foo		db	0				; byte
-	arr		db	0, 1, 2			; byte[3]
-	arr2	db	0, 0, 0, 0, 0	; byte[5]
-	int32	dd	10				; int32 -> dword
+int32 typedef dword		; typedef int32: dword
+uint32 typedef dword	; typedef int32: unsigned dword
+address typedef qword	; typedef addreess: qword
 
-	section .text
-	extern printf ; compileFunction: (format: address, ...args) -> int32
+bool typedef byte		; typedef bool: byte -> bind { false = 0, true = 1 }
 
-boo:	; compileFunction: (void) -> byte
-	xor rax, rax
-	mov rax, 0
+includelib "libcmt.lib"
+printf PROTO : qword, VARARG	; extern asm func printf(format: unsigned qword, ...args) -> int32;
+
+.data
+foo		db	0				; byte		; let foo: byte = 0;
+
+.code
+boo proc								; func boo(void) -> byte { return 0; }
+;	mov     dword ptr [rsp+20h],    r9d	; fourth argument
+;   mov     dword ptr [rsp+18h],    r8d	; third argument
+;   mov     dword ptr [rsp+10h],    edx	; second argument
+;	mov     dword ptr [rsp+8h],     ecx	; first argument
+
+    sub     rsp, 20h					; stack memory allocation with 16 byte alignment with composition of :
+										; [20h shadow spacing including up to fourth function call arguments] + 
+										; [function call arugments from fifth] + 
+										; [local variables]
+
+; local variable initialization with first argument
+;	mov     eax, dword ptr [rsp + (ParamOffset)]
+;	mov     dword ptr [rsp + (LocalVariableOffset + 08h)], eax
+
+    add     rsp, 20h					; pop allocated memory in stack for this procedure
 	ret
+boo endp
 
+.data
+arr		db	0, 1, 2			; byte[3]			; let arr: byte[] = { 0, 1, 2 };
+arr2	db	0, 0, 0, 0, 0	; byte[5]			; let arr2: byte[5] = { 0 };
+intval	dd	10				; int32 -> dword	; let intVal: int32 = 10;
 
+.code
+main proc					; main(void) -> void {
+							; unused(foo, boo, arr, arr2);
+    sub     rsp, 40h		; stack memory allocation with 16 byte alignment 
+							; [20h: shadow spacing] + 
+							; [20h: 25 bytes for message with 16 bytes alignment]
+	
+	; let message: byte[] = "Hello, World! Value=%d\n"; 25 bytes
+	lea     rax, [?0]					
+	mov		dword ptr [rsp + (20h + 08h)], rax
 
-let intVal: int32 = 10;
-
-main(void) -> void
-{
-	unused(foo, boo, arr, arr2);
-	let message: byte[] = "Hello, World! Value=%d\n";
-	printf(&message, intVal);
-}
+							; printf(&message, intVal);
+main endp					; }
