@@ -1,7 +1,7 @@
 ﻿#include <asm, "kernel32.lib">
 
 typedef int32: dword;
-typedef address: unsigned qword;
+typedef address: qword;
 
 typedef bool: byte -> bind
 {

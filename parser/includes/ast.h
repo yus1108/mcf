@@ -320,12 +320,13 @@ namespace mcf
 
 			public:
 				explicit TypeSignature(void) noexcept = default;
-				explicit TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept;
+				explicit TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept;
 
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
+				bool _isUnsigned;
 				mcf::AST::Expression::Pointer _signature;
 			};
 

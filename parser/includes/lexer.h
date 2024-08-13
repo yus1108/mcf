@@ -54,6 +54,7 @@ namespace mcf
 			KEYWORD_FUNC,				// func
 			KEYWORD_MAIN,				// main
 			KEYWORD_VOID,				// void
+			KEYWORD_UNSIGNED,			// unsigned
 			KEYWORD_RETURN,				// return
 			KEYWORD_UNUSED,				// unused
 			KEYWORD_IDENTIFIER_END,		// 실제 값으로 사용되어선 안됩니다!!!
@@ -122,6 +123,7 @@ namespace mcf
 			"KEYWORD_FUNC",
 			"KEYWORD_MAIN",
 			"KEYWORD_VOID",
+			"KEYWORD_UNSIGNED",
 			"KEYWORD_RETURN",
 			"KEYWORD_UNUSED",
 			"KEYWORD_IDENTIFIER_END",

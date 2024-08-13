@@ -284,24 +284,18 @@ namespace UnitTest
 				TokenString("\"kernel32.lib\""),
 				TokenGT,
 
-				// typedef int32: byte[4];
+				// typedef int32: dword;
 				TokenTypedef,
 				TokenIdentifier("int32"),
 				TokenColon,
-				TokenByte,
-				TokenLBracket,
-				TokenInteger("4"),
-				TokenRBracket,
+				TokenDword,
 				TokenSemicolon,
 
-				// typedef address: byte[4];
+				// typedef address: qword;
 				TokenTypedef,
 				TokenIdentifier("address"),
 				TokenColon,
-				TokenByte,
-				TokenLBracket,
-				TokenInteger("4"),
-				TokenRBracket,
+				TokenQword,
 				TokenSemicolon,
 
 				/*
@@ -337,7 +331,7 @@ namespace UnitTest
 				TokenString("\"libcmt.lib\""),
 				TokenGT,
 
-				// extern asm func printf(format: address, ...args) -> int32;
+				// extern asm func printf(format: unsigned qword, ...args) -> int32;
 				TokenExtern,
 				TokenASM,
 				TokenFunc,
@@ -345,7 +339,8 @@ namespace UnitTest
 				TokenLParen,
 				TokenIdentifier("format"),
 				TokenColon,
-				TokenIdentifier("address"),
+				TokenUnsigned,
+				TokenQword,
 				TokenComma,
 				TokenVariadic,
 				TokenIdentifier("args"),

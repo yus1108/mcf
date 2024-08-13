@@ -23,6 +23,31 @@ inline const bool mcf::Parser::Object::ReadNextTokenIf(const mcf::Token::Type to
 	return true;
 }
 
+inline const bool mcf::Parser::Object::ReadNextTokenIfAny(std::initializer_list<mcf::Token::Type> list) noexcept
+{
+	for (const mcf::Token::Type* iter = list.begin(); iter != list.end(); iter++)
+	{
+		if ( _nextToken.Type == *iter)
+		{
+			ReadNextToken();
+			return true;
+		}
+	}
+	return false;
+}
+
+inline const bool mcf::Parser::Object::IsCurrentTokenAny(std::initializer_list<mcf::Token::Type> list) noexcept
+{
+	for ( const mcf::Token::Type* iter = list.begin(); iter != list.end(); iter++ )
+	{
+		if ( _currentToken.Type == *iter )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(const mcf::Token::Data& token) noexcept
 {
 	constexpr const size_t PRECEDENCE_COUNT_BEGIN = __COUNTER__;
@@ -77,6 +102,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];

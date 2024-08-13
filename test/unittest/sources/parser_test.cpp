@@ -1,7 +1,6 @@
 ﻿#include <iostream>
 #include "test/unittest/unittest.h"
 
-
 UnitTest::ParserTest::ParserTest(void) noexcept
 {
 	_names.emplace_back(u8"0. include 매크로 명령문 테스트");
@@ -51,16 +50,16 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Typedef: <VariableSignature: <Identifier: char> COLON <TypeSignature: <Identifier: byte>>> SEMICOLON]",
 				},
 				{
-					"typedef int32: byte[2];",
-					"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 2> RBRACKET>>> SEMICOLON]",
+					"typedef int32: dword;",
+					"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Identifier: dword>>> SEMICOLON]",
 				},
 				{
-					"typedef int64: byte[6 + 2];",
-					"[Typedef: <VariableSignature: <Identifier: int64> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Infix: <Integer: 6> PLUS <Integer: 2>> RBRACKET>>> SEMICOLON]",
+					"typedef int64: qword;",
+					"[Typedef: <VariableSignature: <Identifier: int64> COLON <TypeSignature: <Identifier: qword>>> SEMICOLON]",
 				},
 				{
-					"typedef address: byte[4];",
-					"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 4> RBRACKET>>> SEMICOLON]",
+					"typedef address: unsigned qword;",
+					"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> SEMICOLON]",
 				},
 				{
 					"typedef bool: byte -> bind { false = 0, true = 1, };",
@@ -99,9 +98,9 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			} testCases[] =
 			{
 				{
-					"extern asm func printf(format: address, ...args) -> int32;",
+					"extern asm func printf(format: unsigned qword, ...args) -> int32;",
 					"[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
-						"<VariableSignature: <Identifier: format> COLON <TypeSignature: <Identifier: address>>> COMMA "
+						"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "
 						"<Variadic: <Identifier: args>> "
 					"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]",
 				}

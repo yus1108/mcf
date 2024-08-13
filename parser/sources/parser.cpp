@@ -115,6 +115,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
@@ -479,10 +480,23 @@ mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicInte
 
 mcf::AST::Intermediate::TypeSignature::Pointer mcf::Parser::Object::ParseTypeSignatureIntermediate(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::IDENTIFIER, u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	DebugAssert(IsCurrentTokenAny({ mcf::Token::Type::IDENTIFIER, mcf::Token::Type::KEYWORD_UNSIGNED }), u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER` 또는 `KEYWORD_UNSIGNED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
+	bool isUnsigned = false;
+	if (_currentToken.Type == mcf::Token::Type::KEYWORD_UNSIGNED)
+	{
+		isUnsigned = true;
+		if ( ReadNextTokenIf( mcf::Token::Type::IDENTIFIER ) == false )
+		{
+			const std::string message = ErrorMessage( u8"다음 토큰은 `IDENTIFIER`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING( _nextToken.Type ) );
+			_errors.push( ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index } );
+			return nullptr;
+		}
+	}
 	mcf::AST::Expression::Pointer signature = mcf::AST::Expression::Identifier::Make(_currentToken);
+
 	while (ReadNextTokenIf(mcf::Token::Type::LBRACKET) == true)
 	{
 		if (ReadNextTokenIf(mcf::Token::Type::END_OF_FILE) == true)
@@ -502,7 +516,7 @@ mcf::AST::Intermediate::TypeSignature::Pointer mcf::Parser::Object::ParseTypeSig
 			return nullptr;
 		}
 	}
-	return mcf::AST::Intermediate::TypeSignature::Make(std::move(signature));
+	return mcf::AST::Intermediate::TypeSignature::Make(isUnsigned, std::move(signature));
 }
 
 mcf::AST::Intermediate::VariableSignature::Pointer mcf::Parser::Object::ParseVariableSignatureIntermediate(void) noexcept
@@ -714,6 +728,10 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		expression = ParseInitializerExpression();
 		break;
 
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__;
+		DebugMessage(u8"구현 필요");
+		break;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	case Token::Type::PLUS: __COUNTER__; [[fallthrough]];
@@ -814,6 +832,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+		case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];

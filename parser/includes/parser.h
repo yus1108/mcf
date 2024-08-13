@@ -91,6 +91,9 @@ namespace mcf
 
 			inline void ReadNextToken(void) noexcept;
 			inline const bool ReadNextTokenIf(const mcf::Token::Type tokenType) noexcept;
+			inline const bool ReadNextTokenIfAny(std::initializer_list<mcf::Token::Type> list) noexcept;
+
+			inline const bool IsCurrentTokenAny( std::initializer_list<mcf::Token::Type> list ) noexcept;
 
 			inline const mcf::Parser::Precedence GetTokenPrecedence(const mcf::Token::Data& token) noexcept;
 			inline const mcf::Parser::Precedence GetCurrentTokenPrecedence(void) noexcept;

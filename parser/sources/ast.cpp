@@ -147,8 +147,9 @@ const std::string mcf::AST::Intermediate::Variadic::ConvertToString(void) const 
 	return "<Variadic: " + _name->ConvertToString() + ">";
 }
 
-mcf::AST::Intermediate::TypeSignature::TypeSignature(mcf::AST::Expression::Pointer&& signature) noexcept
-	: _signature(std::move(signature))
+mcf::AST::Intermediate::TypeSignature::TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept
+	: _isUnsigned(isUnsigned)
+	, _signature(std::move(signature))
 {
 	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
 }
@@ -156,7 +157,7 @@ mcf::AST::Intermediate::TypeSignature::TypeSignature(mcf::AST::Expression::Point
 const std::string mcf::AST::Intermediate::TypeSignature::ConvertToString(void) const noexcept
 {
 	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
-	return "<TypeSignature: " + _signature->ConvertToString() + ">";
+	return "<TypeSignature: " + std::string(_isUnsigned ? "KEYWORD_UNSIGNED " : "") + _signature->ConvertToString() + ">";
 }
 
 mcf::AST::Intermediate::VariableSignature::VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept

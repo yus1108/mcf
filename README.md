@@ -109,8 +109,8 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `<TypeSignature>`
 
 #### PARSER :
-1. `<Identifier>`
-2. `<Index>`
+1. {`KEYWORD_UNSIGNED`} `<Identifier>`
+2. {`KEYWORD_UNSIGNED`} `<Index>`
 
 #### EVALUATOR :
 
