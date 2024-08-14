@@ -14,6 +14,18 @@ const std::string mcf::AST::Expression::Prefix::ConvertToString(void) const noex
 	return std::string("<Prefix: ") + mcf::Token::CONVERT_TYPE_TO_STRING(_prefixOperator.Type) + " " + _right->ConvertToString() + ">";
 }
 
+mcf::AST::Expression::Group::Group(mcf::AST::Expression::Pointer && expression) noexcept
+	: _expression(std::move(expression))
+{
+	DebugAssert( _expression.get() != nullptr, u8"인자로 받은 _expression는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::Group::ConvertToString(void) const noexcept
+{
+	DebugAssert( _expression.get() != nullptr, u8"인자로 받은 _expression는 nullptr 여선 안됩니다." );
+	return "<Group: " + _expression->ConvertToString() + ">";
+}
+
 mcf::AST::Expression::Infix::Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept
 	: _infixOperator(infixOperator)
 	, _left(std::move(left))

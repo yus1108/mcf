@@ -155,6 +155,12 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"let intVal: int32 = 10;",
 					"[Let: <VariableSignature: <Identifier: intVal> COLON <TypeSignature: <Identifier: int32>>> ASSIGN <Integer: 10> SEMICOLON]",
 				},
+				{
+					"let intVal: int32 = 10 * (5 + 5);",
+					"[Let: <VariableSignature: <Identifier: intVal> COLON <TypeSignature: <Identifier: int32>>> ASSIGN "
+						"<Infix: <Integer: 10> ASTERISK <Group: <Infix: <Integer: 5> PLUS <Integer: 5>>>> "
+					"SEMICOLON]",
+				},
 			};
 			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
 

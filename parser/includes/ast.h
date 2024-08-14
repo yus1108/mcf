@@ -44,6 +44,7 @@ namespace mcf
 				INTEGER,
 				STRING,
 				PREFIX,
+				GROUP,
 				INFIX,
 				CALL,
 				INDEX,
@@ -150,6 +151,25 @@ namespace mcf
 			private:
 				mcf::Token::Data _prefixOperator;
 				mcf::AST::Expression::Pointer _right;
+			};
+
+			class Group : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Group>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Group>(std::move(args)...); }
+
+			public:
+				explicit Group(void) noexcept = default;
+				explicit Group(mcf::AST::Expression::Pointer&& expression ) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::GROUP; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _expression;
 			};
 
 			class Infix : public Interface

@@ -724,6 +724,10 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		expression = ParsePrefixExpression();
 		break;
 
+	case Token::Type::LPAREN: __COUNTER__;
+		expression = ParseGroupExpression();
+		break;
+
 	case Token::Type::LBRACE: __COUNTER__;
 		expression = ParseInitializerExpression();
 		break;
@@ -741,7 +745,6 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::NOT_EQUAL: __COUNTER__; [[fallthrough]];
 	case Token::Type::LT: __COUNTER__; [[fallthrough]];
 	case Token::Type::GT: __COUNTER__; [[fallthrough]];
-	case Token::Type::LPAREN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
 	case Token::Type::LBRACKET: __COUNTER__; [[fallthrough]];
@@ -869,6 +872,32 @@ mcf::AST::Expression::Prefix::Pointer mcf::Parser::Object::ParsePrefixExpression
 		return nullptr;
 	}
 	return mcf::AST::Expression::Prefix::Make(prefixOperator, std::move(right));
+}
+
+mcf::AST::Expression::Group::Pointer mcf::Parser::Object::ParseGroupExpression(void) noexcept
+{
+	DebugAssert( _currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING( _currentToken.Type ), mcf::ENUM_INDEX( _currentToken.Type ), _currentToken.Literal.c_str() );
+
+	ReadNextToken();
+	mcf::AST::Expression::Pointer expreesion = ParseExpression(Precedence::LOWEST);
+	if ( expreesion.get() == nullptr || expreesion->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+	{
+		const std::string message = ErrorMessage(u8"Group 표현식 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return nullptr;
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `RPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	return mcf::AST::Expression::Group::Make(std::move(expreesion));
 }
 
 mcf::AST::Expression::Infix::Pointer mcf::Parser::Object::ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept

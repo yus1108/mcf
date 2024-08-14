@@ -83,6 +83,7 @@ namespace mcf
 
 			mcf::AST::Expression::Pointer ParseExpression(const Precedence precedence) noexcept;
 			mcf::AST::Expression::Prefix::Pointer ParsePrefixExpression(void) noexcept;
+			mcf::AST::Expression::Group::Pointer ParseGroupExpression(void) noexcept;
 			mcf::AST::Expression::Infix::Pointer ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Call::Pointer ParseCallExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Index::Pointer ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept;
