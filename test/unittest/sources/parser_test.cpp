@@ -411,6 +411,38 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
+	_names.emplace_back( u8"9. 파일 파싱 테스트" );
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			std::string expectedResult;
+			const size_t expectedResultLength = expectedResult.size();
+			mcf::Parser::Object parser("./test/unittest/texts/test_file_read.txt", true);
+			mcf::AST::Program program;
+			parser.ParseProgram(program);
+			FATAL_ASSERT(CheckParserErrors( parser ), u8"파싱에 실패 하였습니다.");
+
+			const std::string actual = program.ConvertToString();
+			const size_t actualLength = actual.size();
+			size_t lineNumber = 1;
+			size_t position = 0;
+			for (size_t i = 0; i < actualLength; i++)
+			{
+				FATAL_ASSERT(i < expectedResultLength, u8"Expected Result의 길이가 Actual Result의 길이보다 작습니다. ActualResultLength=%zu, ExpectedResultLength=%zu", actualLength, expectedResultLength);
+				FATAL_ASSERT(expectedResult[i] == actual[i], u8"Expected[%c]가 Actual[%c]와 다릅니다. LineNumber=%zu, PositionInLine=%zu\nActualResult:\n%s", expectedResult[i], actual[i], lineNumber, position, actual.c_str());
+
+				position++;
+				if (expectedResult[i] == '\n')
+				{
+					lineNumber++;
+					position = 0;;
+				}
+			}
+			FATAL_ASSERT(actualLength == expectedResultLength, u8"Actual Result의 길이가 Expected Result의 길이보다 작습니다. ActualResultLength=%zu, ExpectedResultLength=%zu", actualLength, expectedResultLength);
+			return true;
+		}
+	);
 }
 
 bool UnitTest::ParserTest::CheckParserErrors(mcf::Parser::Object& parser) noexcept
