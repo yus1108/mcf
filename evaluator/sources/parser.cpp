@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "parser/internals/internal_parser.h"
+#include "internal_parser.h"
 
 mcf::Parser::Object::Object(const std::string& input, const bool isFile) noexcept
 	: _lexer(input, isFile)

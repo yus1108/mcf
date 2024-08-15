@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "parser/internals/framework.h"
-#include "parser/includes/parser.h"
+#include "framework.h"
+#include "parser.h"
 
 inline void mcf::Parser::Object::ReadNextToken(void) noexcept
 {

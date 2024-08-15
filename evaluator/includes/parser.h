@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include <stack>
 #include <string>
-#include <parser/includes/lexer.h>
-#include <parser/includes/ast.h>
+#include <lexer.h>
+#include <ast.h>
 
 namespace mcf
 {

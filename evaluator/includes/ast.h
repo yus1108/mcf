@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <parser/includes/lexer.h>
+#include <lexer.h>
 
 namespace mcf
 {

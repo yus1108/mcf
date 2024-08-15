@@ -1,5 +1,5 @@
 ﻿#include "pch.h"
-#include "parser/includes/ast.h"
+#include "ast.h"
 
 mcf::AST::Expression::Prefix::Prefix(const mcf::Token::Data& prefixOperator, mcf::AST::Expression::Pointer&& right) noexcept
 	: _prefixOperator(prefixOperator)
