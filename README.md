@@ -55,6 +55,13 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Group>`
+
+#### PARSER :
+`LPAREN` `<Expression>` `RPAREN`
+
+---
+
 ### `<Infix>`
 
 #### PARSER :
@@ -243,3 +250,12 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `[Unused]` :
+
+#### PARSER :
+`KEYWORD_UNUSED` `LPAREN` {`<Identifier>` {`COMMA` `<Identifier>`}* {`COMMA`}} `RPAREN`
+
+#### EVALUATOR:
+{`<Identifier>` {`COMMA` `<Identifier>`}* {`COMMA`}}: variables passed will be checked as used.
+
+---

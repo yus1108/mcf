@@ -85,6 +85,10 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 		statement = ParseExpressionStatement();
 		break;
 
+	case Token::Type::KEYWORD_UNUSED: __COUNTER__;
+		statement = ParseUnusedStatement();
+		break;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::SEMICOLON: __COUNTER__;
 		break;
@@ -116,7 +120,6 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
-	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -460,6 +463,78 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExpressionStatement(void)
 	}
 
 	return mcf::AST::Statement::Expression::Make(std::move(expression));
+}
+
+mcf::AST::Statement::Pointer mcf::Parser::Object::ParseUnusedStatement(void) noexcept
+{
+	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_UNUSED, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_UNUSED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
+
+	if (ReadNextTokenIf(mcf::Token::Type::LPAREN) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `LPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	mcf::AST::Expression::Identifier::PointerVector identifiers;
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == true)
+	{
+		return mcf::AST::Statement::Unused::Make(std::move(identifiers));
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::IDENTIFIER) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `IDENTIFIER`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+	identifiers.emplace_back(mcf::AST::Expression::Identifier::Make(_currentToken));
+
+	while (ReadNextTokenIf(mcf::Token::Type::COMMA) == true)
+	{
+		if (ReadNextTokenIf(mcf::Token::Type::END_OF_FILE) == true)
+		{
+			const std::string message = ErrorMessage(u8"Unused 명령문 파싱중 파일의 끝에 도달 했습니다. Unused 명령문 반드시 RPAREN(')')로 끝나야 합니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+			return nullptr;
+		}
+
+		if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == true)
+		{
+			return mcf::AST::Statement::Unused::Make(std::move(identifiers));
+		}
+
+		if (ReadNextTokenIf(mcf::Token::Type::IDENTIFIER) == false)
+		{
+			const std::string message = ErrorMessage(u8"다음 토큰은 `IDENTIFIER`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+			return nullptr;
+		}
+		identifiers.emplace_back(mcf::AST::Expression::Identifier::Make(_currentToken));
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `RPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::SEMICOLON) == false)
+	{
+		const std::string message = ErrorMessage(u8"다음 토큰은 `SEMICOLON`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	return mcf::AST::Statement::Unused::Make(std::move(identifiers));
 }
 
 mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicIntermediate(void) noexcept

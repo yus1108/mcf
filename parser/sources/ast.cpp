@@ -230,7 +230,7 @@ const std::string mcf::AST::Statement::IncludeLibrary::ConvertToString(void) con
 {
 	std::string buffer;
 	buffer = "[IncludeLibrary: LT ";
-	buffer += "asm COMMA " + _libPath.Literal;
+	buffer += "KEYWORD_ASM COMMA " + _libPath.Literal;
 	buffer += " GT]";
 	return buffer;
 }
@@ -366,6 +366,30 @@ const std::string mcf::AST::Statement::Expression::ConvertToString(void) const n
 {
 	DebugAssert(_expression.get() != nullptr, u8"인자로 받은 _expression은 nullptr 여선 안됩니다.");
 	return "[Expression: " + _expression->ConvertToString() + " SEMICOLON]";
+}
+
+mcf::AST::Statement::Unused::Unused(mcf::AST::Expression::Identifier::PointerVector&& identifiers) noexcept
+	: _identifiers(std::move(identifiers))
+{
+#if defined(_DEBUG)
+	const size_t size = _identifiers.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_identifiers[i].get() != nullptr, u8"_identifiers[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::AST::Statement::Unused::ConvertToString(void) const noexcept
+{
+	std::string buffer = "[Unused: LPAREN ";
+	const size_t size = _identifiers.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_identifiers[i].get() != nullptr, u8"_identifiers[%zu]는 nullptr 여선 안됩니다.", i);
+		buffer += _identifiers[i]->ConvertToString() + " COMMA ";
+	}
+	return buffer + "RPAREN SEMICOLON]";
 }
 
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept

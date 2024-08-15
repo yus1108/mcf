@@ -80,6 +80,7 @@ namespace mcf
 			{
 			public:
 				using Pointer = std::unique_ptr<Identifier>;
+				using PointerVector = std::vector<Pointer>;
 
 				template <class... Variadic>
 				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Identifier>(std::move(args)...); }
@@ -435,6 +436,7 @@ namespace mcf
 				FUNC,
 				MAIN,
 				EXPRESSION,
+				UNUSED,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -640,6 +642,25 @@ namespace mcf
 
 			private:
 				mcf::AST::Expression::Pointer _expression;
+			};
+
+			class Unused : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Unused>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Unused>(std::move(args)...); }
+
+			public:
+				explicit Unused(void) noexcept = default;
+				explicit Unused(mcf::AST::Expression::Identifier::PointerVector&& identifiers) noexcept;
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::UNUSED; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Identifier::PointerVector _identifiers;
 			};
 		}
 
