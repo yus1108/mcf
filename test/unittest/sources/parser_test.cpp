@@ -19,7 +19,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[IncludeLibrary: LT KEYWORD_ASM COMMA \"kernel32.lib\" GT]",
 				}
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -71,7 +71,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"SEMICOLON]",
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -105,7 +105,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]",
 				}
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -162,7 +162,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"SEMICOLON]",
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -197,7 +197,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"RBRACE]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -268,7 +268,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Return: <Infix: <Integer: 2> EQUAL <Infix: <Integer: 2> LT <Infix: <Integer: 2> PLUS <Integer: 2>>>> SEMICOLON]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -312,7 +312,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -349,7 +349,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -396,7 +396,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Expression: <Call: <Identifier: printf> LPAREN <Prefix: AMPERSAND <Identifier: message>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -427,7 +427,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: boo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON]"
 				},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{

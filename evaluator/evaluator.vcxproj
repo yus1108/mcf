@@ -21,7 +21,9 @@
   <ItemGroup>
     <ClInclude Include="includes\ast.h" />
     <ClInclude Include="includes\common.h" />
+    <ClInclude Include="includes\evaluator.h" />
     <ClInclude Include="includes\lexer.h" />
+    <ClInclude Include="includes\object.h" />
     <ClInclude Include="includes\parser.h" />
     <ClInclude Include="internals\framework.h" />
     <ClInclude Include="internals\internal_parser.h" />

@@ -139,8 +139,8 @@ namespace mcf
 			"COMMENT",
 			"COMMENT_BLOCK",
 		};
-		constexpr const size_t TokenTypeS_SIZE = ARRAY_SIZE(TYPE_STRING_ARRAY);
-		static_assert(static_cast<size_t>(Type::COUNT) == TokenTypeS_SIZE, "token count not matching!");
+		constexpr const size_t TOKEN_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
+		static_assert(static_cast<size_t>(Type::COUNT) == TOKEN_TYPES_SIZE, "token count not matching!");
 
 		constexpr const char* CONVERT_TYPE_TO_STRING(const Type& value)
 		{

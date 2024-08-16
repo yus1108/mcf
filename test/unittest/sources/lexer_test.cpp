@@ -241,7 +241,7 @@ namespace UnitTest
 				//	},
 				//},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{

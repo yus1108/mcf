@@ -36,7 +36,7 @@ namespace mcf
 				{
 					{0xef, 0xbb, 0xbf, 0},
 				};
-				constexpr size_t encodingArraySize = ARRAY_SIZE(ENCODING_ARRAY);
+				constexpr size_t encodingArraySize = MCF_ARRAY_SIZE(ENCODING_ARRAY);
 				constexpr size_t MAX_ENCODING_BYTE = 4;
 
 				for (size_t i = 0; i < encodingArraySize; ++i)
@@ -101,7 +101,7 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 		"return",
 		"unused",
 	};
-	constexpr const size_t KEYWORDS_SIZE = ARRAY_SIZE(IDENTIFIER_KEYWORDS);
+	constexpr const size_t KEYWORDS_SIZE = MCF_ARRAY_SIZE(IDENTIFIER_KEYWORDS);
 	static_assert(ENUM_INDEX(Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
 		"identifier keyword TokenType count is changed. this array need to be changed as well.");
 
@@ -587,7 +587,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 	{
 		"#include", // MACRO_INCLUDE
 	};
-	constexpr const size_t MACRO_START_WITH_SIZE = ARRAY_SIZE(MACRO_START_WITH);
+	constexpr const size_t MACRO_START_WITH_SIZE = MCF_ARRAY_SIZE(MACRO_START_WITH);
 	static_assert(ENUM_INDEX(Token::Type::MACRO_END) - ENUM_INDEX(Token::Type::MACRO_START) - 1 == MACRO_START_WITH_SIZE,
 		"macro TokenType count is changed. this array need to be changed as well.");
 

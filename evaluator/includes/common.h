@@ -5,10 +5,10 @@
 #endif
 #define UNUSED(variable) variable
 
-#if defined(ARRAY_SIZE)
-#undef ARRAY_SIZE
+#if defined(MCF_ARRAY_SIZE)
+#undef MCF_ARRAY_SIZE
 #endif
-#define ARRAY_SIZE(value) sizeof(value) / mcf::ARRAY_TYPE_SIZE(value)
+#define MCF_ARRAY_SIZE(value) sizeof(value) / mcf::ARRAY_TYPE_SIZE(value)
 
 namespace mcf
 {
