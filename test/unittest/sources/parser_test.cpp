@@ -3,7 +3,7 @@
 
 UnitTest::ParserTest::ParserTest(void) noexcept
 {
-	_names.emplace_back(u8"0. include 매크로 명령문 테스트");
+	_names.emplace_back(u8"include 매크로 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -34,7 +34,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"1. typedef 명령문 테스트");
+	_names.emplace_back(u8"typedef 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -86,7 +86,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"2. extern 명령문 테스트");
+	_names.emplace_back(u8"extern 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -120,7 +120,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"3. let 명령문 테스트");
+	_names.emplace_back(u8"let 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -177,7 +177,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"4. block 명령문 테스트");
+	_names.emplace_back(u8"block 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -212,7 +212,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"5. return 명령문 테스트");
+	_names.emplace_back(u8"return 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -283,7 +283,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"6. func 명령문 테스트");
+	_names.emplace_back(u8"func 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -327,7 +327,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"7. main 명령문 테스트");
+	_names.emplace_back(u8"main 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -364,7 +364,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"8.. expression 명령문 테스트");
+	_names.emplace_back(u8"expression 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -411,7 +411,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"9.. Unused 명령문 테스트");
+	_names.emplace_back(u8"Unused 명령문 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -442,7 +442,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back( u8"9. 파일 파싱 테스트" );
+	_names.emplace_back( u8"파일 파싱 테스트" );
 	_tests.emplace_back
 	(
 		[&]() -> bool
