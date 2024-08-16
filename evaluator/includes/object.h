@@ -22,6 +22,8 @@ namespace mcf
 
 			constexpr const char* TYPE_STRING_ARRAY[] =
 			{
+				"INVALID",
+
 				"INTEGER",
 			};
 			constexpr const size_t INTERMEDIATE_OBJECT_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
