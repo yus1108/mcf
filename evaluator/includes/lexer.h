@@ -142,7 +142,7 @@ namespace mcf
 		constexpr const size_t TOKEN_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 		static_assert(static_cast<size_t>(Type::COUNT) == TOKEN_TYPES_SIZE, "token count not matching!");
 
-		constexpr const char* CONVERT_TYPE_TO_STRING(const Type& value)
+		constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
 		{
 			return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
 		}

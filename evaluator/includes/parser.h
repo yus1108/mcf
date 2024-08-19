@@ -58,7 +58,7 @@ namespace mcf
 			explicit Object(void) noexcept = delete;
 			explicit Object(const std::string& input, const bool isFile) noexcept;
 
-			inline const size_t GetErrorCount(void) noexcept { return _errors.size(); }
+			inline const size_t GetErrorCount(void) const noexcept { return _errors.size(); }
 			const ErrorInfo PopLastError(void) noexcept;
 
 			void ParseProgram(mcf::AST::Program& outProgram) noexcept;

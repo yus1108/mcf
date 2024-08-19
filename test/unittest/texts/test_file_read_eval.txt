@@ -1,6 +1,6 @@
 ﻿option casemap :none ; make the file case sensitive and define predefined function
 .code
-AssignArray proc
+?AssignArray proc
     push rsi
     push rdi
     push rcx
@@ -19,7 +19,7 @@ AssignArray proc
     pop rdi
     pop rsi
     ret
-AssignArray endp
+?AssignArray endp
 
 .data
 ?0	db "Hello, Worlld! Value=%d", 10, 0   ; "Hello, World! Value=%d\n";

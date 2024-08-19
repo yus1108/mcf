@@ -17,6 +17,7 @@ namespace mcf
 				EXPRESSION,
 				INTERMEDIATE,
 				STATEMENT,
+				PROGRAM,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -54,6 +55,29 @@ namespace mcf
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
 			};
+
+			constexpr const char* TYPE_STRING_ARRAY[] =
+			{
+				"INVALID",
+
+				"IDENTIFIER",
+				"INTEGER",
+				"STRING",
+				"PREFIX",
+				"GROUP",
+				"INFIX",
+				"CALL",
+				"INDEX",
+				"INITIALIZER",
+				"MAP_INITIALIZER",
+			};
+			constexpr const size_t EXPRESSION_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
+			static_assert(static_cast<size_t>(Type::COUNT) == EXPRESSION_TYPES_SIZE, "expression type count not matching!");
+
+			constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
+			{
+				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			}
 
 			class Interface : public mcf::AST::Node::Interface
 			{
@@ -442,6 +466,29 @@ namespace mcf
 				COUNT,
 			};
 
+			constexpr const char* TYPE_STRING_ARRAY[] =
+			{
+				"INVALID",
+				
+				"INCLUDE_LIBRARY",
+				"TYPEDEF",
+				"EXTERN",
+				"LET",
+				"BLOCK",
+				"RETURN",
+				"FUNC",
+				"MAIN",
+				"EXPRESSION",
+				"UNUSED",
+			};
+			constexpr const size_t STATEMENT_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
+			static_assert(static_cast<size_t>(Type::COUNT) == STATEMENT_TYPES_SIZE, "statement type count not matching!");
+
+			constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
+			{
+				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			}
+
 			class Interface : public mcf::AST::Node::Interface
 			{
 			public:
@@ -473,6 +520,8 @@ namespace mcf
 			public:
 				explicit IncludeLibrary(void) noexcept = default;
 				explicit IncludeLibrary(mcf::Token::Data libPath) noexcept : _libPath(libPath) {}
+
+				inline const std::string GetLibPath(void) const noexcept { return _libPath.Literal; }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INCLUDE_LIBRARY; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
@@ -637,6 +686,9 @@ namespace mcf
 				explicit Expression(void) noexcept = default;
 				explicit Expression(mcf::AST::Expression::Pointer&& expression) noexcept;
 
+				mcf::AST::Expression::Interface* GetUnsafeExpression(void) noexcept { return _expression.get(); }
+				const mcf::AST::Expression::Interface* GetUnsafeExpression(void) const noexcept { return _expression.get(); }
+
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXPRESSION; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
@@ -664,19 +716,24 @@ namespace mcf
 			};
 		}
 
-		class Program final
+		class Program final : public Node::Interface
 		{
 		public:
 			explicit Program(void) noexcept = default;
 			explicit Program(mcf::AST::Statement::PointerVector&& statements) noexcept;
 
 			inline const size_t GetStatementCount(void) const noexcept { return _statements.size(); }
+			inline mcf::AST::Statement::Interface* GetUnsafeStatementPointerAt(const size_t index) noexcept
+			{
+				return _statements[index].get();
+			}
 			inline const mcf::AST::Statement::Interface* GetUnsafeStatementPointerAt(const size_t index) const noexcept 
 			{
 				return _statements[index].get(); 
 			}
 
-			const std::string ConvertToString(void) const noexcept;
+			inline virtual const Node::Type GetNodeType(void) const noexcept override final { return Node::Type::PROGRAM; }
+			virtual const std::string ConvertToString(void) const noexcept override final;
 
 		private:
 			mcf::AST::Statement::PointerVector _statements;

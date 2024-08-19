@@ -39,7 +39,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="sources\ast.cpp" />
+    <ClCompile Include="sources\evaluator.cpp" />
     <ClCompile Include="sources\lexer.cpp" />
+    <ClCompile Include="sources\object.cpp" />
     <ClCompile Include="sources\parser.cpp" />
     <ClCompile Include="sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
