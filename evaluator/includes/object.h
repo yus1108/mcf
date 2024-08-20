@@ -8,12 +8,13 @@ namespace mcf
 {
 	namespace Object
 	{
-		enum Type : unsigned char
+		enum class Type : unsigned char
 		{
 			INVALID = 0,
 
 			PROGRAM,
 			INCLUDELIB,
+			INDEX,
 			INTEGER,
 
 			// 이 밑으로는 수정하면 안됩니다.
@@ -26,6 +27,7 @@ namespace mcf
 
 			"PROGRAM",
 			"INCLUDELIB",
+			"INDEX",
 			"INTEGER",
 		};
 		constexpr const size_t INTERMEDIATE_OBJECT_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
@@ -83,6 +85,25 @@ namespace mcf
 
 		private:
 			std::string _libPath;
+		};
+
+		class Index final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Index>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Index>(std::move(args)...); }
+
+		public:
+			explicit Index(void) noexcept = default;
+			explicit Index(const std::string& libPath) noexcept;
+
+			inline virtual const Type GetType( void ) const noexcept override final { return Type::INDEX; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			std::string _identifier;
 		};
 
 		class Integer : public Interface

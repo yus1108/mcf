@@ -3,7 +3,7 @@
 
 UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 {
-	_names.emplace_back(u8"정수 평가 테스트");
+	_names.emplace_back(u8"#include 평가 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -28,7 +28,41 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				mcf::Evaluator::Object evaluator;
 				mcf::Object::Pointer object = evaluator.Eval(&program);
 
-				FATAL_ASSERT(object.get() != nullptr, "object가 nullptr이면 안됩니다.");
+				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
+				const std::string actual = object->Inspect();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"typedef 평가 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{"typedef int32: dword;", "int32 typedef dword"},
+				{"typedef uint32: dword;", "uint32 typedef dword; unsigned"},
+				{"typedef address: qword;", "uint32 typedef dword"},
+				{"typedef bool: byte -> bind { false = 0, true = 1, };", "bool typedef byte; -> bind { false = 0, true = 1 }"},
+			};
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
+
+			for ( size_t i = 0; i < testCaseCount; i++ )
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+				mcf::Evaluator::Object evaluator;
+				mcf::Object::Pointer object = evaluator.Eval(&program);
+
+				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}

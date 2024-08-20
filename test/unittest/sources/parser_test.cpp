@@ -450,6 +450,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			std::string expectedResult =
 				"[IncludeLibrary: LT KEYWORD_ASM COMMA \"kernel32.lib\" GT]\n"
 				"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Identifier: dword>>> SEMICOLON]\n"
+				"[Typedef: <VariableSignature: <Identifier: uint32> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: dword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: <Identifier: qword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND "
 				"<MapInitializer: LBRACE "

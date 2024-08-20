@@ -27,7 +27,7 @@
 includelib "kernel32.lib"
 
 int32 typedef dword		; typedef int32: dword
-uint32 typedef dword	; typedef int32: unsigned dword
+uint32 typedef dword	; typedef uint32: unsigned dword
 address typedef qword	; typedef addreess: qword
 
 bool typedef byte		; typedef bool: byte -> bind { false = 0, true = 1 }

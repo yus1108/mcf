@@ -291,6 +291,14 @@ namespace UnitTest
 				TokenDword,
 				TokenSemicolon,
 
+				// typedef uint32: unsigned dword;
+				TokenTypedef,
+				TokenIdentifier("uint32"),
+				TokenColon,
+				TokenUnsigned,
+				TokenDword,
+				TokenSemicolon,
+
 				// typedef address: qword;
 				TokenTypedef,
 				TokenIdentifier("address"),

@@ -3,17 +3,17 @@
 
 mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node) const noexcept
 {
-	DebugAssert(node != nullptr, "node가 nullptr이면 안됩니다.");
+	DebugAssert(node != nullptr, u8"node가 nullptr이면 안됩니다.");
 
 	mcf::Object::Pointer object;
 	switch (node->GetNodeType())
 	{
 	case mcf::AST::Node::Type::EXPRESSION:
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case mcf::AST::Node::Type::INTERMEDIATE:
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case mcf::AST::Node::Type::STATEMENT:
@@ -32,7 +32,7 @@ mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node
 		
 mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program) const noexcept
 {
-	DebugAssert(program != nullptr, "program가 nullptr이면 안됩니다.");
+	DebugAssert(program != nullptr, u8"program가 nullptr이면 안됩니다.");
 
 	mcf::Object::PointerVector objects;
 	const size_t statementCount = program->GetStatementCount();
@@ -45,7 +45,7 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AS
 
 mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement) const noexcept
 {
-	DebugAssert(statement != nullptr, "statement가 nullptr이면 안됩니다.");
+	DebugAssert(statement != nullptr, u8"statement가 nullptr이면 안됩니다.");
 
 	mcf::Object::Pointer object;
 	constexpr const size_t STATEMENT_TYPE_COUNT_BEGIN = __COUNTER__;
@@ -56,31 +56,31 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 		break;
 
 	case AST::Statement::Type::TYPEDEF: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::EXTERN: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::LET: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::BLOCK: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::RETURN: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::FUNC: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::MAIN: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Statement::Type::EXPRESSION: __COUNTER__;
@@ -88,7 +88,7 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 		break;
 
 	case AST::Statement::Type::UNUSED: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	default:
@@ -102,49 +102,49 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 
 mcf::Object::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept
 {
-	DebugAssert(expression != nullptr, "expression가 nullptr이면 안됩니다.");
+	DebugAssert(expression != nullptr, u8"expression가 nullptr이면 안됩니다.");
 	mcf::Object::Pointer object;
 	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (expression->GetExpressionType())
 	{
 	case AST::Expression::Type::IDENTIFIER: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::INTEGER: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::STRING: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::PREFIX: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::GROUP: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::INFIX: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::CALL: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::INDEX: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::INITIALIZER: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	case AST::Expression::Type::MAP_INITIALIZER: __COUNTER__;
-		DebugMessage("구현 필요");
+		DebugMessage(u8"구현 필요");
 		break;
 
 	default:
