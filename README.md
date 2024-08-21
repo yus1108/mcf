@@ -179,10 +179,9 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Extern]`
 
 #### PARSER :
-`KEYWORD_EXTERN` `KEYWORD_ASM` `<FunctionSignature>` `SEMICOLON`
+`KEYWORD_EXTERN` `<FunctionSignature>` `SEMICOLON`
 
 #### EVALUATOR:
-* `KEYWORD_ASM`: when calling this function, it will pass calling without function description.
 * `<FunctionSignature>` : the function signature will be written as extern in the taget assembly.
 
 ---

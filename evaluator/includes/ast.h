@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -112,6 +113,8 @@ namespace mcf
 			public:
 				explicit Identifier(void) noexcept = default;
 				explicit Identifier(const mcf::Token::Data& token) noexcept : _token(token) {}
+
+				inline const std::string& GetTokenLiteral(void) const noexcept { return _token.Literal; }
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::IDENTIFIER; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Identifier: " + _token.Literal + ">"; }
@@ -367,7 +370,11 @@ namespace mcf
 				explicit TypeSignature(void) noexcept = default;
 				explicit TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept;
 
-				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
+				inline const mcf::AST::Expression::Type GetSignatureExpressionType(void) const noexcept { return _signature->GetExpressionType(); }
+				inline const std::string ConvertToString(std::function<const std::string(const bool isUnsigned, const mcf::AST::Expression::Interface* signature)> function) 
+					const noexcept { return function(_isUnsigned, _signature.get()); }
+
+				inline virtual const Type GetIntermediateType( void ) const noexcept override final { return Type::TYPE_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
@@ -434,6 +441,9 @@ namespace mcf
 				explicit FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept;
 
 				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+
+				inline const std::string& GetName(void) const noexcept { return _name->GetTokenLiteral(); }
+				const mcf::AST::Intermediate::TypeSignature* GetUnsafeReturnTypePointer(void) const noexcept;
 
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
@@ -563,13 +573,14 @@ namespace mcf
 
 			public:
 				explicit Extern(void) noexcept = default;
-				explicit Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept;
+				explicit Extern(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept;
+
+				inline const mcf::AST::Intermediate::FunctionSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXTERN; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
-				bool _isAssemblyFunction;
 				mcf::AST::Intermediate::FunctionSignature::Pointer _signature;
 			};
 

@@ -98,8 +98,8 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			} testCases[] =
 			{
 				{
-					"extern asm func printf(format: unsigned qword, ...args) -> int32;",
-					"[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
+					"extern func printf(format: unsigned qword, ...args) -> int32;",
+					"[Extern <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
 						"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "
 						"<Variadic: <Identifier: args>> "
 					"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]",
@@ -458,7 +458,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"<Identifier: true> ASSIGN <Integer: 1> COMMA "
 				"RBRACE> SEMICOLON]\n"
 				"[IncludeLibrary: LT KEYWORD_ASM COMMA \"libcmt.lib\" GT]\n"
-				"[Extern KEYWORD_ASM <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
+				"[Extern <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
 					"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "
 					"<Variadic: <Identifier: args>> "
 				"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]\n"

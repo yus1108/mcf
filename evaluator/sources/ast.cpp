@@ -164,6 +164,11 @@ mcf::AST::Intermediate::TypeSignature::TypeSignature(const bool isUnsigned, mcf:
 	, _signature(std::move(signature))
 {
 	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
+	DebugAssert
+	(
+		_signature->GetExpressionType() == mcf::AST::Expression::Type::IDENTIFIER || _signature->GetExpressionType() == mcf::AST::Expression::Type::INDEX, 
+		u8"_signature는 identifier 또는 index expression 이어야 합니다."
+	);
 }
 
 const std::string mcf::AST::Intermediate::TypeSignature::ConvertToString(void) const noexcept
@@ -218,6 +223,12 @@ mcf::AST::Intermediate::FunctionSignature::FunctionSignature(mcf::AST::Expressio
 	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
 }
 
+const mcf::AST::Intermediate::TypeSignature* mcf::AST::Intermediate::FunctionSignature::GetUnsafeReturnTypePointer( void ) const noexcept
+{
+	DebugAssert(_returnType.get() != nullptr, u8"리턴 타입이 void일 경우 리턴 타입을 가져올 수 없습비다.");
+	return _returnType.get();
+}
+
 const std::string mcf::AST::Intermediate::FunctionSignature::ConvertToString(void) const noexcept
 {
 	std::string buffer = "<FunctionSignature: " + _name->ConvertToString() + " " + _params->ConvertToString() + " POINTING ";
@@ -255,9 +266,8 @@ const std::string mcf::AST::Statement::Typedef::ConvertToString(void) const noex
 	return buffer;
 }
 
-mcf::AST::Statement::Extern::Extern(const bool isAssemblyFunction, mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept
-	: _isAssemblyFunction(isAssemblyFunction)
-	, _signature(std::move(signature))
+mcf::AST::Statement::Extern::Extern(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept
+	: _signature(std::move(signature))
 {
 	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 }
@@ -265,7 +275,7 @@ mcf::AST::Statement::Extern::Extern(const bool isAssemblyFunction, mcf::AST::Int
 const std::string mcf::AST::Statement::Extern::ConvertToString(void) const noexcept
 {
 	DebugAssert(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
-	return "[Extern" + std::string(_isAssemblyFunction ? " KEYWORD_ASM " : " ") + _signature->ConvertToString() + " SEMICOLON]";
+	return "[Extern " + _signature->ConvertToString() + " SEMICOLON]";
 }
 
 mcf::AST::Statement::Let::Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept

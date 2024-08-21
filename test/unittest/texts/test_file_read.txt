@@ -11,7 +11,7 @@ typedef bool: byte -> bind
 };
 
 #include <asm, "libcmt.lib">
-extern asm func printf(format: unsigned qword, ...args) -> int32;
+extern func printf(format: unsigned qword, ...args) -> int32;
 
 let foo: byte = 0;
 func boo(void) -> byte { return 0; }

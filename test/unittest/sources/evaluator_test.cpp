@@ -35,7 +35,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back(u8"typedef 평가 테스트");
+	_names.emplace_back(u8"extern 평가 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -44,16 +44,26 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			{
 				const std::string Input;
 				const std::string Expected;
+				std::vector<mcf::Evaluator::FunctionInfo> ExpectedExternalFunctions;
 			} testCases[] =
 			{
-				{"typedef int32: dword;", "int32 typedef dword"},
-				{"typedef uint32: dword;", "uint32 typedef dword; unsigned"},
-				{"typedef address: qword;", "uint32 typedef dword"},
-				{"typedef bool: byte -> bind { false = 0, true = 1, };", "bool typedef byte; -> bind { false = 0, true = 1 }"},
+				{
+					"extern func printf(format: unsigned qword, ...args) -> int32;",
+					"printf PROTO : qword, VARARG",
+					{
+						mcf::Evaluator::FunctionInfo(
+							"printf",
+							{"format", "args"},
+							{"qword", "..."},
+							{true, false},
+							{false, true},
+							std::make_pair<bool, std::string>(false, "void")
+						),
+					},
+				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
-
-			for ( size_t i = 0; i < testCaseCount; i++ )
+			for (size_t i = 0; i < testCaseCount; i++)
 			{
 				mcf::Parser::Object parser(testCases[i].Input, false);
 				mcf::AST::Program program;
@@ -65,6 +75,14 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+
+				const size_t externalFunctionsCount = testCases[i].ExpectedExternalFunctions.size();
+				for (size_t j = 0; j < externalFunctionsCount; ++j)
+				{
+					const mcf::Evaluator::FunctionInfo actualFunctionInfo = evaluator.FindFunctionInfo(testCases[i].ExpectedExternalFunctions[j].GetName());
+					FATAL_ASSERT(actualFunctionInfo == testCases[i].ExpectedExternalFunctions[j], "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s",
+						i, testCases[i].Input.c_str(), testCases[i].ExpectedExternalFunctions[j].ConvertToString().c_str(), actualFunctionInfo.ConvertToString().c_str());
+				}
 			}
 			return true;
 		}

@@ -76,3 +76,52 @@ main proc,						; main(void) -> void {
 	add		rsp, 08h
 	ret
 main endp					; }
+
+
+/*
+includelib "kernel32.lib"
+includelib "libcmt.lib"
+printf PROTO : qword, VARARG
+
+.data
+foo		db	0
+
+.code
+boo proc								
+	sub rsp, 08h;
+	xor al, al
+	add rsp, 08h;
+	ret
+boo endp
+
+.data
+arr		db	0, 1, 2			
+arr2	db	0, 0, 0, 0, 0	
+intval	dd	10			
+
+.code
+main proc,					
+	sub		rsp, 08h		
+							
+	sub		rsp, 20h		
+	
+	; message = "Hello, World! Value=%d\n";
+    sub     rsp, 20h
+    mov     r8,  25
+    lea     rdx, [rsp + 20h]
+    lea     rcx, [?0]
+    call    ?AssignArray
+    add     rsp, 20h
+	
+	; printf(&message, intVal);
+    sub     rsp, 20h
+    mov     edx, 25
+    lea     rcx, [rsp + 20h]
+    call    printf
+    add     rsp, 20h
+
+    add     rsp, 20h
+	add		rsp, 08h
+	ret
+main endp					; }
+*/

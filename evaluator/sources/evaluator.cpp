@@ -1,6 +1,66 @@
 ﻿#include "pch.h"
 #include "evaluator.h"
 
+const std::string mcf::Evaluator::FunctionInfo::ConvertToString(void) const noexcept
+{
+	std::string buffer;
+	buffer += _name + "\n";
+	buffer += "ParamNames: ";
+	size_t count = _paramNames.size();
+	for (size_t i = 0; i < count; ++i)
+	{
+		buffer += _paramNames[i] + ", ";
+	}
+	buffer += "\nParamTypes: ";
+	count = _paramTypes.size();
+	for (size_t i = 0; i < count; ++i)
+	{
+		buffer += _paramTypes[i] + ", ";
+	}
+	buffer += "\nParamIsUnsignedList: ";
+	count = _paramIsUnsignedList.size();
+	for (size_t i = 0; i < count; ++i)
+	{
+		buffer += std::to_string(_paramIsUnsignedList[i]) + ", ";
+	}
+	buffer += "\nParamIsVariadicList: ";
+	count = _paramIsVariadicList.size();
+	for (size_t i = 0; i < count; ++i)
+	{
+		buffer += std::to_string(_paramIsVariadicList[i]) + ", ";
+	}
+	buffer += std::string("\nReturnType: ") + (_returnType.first ? "unsigned " : " ") + _returnType.second;
+	return buffer;
+}
+
+mcf::Evaluator::FunctionInfo::FunctionInfo( std::string name,
+											std::vector<std::string> paramNames,
+											std::vector<std::string> paramTypes,
+											std::vector<bool> paramIsUnsignedList,
+											std::vector<bool> paramIsVariadicList,
+											std::pair<bool, std::string> returnType) noexcept
+	: _name(name)
+	, _paramNames(paramNames)
+	, _paramTypes(paramTypes)
+	, _paramIsUnsignedList(paramIsUnsignedList)
+	, _paramIsVariadicList(paramIsVariadicList)
+	, _returnType(returnType)
+{}
+
+mcf::Evaluator::FunctionInfo::FunctionInfo( std::string name,
+											std::initializer_list<std::string> paramNames,
+											std::initializer_list<std::string> paramTypes,
+											std::initializer_list<bool> paramIsUnsignedList,
+											std::initializer_list<bool> paramIsVariadicList,
+											std::pair<bool, std::string> returnType) noexcept
+	: _name(name)
+	, _paramNames(paramNames)
+	, _paramTypes(paramTypes)
+	, _paramIsUnsignedList(paramIsUnsignedList)
+	, _paramIsVariadicList(paramIsVariadicList)
+	, _returnType(returnType)
+{}
+
 mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node) const noexcept
 {
 	DebugAssert(node != nullptr, u8"node가 nullptr이면 안됩니다.");
@@ -28,6 +88,17 @@ mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node
 		DebugBreak("");
 	}
 	return std::move(object);
+}
+
+const mcf::Evaluator::FunctionInfo mcf::Evaluator::Object::FindFunctionInfo(const std::string& functionName) const noexcept
+{
+	auto infoFound = _functionMap.find(functionName);
+	if (infoFound != _functionMap.end())
+	{
+		return infoFound->second;
+	}
+	DebugMessage(u8"해당 이름의 함수를 찾을수 업습니다.");
+	return FunctionInfo();
 }
 		
 mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program) const noexcept
@@ -60,7 +131,7 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 		break;
 
 	case AST::Statement::Type::EXTERN: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		object = EvalExternStatement(static_cast<const mcf::AST::Statement::Extern*>(statement));
 		break;
 
 	case AST::Statement::Type::LET: __COUNTER__;
@@ -92,12 +163,44 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 		break;
 
 	default:
+		object = mcf::Object::Invalid::Make();
 		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. StatementType=%s(%zu) ConvertedString=`%s`",
 			mcf::AST::Statement::CONVERT_TYPE_TO_STRING(statement->GetStatementType()), mcf::ENUM_INDEX(statement->GetStatementType()), statement->ConvertToString().c_str());
 	}
 	constexpr const size_t STATEMENT_TYPE_COUNT = __COUNTER__ - STATEMENT_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::AST::Statement::Type::COUNT) == STATEMENT_TYPE_COUNT, "statement type count is changed. this SWITCH need to be changed as well.");
 	return std::move(object);
+}
+
+mcf::Object::Extern::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement) const noexcept
+{
+	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
+	std::string functionName = signature->GetName();
+	if (_functionMap.find(functionName) == _functionMap.end())
+	{
+		DebugMessage(u8"구현 필요");
+		return nullptr;
+	}
+
+	std::vector<std::string> paramNames;
+	std::vector<std::string> paramTypes;
+	std::vector<bool> paramIsUnsignedList;
+	std::vector<bool> paramIsVariadicList;
+
+	std::pair<bool, std::string> returnType;
+	if (signature->IsReturnVoid())
+	{
+		returnType = std::make_pair(false, "void");
+	}
+	else
+	{
+		const mcf::AST::Intermediate::TypeSignature* returnTypeSignature = signature->GetUnsafeReturnTypePointer();
+	}
+
+
+	FunctionInfo functionName(functionName, paramNames, paramTypes, paramIsUnsignedList, paramIsVariadicList, returnType);
+	
+	return mcf::Object::Extern::Make(functionName, paramTypes);
 }
 
 mcf::Object::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept
