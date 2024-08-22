@@ -7,7 +7,7 @@
 
 namespace mcf
 {
-	namespace Evaluator
+	namespace Object
 	{
 		// if any item in ArraySizeList has the value as 0, it means it's unknown
 		struct TypeInfo final
@@ -17,7 +17,7 @@ namespace mcf
 			bool IsUnsigned = false;
 
 			inline const bool IsValid(void) const noexcept { return Name.empty() == false; }
-			static const mcf::Evaluator::TypeInfo MakePrimitive(std::string name) { return { std::vector<size_t>(), name, false }; }
+			static const mcf::Object::TypeInfo MakePrimitive(std::string name) { return { std::vector<size_t>(), name, false }; }
 		};
 
 		struct Variable final
@@ -31,9 +31,9 @@ namespace mcf
 		struct FunctionParams
 		{
 			std::vector<Variable> Variables;
-			bool HasVariadic = false;
+			std::string VariadicIdentifier;
 
-			inline const bool IsVoid(void) const noexcept { return Variables.empty() && HasVariadic == false; }
+			inline const bool IsVoid(void) const noexcept { return Variables.empty() && VariadicIdentifier.empty(); }
 		};
 
 		struct FunctionInfo
@@ -46,7 +46,7 @@ namespace mcf
 		};
 	}
 
-	namespace Object
+	namespace IR
 	{
 		enum class Type : unsigned char
 		{
@@ -131,12 +131,12 @@ namespace mcf
 				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
 			}
 
-			class Interface : public mcf::Object::Interface
+			class Interface : public mcf::IR::Interface
 			{
 			public:
 				virtual const Type GetExpressionType(void) const noexcept = 0;
 
-				inline virtual const mcf::Object::Type GetType(void) const noexcept override final { return mcf::Object::Type::EXPRESSION; }
+				inline virtual const mcf::IR::Type GetType(void) const noexcept override final { return mcf::IR::Type::EXPRESSION; }
 				virtual const std::string Inspect(void) const noexcept override = 0;
 			};
 
@@ -161,15 +161,15 @@ namespace mcf
 
 			public:
 				explicit TypeIdentifier(void) noexcept = default;
-				explicit TypeIdentifier(const mcf::Evaluator::TypeInfo& typeInfo) noexcept;
+				explicit TypeIdentifier(const mcf::Object::TypeInfo& typeInfo) noexcept;
 
-				const mcf::Evaluator::TypeInfo& GetTypeInfo(void) const noexcept { return _typeInfo;}
+				const mcf::Object::TypeInfo& GetTypeInfo(void) const noexcept { return _typeInfo;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::TYPE_IDENTIFIER; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			private:
-				mcf::Evaluator::TypeInfo _typeInfo;
+				mcf::Object::TypeInfo _typeInfo;
 			};
 		}
 
@@ -202,14 +202,14 @@ namespace mcf
 
 		public:
 			explicit Extern(void) noexcept = default;
-			explicit Extern(const std::string& name, const std::vector<mcf::Evaluator::TypeInfo>& params, const bool hasVariadic) noexcept;
+			explicit Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::EXTERN; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
 			std::string _name;
-			std::vector<mcf::Evaluator::TypeInfo> _params;
+			std::vector<mcf::Object::TypeInfo> _params;
 			bool _hasVariadic;
 		};
 

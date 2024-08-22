@@ -211,6 +211,12 @@ const mcf::AST::Intermediate::VariableSignature* mcf::AST::Intermediate::Functio
 	return _params[index].get();
 }
 
+const mcf::AST::Intermediate::Variadic* mcf::AST::Intermediate::FunctionParams::GetUnsafeVariadic(void) const noexcept
+{
+	DebugAssert( _variadic.get() != nullptr, u8"인자로 받은 _variadic은 nullptr 여선 안됩니다.");
+	return _variadic.get();
+}
+
 const std::string mcf::AST::Intermediate::FunctionParams::ConvertToString(void) const noexcept
 {
 	if (IsVoid())

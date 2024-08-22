@@ -2,16 +2,16 @@
 #include "evaluator.h"
 #include "object.h"
 
-mcf::Object::IncludeLib::IncludeLib(const std::string& libPath) noexcept
+mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept
 	: _libPath(libPath)
 {}
 
-const std::string mcf::Object::IncludeLib::Inspect(void) const noexcept
+const std::string mcf::IR::IncludeLib::Inspect(void) const noexcept
 {
 	return "includelib " + _libPath;
 }
 
-mcf::Object::Extern::Extern(const std::string& name, const std::vector<mcf::Evaluator::TypeInfo>& params, const bool hasVariadic) noexcept
+mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept
 	: _name(name)
 	, _params(params)
 	, _hasVariadic(hasVariadic)
@@ -30,7 +30,7 @@ mcf::Object::Extern::Extern(const std::string& name, const std::vector<mcf::Eval
 #endif
 }
 
-const std::string mcf::Object::Extern::Inspect(void) const noexcept
+const std::string mcf::IR::Extern::Inspect(void) const noexcept
 {
 	std::string buffer = _name + " PROTO";
 	if (_params.empty())
@@ -53,7 +53,7 @@ const std::string mcf::Object::Extern::Inspect(void) const noexcept
 	return _hasVariadic ? (buffer + ", VARARG") : buffer;
 }
 
-mcf::Object::Program::Program(PointerVector&& objects) noexcept
+mcf::IR::Program::Program(PointerVector&& objects) noexcept
 	: _objects(std::move(objects))
 {
 #if defined(_DEBUG)
@@ -66,7 +66,7 @@ mcf::Object::Program::Program(PointerVector&& objects) noexcept
 #endif
 }
 
-const std::string mcf::Object::Program::Inspect(void) const noexcept
+const std::string mcf::IR::Program::Inspect(void) const noexcept
 {
 	std::string buffer;
 	const size_t size = _objects.size();
@@ -79,13 +79,13 @@ const std::string mcf::Object::Program::Inspect(void) const noexcept
 	return buffer;
 }
 
-mcf::Object::Expression::TypeIdentifier::TypeIdentifier(const mcf::Evaluator::TypeInfo& typeInfo) noexcept
+mcf::IR::Expression::TypeIdentifier::TypeIdentifier(const mcf::Object::TypeInfo& typeInfo) noexcept
 	: _typeInfo(typeInfo)
 {
 	DebugAssert( _typeInfo.IsValid(), u8"_typeInfo가 유효하지 않습니다.");
 }
 
-const std::string mcf::Object::Expression::TypeIdentifier::Inspect(void) const noexcept
+const std::string mcf::IR::Expression::TypeIdentifier::Inspect(void) const noexcept
 {
 	return std::string();
 }

@@ -26,7 +26,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				parser.ParseProgram(program);
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 				mcf::Evaluator::Object evaluator;
-				mcf::Object::Pointer object = evaluator.Eval(&program);
+				mcf::IR::Pointer object = evaluator.Eval(&program);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -50,6 +50,10 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"extern func printf(format: unsigned qword, ...args) -> dword;",
 					"printf PROTO : unsigned qword, VARARG",
 				},
+				{
+					"extern func printf(format: unsigned qword, ...args) -> dword[5];",
+					"printf PROTO : unsigned qword, VARARG",
+				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
 			for (size_t i = 0; i < testCaseCount; i++)
@@ -61,25 +65,18 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				mcf::Evaluator::Object evaluator
 				( 
 					{
-						mcf::Evaluator::TypeInfo::MakePrimitive("byte"),
-						mcf::Evaluator::TypeInfo::MakePrimitive("word"),
-						mcf::Evaluator::TypeInfo::MakePrimitive("dword"),
-						mcf::Evaluator::TypeInfo::MakePrimitive("qword"),
+						mcf::Object::TypeInfo::MakePrimitive("byte"),
+						mcf::Object::TypeInfo::MakePrimitive("word"),
+						mcf::Object::TypeInfo::MakePrimitive("dword"),
+						mcf::Object::TypeInfo::MakePrimitive("qword"),
 					}
 				);
-				mcf::Object::Pointer object = evaluator.Eval(&program);
+				mcf::IR::Pointer object = evaluator.Eval(&program);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 
-				//const size_t externalFunctionsCount = testCases[i].ExpectedExternalFunctions.size();
-				//for (size_t j = 0; j < externalFunctionsCount; ++j)
-				//{
-				//	const mcf::Evaluator::FunctionInfo actualFunctionInfo = evaluator.FindFunctionInfo(testCases[i].ExpectedExternalFunctions[j].GetName());
-				//	FATAL_ASSERT(actualFunctionInfo == testCases[i].ExpectedExternalFunctions[j], "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s",
-				//		i, testCases[i].Input.c_str(), testCases[i].ExpectedExternalFunctions[j].ConvertToString().c_str(), actualFunctionInfo.ConvertToString().c_str());
-				//}
 			}
 			return true;
 		}

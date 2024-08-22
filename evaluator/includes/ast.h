@@ -350,6 +350,8 @@ namespace mcf
 				explicit Variadic(void) noexcept = default;
 				explicit Variadic(mcf::AST::Expression::Identifier::Pointer&& name) noexcept;
 
+				inline const std::string& GetIdentifier(void) const noexcept { return _name->GetTokenLiteral(); }
+
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIADIC; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
@@ -426,6 +428,7 @@ namespace mcf
 				inline const bool HasVariadic(void) const noexcept { return _variadic.get() != nullptr; }
 				inline const size_t GetParamCount(void) const noexcept { return _params.size(); }
 				const mcf::AST::Intermediate::VariableSignature* GetUnsafeParamPointerAt(size_t index) const noexcept;
+				const mcf::AST::Intermediate::Variadic* GetUnsafeVariadic(void) const noexcept;
 
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
