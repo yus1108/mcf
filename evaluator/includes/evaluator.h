@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include <initializer_list>
+#include <unordered_map>
+#include <unordered_set>
+
 #include <ast.h>
 #include <object.h>
 
@@ -9,62 +12,44 @@ namespace mcf
 {
 	namespace Evaluator
 	{
-		class FunctionInfo final
-		{
-		public:
-			explicit FunctionInfo(void) noexcept = default;
-			explicit FunctionInfo(	std::string name,
-									std::vector<std::string> paramNames,
-									std::vector<std::string> paramTypes,
-									std::vector<bool> paramIsUnsignedList,
-									std::vector<bool> paramIsVariadicList,
-									std::pair<bool, std::string> returnType) noexcept;
-			explicit FunctionInfo(	std::string name,
-									std::initializer_list<std::string> paramNames,
-									std::initializer_list<std::string> paramTypes,
-									std::initializer_list<bool> paramIsUnsignedList,
-									std::initializer_list<bool> paramIsVariadicList,
-									std::pair<bool, std::string> returnType) noexcept;
-
-			inline friend bool operator==(const FunctionInfo& lhs, const FunctionInfo& rhs);
-
-			inline const std::string& GetName(void) const noexcept { return _name;}
-			const std::string ConvertToString(void) const noexcept;
-
-		private:
-			std::string _name;
-			std::vector<std::string> _paramNames;
-			std::vector<std::string> _paramTypes;
-			std::vector<bool> _paramIsUnsignedList;
-			std::vector<bool> _paramIsVariadicList;
-			std::pair<bool, std::string> _returnType;
-		};
-		inline bool operator==(const FunctionInfo& lhs, const FunctionInfo& rhs) 
-		{ 
-			return (lhs._name == rhs._name) && 
-				(lhs._paramNames == rhs._paramNames) &&
-				(lhs._paramTypes == rhs._paramTypes) &&
-				(lhs._paramIsUnsignedList == rhs._paramIsUnsignedList) &&
-				(lhs._paramIsVariadicList == rhs._paramIsVariadicList) &&
-				(lhs._returnType == rhs._returnType);
-		}
-
 		class Object final
 		{
 		public:
-			mcf::Object::Pointer Eval(_Notnull_ const mcf::AST::Node::Interface* node) const noexcept;
-			const mcf::Evaluator::FunctionInfo FindFunctionInfo(const std::string& functionName) const noexcept;
+			explicit Object(void) noexcept = default;
+			explicit Object(const std::vector<TypeInfo>& primitiveTypes) noexcept;
+
+			mcf::Object::Pointer Eval(_Notnull_ const mcf::AST::Node::Interface* node) noexcept;
 
 		private:
-			mcf::Object::Pointer EvalProgram(_Notnull_ const mcf::AST::Program* program) const noexcept;
+			mcf::Object::Pointer EvalProgram(_Notnull_ const mcf::AST::Program* program) noexcept;
 
-			mcf::Object::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement) const noexcept;
-			mcf::Object::Extern::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement) const noexcept;
+			mcf::Object::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement) noexcept;
+			mcf::Object::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement) noexcept;
 
-			mcf::Object::Pointer EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept;
+			mcf::Evaluator::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate) const noexcept;
+			const bool EvalFunctionParamsIntermediate(_Out_ mcf::Evaluator::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate) const noexcept;
+			mcf::Evaluator::Variable EvalVariavbleSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::VariableSignature* intermediate) const noexcept;
+			mcf::Evaluator::TypeInfo EvalTypeSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::TypeSignature* intermediate) const noexcept;
+
+			mcf::Object::Expression::Pointer EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept;
+			mcf::Object::Expression::Pointer EvalIdentifierExpression(_Notnull_ const mcf::AST::Expression::Identifier* expression) const noexcept;
+
+			inline const bool IsIdentifierRegistered(const std::string& name) const noexcept { return _allIdentifierSet.find(name) != _allIdentifierSet.end(); }
+
+			const bool DefineType(const std::string& name, const TypeInfo& info) noexcept;
+			const mcf::Evaluator::TypeInfo GetTypeInfo(const std::string& name) const noexcept;
+
+			const bool DefineGlobalVariable(const std::string& name, const Variable& info) noexcept;
+			const mcf::Evaluator::Variable GetGlobalVariable(const std::string& name) const noexcept;
+
+			const bool DefineFunction(const std::string& name, const FunctionInfo& info) noexcept;
+			const mcf::Evaluator::FunctionInfo GetFunction(const std::string& name) const noexcept;
 
 		private:
-			std::unordered_map<std::string, FunctionInfo> _functionMap;
+			std::unordered_set<std::string> _allIdentifierSet;
+			std::unordered_map<std::string, TypeInfo> _typeInfoMap;
+			std::unordered_map<std::string, Variable> _globalVariables;
+			std::unordered_map<std::string, FunctionInfo> _functionInfoMap;
 		};
 	}
 }

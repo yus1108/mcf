@@ -123,7 +123,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 `<Identifier>`: identifier must be registered as type unless used for `[Typedef]`
 
-`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be either the integer or opted out.
+`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be integer.
 
 ---
 

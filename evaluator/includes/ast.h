@@ -338,7 +338,6 @@ namespace mcf
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
 
-
 			class Variadic : public Interface
 			{
 			public:
@@ -370,6 +369,9 @@ namespace mcf
 				explicit TypeSignature(void) noexcept = default;
 				explicit TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept;
 
+				inline const bool IsUnsigned(void) const noexcept { return _isUnsigned; }
+				const mcf::AST::Expression::Interface* GetUnsafeSignaturePointer(void) const noexcept;
+
 				inline const mcf::AST::Expression::Type GetSignatureExpressionType(void) const noexcept { return _signature->GetExpressionType(); }
 				inline const std::string ConvertToString(std::function<const std::string(const bool isUnsigned, const mcf::AST::Expression::Interface* signature)> function) 
 					const noexcept { return function(_isUnsigned, _signature.get()); }
@@ -395,6 +397,9 @@ namespace mcf
 				explicit VariableSignature(void) noexcept = default;
 				explicit VariableSignature(mcf::AST::Expression::Identifier::Pointer&& name, TypeSignature::Pointer&& typeSignature) noexcept;
 				
+				inline const std::string& GetName(void) const noexcept { return _name->GetTokenLiteral(); }
+				const mcf::AST::Intermediate::TypeSignature* GetUnsafeTypeSignaturePointer(void) const noexcept;
+
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::VARIABLE_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
@@ -419,6 +424,8 @@ namespace mcf
 				inline const bool IsVoid(void) const noexcept { return HasParams() == false && HasVariadic() == false; }
 				inline const bool HasParams(void) const noexcept { return _params.size() != 0; }
 				inline const bool HasVariadic(void) const noexcept { return _variadic.get() != nullptr; }
+				inline const size_t GetParamCount(void) const noexcept { return _params.size(); }
+				const mcf::AST::Intermediate::VariableSignature* GetUnsafeParamPointerAt(size_t index) const noexcept;
 
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_PARAMS; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
@@ -444,6 +451,7 @@ namespace mcf
 
 				inline const std::string& GetName(void) const noexcept { return _name->GetTokenLiteral(); }
 				const mcf::AST::Intermediate::TypeSignature* GetUnsafeReturnTypePointer(void) const noexcept;
+				const mcf::AST::Intermediate::FunctionParams* GetUnsafeFunctionParamsPointer(void) const noexcept;
 
 				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::FUNCTION_SIGNATURE; }
 				virtual const std::string ConvertToString(void) const noexcept override final;

@@ -171,6 +171,12 @@ mcf::AST::Intermediate::TypeSignature::TypeSignature(const bool isUnsigned, mcf:
 	);
 }
 
+const mcf::AST::Expression::Interface* mcf::AST::Intermediate::TypeSignature::GetUnsafeSignaturePointer(void) const noexcept
+{
+	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
+	return _signature.get();
+}
+
 const std::string mcf::AST::Intermediate::TypeSignature::ConvertToString(void) const noexcept
 {
 	DebugAssert(_signature.get() != nullptr, u8"_signature는 nullptr 여선 안됩니다.");
@@ -185,9 +191,24 @@ mcf::AST::Intermediate::VariableSignature::VariableSignature(mcf::AST::Expressio
 	DebugAssert(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
 }
 
+const mcf::AST::Intermediate::TypeSignature* mcf::AST::Intermediate::VariableSignature::GetUnsafeTypeSignaturePointer(void) const noexcept
+{
+	DebugAssert(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
+	return _typeSignature.get();
+}
+
 const std::string mcf::AST::Intermediate::VariableSignature::ConvertToString(void) const noexcept
 {
+	DebugAssert(_name.get() != nullptr, u8"인자로 받은 _name은 nullptr 여선 안됩니다.");
+	DebugAssert(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
 	return "<VariableSignature: " + _name->ConvertToString() + " COLON " + _typeSignature->ConvertToString() + ">";
+}
+
+const mcf::AST::Intermediate::VariableSignature* mcf::AST::Intermediate::FunctionParams::GetUnsafeParamPointerAt(size_t index) const noexcept
+{
+	DebugAssert(index < _params.size(), u8"인자로 받은 index는 _params의 사이즈보다 작아야 합니다.");
+	DebugAssert(_params[index].get() != nullptr, u8"인자로 받은 _params[%zu]는 nullptr 여선 안됩니다.", index);
+	return _params[index].get();
 }
 
 const std::string mcf::AST::Intermediate::FunctionParams::ConvertToString(void) const noexcept
@@ -223,10 +244,16 @@ mcf::AST::Intermediate::FunctionSignature::FunctionSignature(mcf::AST::Expressio
 	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
 }
 
-const mcf::AST::Intermediate::TypeSignature* mcf::AST::Intermediate::FunctionSignature::GetUnsafeReturnTypePointer( void ) const noexcept
+const mcf::AST::Intermediate::TypeSignature* mcf::AST::Intermediate::FunctionSignature::GetUnsafeReturnTypePointer(void) const noexcept
 {
 	DebugAssert(_returnType.get() != nullptr, u8"리턴 타입이 void일 경우 리턴 타입을 가져올 수 없습비다.");
 	return _returnType.get();
+}
+
+const mcf::AST::Intermediate::FunctionParams* mcf::AST::Intermediate::FunctionSignature::GetUnsafeFunctionParamsPointer(void) const noexcept
+{
+	DebugAssert(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	return _params.get();
 }
 
 const std::string mcf::AST::Intermediate::FunctionSignature::ConvertToString(void) const noexcept

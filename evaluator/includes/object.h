@@ -2,19 +2,57 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include <common.h>
 
 namespace mcf
 {
+	namespace Evaluator
+	{
+		// if any item in ArraySizeList has the value as 0, it means it's unknown
+		struct TypeInfo final
+		{
+			std::vector<size_t> ArraySizeList;
+			std::string Name;
+			bool IsUnsigned = false;
+
+			inline const bool IsValid(void) const noexcept { return Name.empty() == false; }
+			static const mcf::Evaluator::TypeInfo MakePrimitive(std::string name) { return { std::vector<size_t>(), name, false }; }
+		};
+
+		struct Variable final
+		{
+			std::string Name;
+			TypeInfo DataType;
+
+			inline const bool IsValid(void) const noexcept { return Name.empty() == false; }
+		};
+
+		struct FunctionParams
+		{
+			std::vector<Variable> Variables;
+			bool HasVariadic = false;
+
+			inline const bool IsVoid(void) const noexcept { return Variables.empty() && HasVariadic == false; }
+		};
+
+		struct FunctionInfo
+		{
+			std::string Name;
+			FunctionParams Params;
+			TypeInfo ReturnType;
+
+			inline const bool IsValid( void ) const noexcept { return Name.empty() == false; }
+		};
+	}
+
 	namespace Object
 	{
 		enum class Type : unsigned char
 		{
 			INVALID = 0,
 
-			INDEXDATA,
-			TYPEINFO,
-			INTEGER,
+			EXPRESSION,
 
 			INCLUDELIB,
 			EXTERN,
@@ -29,9 +67,7 @@ namespace mcf
 		{
 			"INVALID",
 
-			"INDEXDATA",
-			"TYPEINFO",
-			"INTEGER",
+			"EXPRESSION",
 
 			"INCLUDELIB",
 			"EXTERN",
@@ -61,17 +97,19 @@ namespace mcf
 		{
 		public:
 			inline static Pointer Make() { return std::make_unique<Invalid>(); }
-			inline virtual const Type GetType( void ) const noexcept override final { return Type::INVALID; }
-			inline virtual const std::string Inspect( void ) const noexcept override final { return "Invalid Object"; }
+			inline virtual const Type GetType(void) const noexcept override final { return Type::INVALID; }
+			inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Object"; }
 		};
 
-		namespace IndexData
+		namespace Expression
 		{
 			enum class Type : unsigned char
 			{
 				INVALID = 0,
 
-				UNKNOWN,
+				TYPE_IDENTIFIER,
+				VARIABLE_IDENTIFIER,
+				FUNCTION_IDENTIFIER,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -81,103 +119,59 @@ namespace mcf
 			{
 				"INVALID",
 
-				"UNKNOWN",
+				"TYPE_IDENTIFIER",
+				"VARIABLE_IDENTIFIER",
+				"FUNCTION_IDENTIFIER",
 			};
-			constexpr const size_t INDEXDATA_TYPE_SIZE = MCF_ARRAY_SIZE( TYPE_STRING_ARRAY );
-			static_assert(static_cast<size_t>(Type::COUNT) == INDEXDATA_TYPE_SIZE, "index data type count not matching!");
+			constexpr const size_t OBJECT_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
+			static_assert(static_cast<size_t>(Type::COUNT) == OBJECT_TYPE_SIZE, "object type count not matching!");
 
-			constexpr const char* CONVERT_TYPE_TO_STRING( const Type value )
+			constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
 			{
-				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX( value )];
+				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
 			}
 
 			class Interface : public mcf::Object::Interface
 			{
 			public:
+				virtual const Type GetExpressionType(void) const noexcept = 0;
 
-				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Interface>(std::move(args)...); }
-
-			public:
-				explicit Interface(void) noexcept = default;
-
-				virtual const Type GetIndexDataType(void) const noexcept = 0;
-
-				inline virtual const mcf::Object::Type GetType(void) const noexcept override final { return mcf::Object::Type::INDEXDATA; }
-				inline virtual const std::string Inspect(void) const noexcept override = 0;
+				inline virtual const mcf::Object::Type GetType(void) const noexcept override final { return mcf::Object::Type::EXPRESSION; }
+				virtual const std::string Inspect(void) const noexcept override = 0;
 			};
-			using Pointer = std::unique_ptr<Interface>;
 
-			class Unknown final : public Interface
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
 			{
 			public:
-				using Pointer = std::unique_ptr<Unknown>;
+				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Object"; }
+			};
+
+			class TypeIdentifier final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<TypeIdentifier>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Unknown>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<TypeIdentifier>(std::move(args)...); }
 
 			public:
-				explicit Unknown(void) noexcept = default;
+				explicit TypeIdentifier(void) noexcept = default;
+				explicit TypeIdentifier(const mcf::Evaluator::TypeInfo& typeInfo) noexcept;
 
-				inline virtual const Type GetIndexDataType(void) const noexcept override final { return Type::UNKNOWN; }
+				const mcf::Evaluator::TypeInfo& GetTypeInfo(void) const noexcept { return _typeInfo;}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::TYPE_IDENTIFIER; }
 				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::Evaluator::TypeInfo _typeInfo;
 			};
 		}
-
-		class TypeInfo final : public Interface
-		{
-		public:
-			using Pointer = std::unique_ptr<TypeInfo>;
-
-			template <class... Variadic>
-			inline static Pointer Make(Variadic&& ...args) { return std::make_unique<TypeInfo>(std::move(args)...); }
-
-		public:
-			explicit TypeInfo(void) noexcept = default;
-			explicit TypeInfo(const bool isUnsigned, const std::string& typeName, std::vector<mcf::Object::IndexData::Pointer>&& indexDataList) noexcept;
-
-			inline const std::string GetTypeName(void) const noexcept { return _typeName; }
-			inline const bool IsArrayType(void) const noexcept { return _indexDataList.empty() == false; }
-
-			inline virtual const Type GetType(void) const noexcept override final { return Type::TYPEINFO; }
-			virtual const std::string Inspect(void) const noexcept override final;
-
-		private:
-			bool _isUnsigned;
-			std::string _typeName;
-			std::vector<mcf::Object::IndexData::Pointer> _indexDataList;
-		};
-
-		class Integer : public Interface
-		{
-		public:
-			using Pointer = std::unique_ptr<Integer>;
-
-			template <class... Variadic>
-			inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Integer>(std::move(args)...); }
-
-		public:
-			explicit Integer(void) noexcept = default;
-			explicit Integer(const bool isSigned, const unsigned __int64& value) noexcept : _isSigned(isSigned), _value(value) {}
-
-			inline const bool IsByte(void) const noexcept { return INT8_MIN <= static_cast<__int64>(_value) && static_cast<__int64>(_value) <= INT8_MAX; }
-			inline const bool IsUnsignedByte(void) const noexcept { return _value <= UINT8_MAX; }
-			inline const bool IsWord(void) const noexcept { return INT16_MIN <= static_cast<__int64>(_value) && static_cast<__int64>(_value) <= INT16_MAX; }
-			inline const bool IsUnsignedWord(void) const noexcept { return _value <= UINT16_MAX; }
-			inline const bool IsDoubleWord(void) const noexcept { return INT32_MIN <= static_cast<__int64>(_value) && static_cast<__int64>(_value) <= INT32_MAX; }
-			inline const bool IsUnsignedDoubleWord(void) const noexcept { return _value <= UINT32_MAX; }
-			inline const bool IsQuadWord(void) const noexcept { return INT64_MIN <= static_cast<__int64>(_value) && static_cast<__int64>(_value) <= INT64_MAX; }
-			inline const bool IsUnsignedQuadWord(void) const noexcept { return _value <= UINT64_MAX; }
-
-			const int8_t GetByte(void) const noexcept;
-
-			inline virtual const Type GetType(void) const noexcept override final { return Type::INTEGER; }
-			inline virtual const std::string Inspect(void) const noexcept override final { return std::to_string(_value); }
-
-		private:
-			bool _isSigned;
-			unsigned __int64 _value;
-		};
 
 		class IncludeLib final : public Interface
 		{
@@ -208,14 +202,15 @@ namespace mcf
 
 		public:
 			explicit Extern(void) noexcept = default;
-			explicit Extern(const std::string& functionName, const std::vector<std::string>& paramTypes) noexcept;
+			explicit Extern(const std::string& name, const std::vector<mcf::Evaluator::TypeInfo>& params, const bool hasVariadic) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::EXTERN; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
-			std::string _functionName;
-			std::vector<std::string> _paramTypes;
+			std::string _name;
+			std::vector<mcf::Evaluator::TypeInfo> _params;
+			bool _hasVariadic;
 		};
 
 		class Program final : public Interface

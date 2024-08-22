@@ -1,67 +1,16 @@
 ﻿#include "pch.h"
 #include "evaluator.h"
 
-const std::string mcf::Evaluator::FunctionInfo::ConvertToString(void) const noexcept
+mcf::Evaluator::Object::Object(const std::vector<TypeInfo>& primitiveTypes) noexcept
 {
-	std::string buffer;
-	buffer += _name + "\n";
-	buffer += "ParamNames: ";
-	size_t count = _paramNames.size();
-	for (size_t i = 0; i < count; ++i)
+	const size_t size = primitiveTypes.size();
+	for (size_t i = 0; i < size; ++i)
 	{
-		buffer += _paramNames[i] + ", ";
+		DefineType(primitiveTypes[i].Name, primitiveTypes[i]);
 	}
-	buffer += "\nParamTypes: ";
-	count = _paramTypes.size();
-	for (size_t i = 0; i < count; ++i)
-	{
-		buffer += _paramTypes[i] + ", ";
-	}
-	buffer += "\nParamIsUnsignedList: ";
-	count = _paramIsUnsignedList.size();
-	for (size_t i = 0; i < count; ++i)
-	{
-		buffer += std::to_string(_paramIsUnsignedList[i]) + ", ";
-	}
-	buffer += "\nParamIsVariadicList: ";
-	count = _paramIsVariadicList.size();
-	for (size_t i = 0; i < count; ++i)
-	{
-		buffer += std::to_string(_paramIsVariadicList[i]) + ", ";
-	}
-	buffer += std::string("\nReturnType: ") + (_returnType.first ? "unsigned " : " ") + _returnType.second;
-	return buffer;
 }
 
-mcf::Evaluator::FunctionInfo::FunctionInfo( std::string name,
-											std::vector<std::string> paramNames,
-											std::vector<std::string> paramTypes,
-											std::vector<bool> paramIsUnsignedList,
-											std::vector<bool> paramIsVariadicList,
-											std::pair<bool, std::string> returnType) noexcept
-	: _name(name)
-	, _paramNames(paramNames)
-	, _paramTypes(paramTypes)
-	, _paramIsUnsignedList(paramIsUnsignedList)
-	, _paramIsVariadicList(paramIsVariadicList)
-	, _returnType(returnType)
-{}
-
-mcf::Evaluator::FunctionInfo::FunctionInfo( std::string name,
-											std::initializer_list<std::string> paramNames,
-											std::initializer_list<std::string> paramTypes,
-											std::initializer_list<bool> paramIsUnsignedList,
-											std::initializer_list<bool> paramIsVariadicList,
-											std::pair<bool, std::string> returnType) noexcept
-	: _name(name)
-	, _paramNames(paramNames)
-	, _paramTypes(paramTypes)
-	, _paramIsUnsignedList(paramIsUnsignedList)
-	, _paramIsVariadicList(paramIsVariadicList)
-	, _returnType(returnType)
-{}
-
-mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node) const noexcept
+mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node) noexcept
 {
 	DebugAssert(node != nullptr, u8"node가 nullptr이면 안됩니다.");
 
@@ -89,19 +38,8 @@ mcf::Object::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node
 	}
 	return std::move(object);
 }
-
-const mcf::Evaluator::FunctionInfo mcf::Evaluator::Object::FindFunctionInfo(const std::string& functionName) const noexcept
-{
-	auto infoFound = _functionMap.find(functionName);
-	if (infoFound != _functionMap.end())
-	{
-		return infoFound->second;
-	}
-	DebugMessage(u8"해당 이름의 함수를 찾을수 업습니다.");
-	return FunctionInfo();
-}
 		
-mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program) const noexcept
+mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program) noexcept
 {
 	DebugAssert(program != nullptr, u8"program가 nullptr이면 안됩니다.");
 
@@ -114,11 +52,11 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AS
 	return mcf::Object::Program::Make(std::move(objects));
 }
 
-mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement) const noexcept
+mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement) noexcept
 {
 	DebugAssert(statement != nullptr, u8"statement가 nullptr이면 안됩니다.");
 
-	mcf::Object::Pointer object;
+	mcf::Object::Pointer object = mcf::Object::Invalid::Make();
 	constexpr const size_t STATEMENT_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (statement->GetStatementType())
 	{
@@ -155,8 +93,15 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 		break;
 
 	case AST::Statement::Type::EXPRESSION: __COUNTER__;
-		object = EvalExpression(static_cast<const mcf::AST::Statement::Expression*>(statement)->GetUnsafeExpression());
+	{
+		mcf::Object::Expression::Pointer expressionObject = EvalExpression(static_cast<const mcf::AST::Statement::Expression*>(statement)->GetUnsafeExpression());
+		if (expressionObject->GetExpressionType() == mcf::Object::Expression::Type::INVALID)
+		{
+			break;
+		}
+		object = std::move(expressionObject);
 		break;
+	}
 
 	case AST::Statement::Type::UNUSED: __COUNTER__;
 		DebugMessage(u8"구현 필요");
@@ -172,46 +117,134 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::
 	return std::move(object);
 }
 
-mcf::Object::Extern::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement) const noexcept
+mcf::Object::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement) noexcept
 {
 	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
-	std::string functionName = signature->GetName();
-	if (_functionMap.find(functionName) == _functionMap.end())
+	const mcf::Evaluator::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature);
+	if (functionInfo.IsValid() == false)
 	{
 		DebugMessage(u8"구현 필요");
-		return nullptr;
+		return mcf::Object::Invalid::Make();
 	}
 
-	std::vector<std::string> paramNames;
-	std::vector<std::string> paramTypes;
-	std::vector<bool> paramIsUnsignedList;
-	std::vector<bool> paramIsVariadicList;
-
-	std::pair<bool, std::string> returnType;
-	if (signature->IsReturnVoid())
+	const size_t paramCount = functionInfo.Params.Variables.size();
+	std::vector<mcf::Evaluator::TypeInfo> params;
+	for (size_t i = 0; i < paramCount; ++i)
 	{
-		returnType = std::make_pair(false, "void");
+		DebugAssert(functionInfo.Params.Variables[i].IsValid(), u8"");
+		DebugAssert(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
+		DebugAssert(GetTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
+
+		params.emplace_back(functionInfo.Params.Variables[i].DataType);
 	}
-	else
+
+	DebugAssert(functionInfo.Name.empty() == false, u8"");
+	if (DefineFunction(functionInfo.Name, functionInfo) == false )
 	{
-		const mcf::AST::Intermediate::TypeSignature* returnTypeSignature = signature->GetUnsafeReturnTypePointer();
+		DebugMessage(u8"구현 필요");
+		return mcf::Object::Invalid::Make();
 	}
-
-
-	FunctionInfo functionName(functionName, paramNames, paramTypes, paramIsUnsignedList, paramIsVariadicList, returnType);
-	
-	return mcf::Object::Extern::Make(functionName, paramTypes);
+	return mcf::Object::Extern::Make(functionInfo.Name, params, functionInfo.Params.HasVariadic);
 }
 
-mcf::Object::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept
+mcf::Evaluator::FunctionInfo mcf::Evaluator::Object::EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate) const noexcept
+{
+	mcf::Evaluator::FunctionInfo functionInfo;
+	functionInfo.Name = intermediate->GetName();
+	if (functionInfo.Name.empty())
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Evaluator::FunctionInfo();
+	}
+
+	const bool isParamsValid = EvalFunctionParamsIntermediate(functionInfo.Params, intermediate->GetUnsafeFunctionParamsPointer());
+	if (isParamsValid == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Evaluator::FunctionInfo();
+	}
+
+	functionInfo.ReturnType = EvalTypeSignatureIntermediate(intermediate->GetUnsafeReturnTypePointer());
+	if (functionInfo.ReturnType.IsValid() == false || GetTypeInfo(functionInfo.ReturnType.Name).IsValid() == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Evaluator::FunctionInfo();
+	}
+
+	return functionInfo;
+}
+
+const bool mcf::Evaluator::Object::EvalFunctionParamsIntermediate(_Out_ mcf::Evaluator::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate) const noexcept
+{
+	outParams = mcf::Evaluator::FunctionParams();
+	const size_t size = intermediate->GetParamCount();
+	for (size_t i = 0; i < size; ++i)
+	{
+		outParams.Variables.emplace_back(EvalVariavbleSignatureIntermediate(intermediate->GetUnsafeParamPointerAt(i)));
+		if (outParams.Variables.back().IsValid() == false )
+		{
+			DebugMessage(u8"구현 필요");
+			return false;
+		}
+	}
+	outParams.HasVariadic = intermediate->HasVariadic();
+	return true;
+}
+
+mcf::Evaluator::Variable mcf::Evaluator::Object::EvalVariavbleSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::VariableSignature* intermediate) const noexcept
+{
+	mcf::Evaluator::Variable variable;
+	variable.Name = intermediate->GetName();
+	if (variable.Name.empty())
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Evaluator::Variable();
+	}
+
+	variable.DataType = EvalTypeSignatureIntermediate(intermediate->GetUnsafeTypeSignaturePointer());
+	if (variable.DataType.IsValid() == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Evaluator::Variable();
+	}
+
+	return variable;
+}
+
+mcf::Evaluator::TypeInfo mcf::Evaluator::Object::EvalTypeSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::TypeSignature* intermediate) const noexcept
+{
+	mcf::Object::Pointer object = EvalExpression(intermediate->GetUnsafeSignaturePointer());
+	DebugAssert(object->GetType() == mcf::Object::Type::EXPRESSION, u8"");
+	mcf::Object::Expression::Interface* expressionObject = static_cast<mcf::Object::Expression::Interface*>(object.get());
+	TypeInfo typeInfo;
+	switch (expressionObject->GetExpressionType())
+	{
+	case mcf::Object::Expression::Type::TYPE_IDENTIFIER:
+		typeInfo = static_cast<mcf::Object::Expression::TypeIdentifier*>(expressionObject)->GetTypeInfo();
+		break;
+
+	default:
+		DebugBreak(u8"");
+	}
+
+	if (intermediate->IsUnsigned() && typeInfo.IsUnsigned)
+	{
+		DebugMessage(u8"구현 필요");
+		return TypeInfo();
+	}
+	typeInfo.IsUnsigned = intermediate->IsUnsigned() ? intermediate->IsUnsigned() : typeInfo.IsUnsigned;
+	return typeInfo;
+}
+
+mcf::Object::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression) const noexcept
 {
 	DebugAssert(expression != nullptr, u8"expression가 nullptr이면 안됩니다.");
-	mcf::Object::Pointer object;
+	mcf::Object::Expression::Pointer object = mcf::Object::Expression::Invalid::Make();
 	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (expression->GetExpressionType())
 	{
 	case AST::Expression::Type::IDENTIFIER: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		object = EvalIdentifierExpression(static_cast<const mcf::AST::Expression::Identifier*>(expression));
 		break;
 
 	case AST::Expression::Type::INTEGER: __COUNTER__;
@@ -257,4 +290,110 @@ mcf::Object::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf:
 	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::AST::Statement::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 	return std::move(object);
+}
+
+mcf::Object::Expression::Pointer mcf::Evaluator::Object::EvalIdentifierExpression(_Notnull_ const mcf::AST::Expression::Identifier* expression) const noexcept
+{
+	const std::string name = expression->GetTokenLiteral();
+	if (IsIdentifierRegistered(name) == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::Object::Expression::Invalid::Make();
+	}
+
+	const TypeInfo typeInfo = GetTypeInfo(name);
+	if (typeInfo.IsValid() == true)
+	{
+		return mcf::Object::Expression::TypeIdentifier::Make(typeInfo);
+	}
+
+	DebugMessage(u8"구현 필요");
+	return mcf::Object::Expression::Pointer();
+}
+
+const bool mcf::Evaluator::Object::DefineType(const std::string& name, const TypeInfo& info) noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+	DebugAssert(info.IsValid(), u8"함수 정보가 유효하지 않습니다.");
+
+	if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
+	{
+		DebugMessage(u8"구현 필요");
+		return false;
+	}
+
+	_allIdentifierSet.emplace(name);
+	_typeInfoMap.emplace(name, info);
+
+	return true;
+}
+
+const mcf::Evaluator::TypeInfo mcf::Evaluator::Object::GetTypeInfo(const std::string& name) const noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+
+	auto infoFound = _typeInfoMap.find(name);
+	if (infoFound == _typeInfoMap.end())
+	{
+		return TypeInfo();
+	}
+	return infoFound->second;
+}
+
+const bool mcf::Evaluator::Object::DefineGlobalVariable(const std::string& name, const Variable& info) noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+	DebugAssert(info.IsValid(), u8"변수 정보가 유효하지 않습니다.");
+
+	if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
+	{
+		DebugMessage(u8"구현 필요");
+		return false;
+	}
+
+	_allIdentifierSet.emplace(name);
+	_globalVariables.emplace(name, info);
+
+	return true;
+}
+
+const mcf::Evaluator::Variable mcf::Evaluator::Object::GetGlobalVariable(const std::string& name) const noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+
+	auto infoFound = _globalVariables.find(name);
+	if (infoFound == _globalVariables.end())
+	{
+		return Variable();
+	}
+	return infoFound->second;
+}
+
+const bool mcf::Evaluator::Object::DefineFunction(const std::string& name, const FunctionInfo& info) noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+	DebugAssert(info.IsValid(), u8"함수 정보가 유효하지 않습니다.");
+
+	if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
+	{
+		DebugMessage(u8"구현 필요");
+		return false;
+	}
+
+	_allIdentifierSet.emplace(name);
+	_functionInfoMap.emplace(name, info);
+
+	return true;
+}
+
+const mcf::Evaluator::FunctionInfo mcf::Evaluator::Object::GetFunction(const std::string& name) const noexcept
+{
+	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+
+	auto infoFound = _functionInfoMap.find(name);
+	if (infoFound == _functionInfoMap.end())
+	{
+		return FunctionInfo();
+	}
+	return infoFound->second;
 }
