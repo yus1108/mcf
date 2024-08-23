@@ -5,6 +5,7 @@
 
 #include <lexer.h>
 #include <parser.h>
+#include <object.h>
 #include <evaluator.h>
 
 #if defined(_DEBUG)

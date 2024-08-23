@@ -3,7 +3,7 @@
 #if defined(UNUSED)
 #undef UNUSED
 #endif
-#define UNUSED(variable) variable
+#define UNUSED(...) __VA_ARGS__
 
 #if defined(MCF_ARRAY_SIZE)
 #undef MCF_ARRAY_SIZE

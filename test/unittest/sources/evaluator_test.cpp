@@ -26,7 +26,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				parser.ParseProgram(program);
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program);
+				mcf::IR::Pointer object = evaluator.Eval(&program, nullptr);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -62,16 +62,13 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				mcf::AST::Program program;
 				parser.ParseProgram(program);
 				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
-				mcf::Evaluator::Object evaluator
-				( 
-					{
-						mcf::Object::TypeInfo::MakePrimitive("byte"),
-						mcf::Object::TypeInfo::MakePrimitive("word"),
-						mcf::Object::TypeInfo::MakePrimitive("dword"),
-						mcf::Object::TypeInfo::MakePrimitive("qword"),
-					}
-				);
-				mcf::IR::Pointer object = evaluator.Eval(&program);
+				mcf::Evaluator::Object evaluator;
+				mcf::Object::Scope global;
+				global.DefineType("byte", mcf::Object::TypeInfo::MakePrimitive("byte"));
+				global.DefineType("word", mcf::Object::TypeInfo::MakePrimitive("word"));
+				global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive("dword"));
+				global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive("qword"));
+				mcf::IR::Pointer object = evaluator.Eval(&program, &global);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
