@@ -253,6 +253,9 @@ namespace mcf
 				explicit Index(void) noexcept = default;
 				explicit Index(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& index) noexcept;
 
+				const mcf::AST::Expression::Interface* GetUnsafeLeftExpressionPointer(void) const noexcept { return _left.get(); }
+				const mcf::AST::Expression::Interface* GetUnsafeIndexExpressionPointer(void) const noexcept { return _index.get(); }
+
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INDEX; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 

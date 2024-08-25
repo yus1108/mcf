@@ -323,17 +323,48 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIdentifierExpression(_N
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
 {
-	UNUSED(expression, scope);
-
-
-
-	mcf::IR::Expression::Pointer expressionObject = EvalExpression( static_cast<const mcf::AST::Statement::Expression*>(statement)->GetUnsafeExpression(), scope );
-	if ( expressionObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID )
+	const mcf::AST::Expression::Interface* leftExpression = expression->GetUnsafeIndexExpressionPointer();
+	mcf::IR::Expression::Pointer leftObject = EvalExpression(leftExpression, scope);
+	DebugAssert(leftObject->GetType() == mcf::IR::Type::EXPRESSION, u8"구현 필요");
+	constexpr const size_t INDEX_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (leftObject->GetExpressionType())
 	{
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		DebugMessage(u8"구현 필요");
 		break;
-	}
-	object = std::move( expressionObject );
 
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		DebugMessage(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	default:
+		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::AST::Expression::CONVERT_TYPE_TO_STRING(leftExpression->GetExpressionType()), mcf::ENUM_INDEX(leftExpression->GetExpressionType()), leftExpression->ConvertToString().c_str());
+	}
+	constexpr const size_t INDEX_EXPRESSION_TYPE_COUNT = __COUNTER__ - INDEX_EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == INDEX_EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+
+	const mcf::AST::Expression::Interface* indexExpression = expression->GetUnsafeIndexExpressionPointer();
+	mcf::IR::Expression::Pointer indexObject = EvalExpression(indexExpression, scope);
+	DebugAssert(indexObject->GetType() == mcf::IR::Type::EXPRESSION, u8"구현 필요");
+	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (indexObject->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		DebugMessage(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	default:
+		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::AST::Expression::CONVERT_TYPE_TO_STRING(indexExpression->GetExpressionType()), mcf::ENUM_INDEX(indexExpression->GetExpressionType()), indexExpression->ConvertToString().c_str());
+	}
+	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == LEFT_EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 
 	DebugMessage(u8"구현 필요");
 	return mcf::IR::Expression::Pointer();
