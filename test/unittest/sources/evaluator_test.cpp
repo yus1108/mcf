@@ -105,6 +105,10 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let intVal: unsigned dword = 10;",
 					"intVal unsigned dword 10",
 				},
+				{
+					"let unInit: qword;",
+					"unInit qword { default init }",
+				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 			for (size_t i = 0; i < testCaseCount; i++)
