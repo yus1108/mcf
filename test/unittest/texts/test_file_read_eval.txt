@@ -22,7 +22,7 @@
 ?AssignArray endp
 
 .data
-?0	db "Hello, Worlld! Value=%d", 10, 0   ; "Hello, World! Value=%d\n";
+?0	byte "Hello, Worlld! Value=%d", 10, 0   ; "Hello, World! Value=%d\n";
 
 includelib "kernel32.lib"
 
@@ -36,7 +36,7 @@ includelib "libcmt.lib"
 printf PROTO : qword, VARARG	; extern asm func printf(format: unsigned qword, ...args) -> int32;
 
 .data
-foo		db	0				; byte		; let foo: byte = 0;
+foo		byte	0				; byte		; let foo: byte = 0;
 
 .code
 boo proc								; func boo(void) -> byte { return 0; }
@@ -47,9 +47,9 @@ boo proc								; func boo(void) -> byte { return 0; }
 boo endp
 
 .data
-arr		db	0, 1, 2			; byte[3]			; let arr: byte[] = { 0, 1, 2 };
-arr2	db	0, 0, 0, 0, 0	; byte[5]			; let arr2: byte[5] = { 0 };
-intval	dd	10				; int32 -> dword	; let intVal: int32 = 10;
+arr		byte	0, 1, 2			; byte[3]			; let arr: byte[] = { 0, 1, 2 };
+arr2	byte	0, 0, 0, 0, 0	; byte[5]			; let arr2: byte[5] = { 0 };
+intval	dword	10				; int32 -> dword	; let intVal: int32 = 10;
 
 .code
 main proc,						; main(void) -> void {
@@ -84,7 +84,7 @@ includelib "libcmt.lib"
 printf PROTO : qword, VARARG
 
 .data
-foo		db	0
+foo		byte	0
 
 .code
 boo proc								
@@ -95,9 +95,9 @@ boo proc
 boo endp
 
 .data
-arr		db	0, 1, 2			
-arr2	db	0, 0, 0, 0, 0	
-intval	dd	10			
+arr		byte	0, 1, 2			
+arr2	byte	0, 0, 0, 0, 0	
+intval	dword	10			
 
 .code
 main proc,					

@@ -47,5 +47,18 @@ namespace mcf
 #endif
 			return message;
 		}
+
+		namespace UInt64
+		{
+			inline static unsigned __int64 Pow(unsigned __int8 base, unsigned __int8 exponent)
+			{
+				unsigned __int64 result = 1;
+				for (unsigned __int8 i = 0; i < exponent; i++)
+				{
+					result *= static_cast<unsigned __int64>(base);
+				}
+				return result;
+			}
+		}
 	}
 }

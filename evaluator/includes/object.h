@@ -16,11 +16,14 @@ namespace mcf
 		{
 			std::vector<size_t> ArraySizeList;
 			std::string Name;
+			size_t Size;
 			bool IsUnsigned = false;
 
-			static const mcf::Object::TypeInfo MakePrimitive(std::string name) { return { std::vector<size_t>(), name, false }; }
+			static const mcf::Object::TypeInfo MakePrimitive(const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false }; }
 
 			inline const bool IsValid(void) const noexcept { return Name.empty() == false; }
+			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
+			const bool HasUnknownArrayIndex(void) const noexcept;
 			const std::string Inspect(void) const noexcept;
 		};
 
@@ -30,6 +33,7 @@ namespace mcf
 			TypeInfo DataType;
 
 			inline const bool IsValid(void) const noexcept { return Name.empty() == false; }
+			const std::string Inspect(void) const noexcept;
 		};
 
 		struct VariableInfo final
@@ -37,7 +41,7 @@ namespace mcf
 			Variable Variable;
 			bool IsGlobal = false;
 
-			inline const bool IsValid(void) const noexcept { return Variable.IsValid() == false; }
+			inline const bool IsValid(void) const noexcept { return Variable.IsValid(); }
 		};
 
 		struct FunctionParams final
@@ -68,7 +72,7 @@ namespace mcf
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
 
-			const bool DefineVariable(const std::string& name, const mcf::Object::Variable& info) noexcept;
+			const mcf::Object::VariableInfo DefineVariable(const std::string& name, const mcf::Object::Variable& variable) noexcept;
 			const mcf::Object::VariableInfo FindVariableInfo(const std::string& name) const noexcept;
 
 			const bool DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept;
@@ -93,6 +97,7 @@ namespace mcf
 
 			INCLUDELIB,
 			EXTERN,
+			LET,
 
 			PROGRAM,
 
@@ -108,6 +113,7 @@ namespace mcf
 
 			"INCLUDELIB",
 			"EXTERN",
+			"LET",
 
 			"PROGRAM",
 		};
@@ -149,6 +155,7 @@ namespace mcf
 				LOCAL_VARIABLE_IDENTIFIER,
 				FUNCTION_IDENTIFIER,
 				INTEGER,
+				INITIALIZER,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -163,6 +170,7 @@ namespace mcf
 				"LOCAL_VARIABLE_IDENTIFIER",
 				"FUNCTION_IDENTIFIER",
 				"INTEGER",
+				"INITIALIZER",
 			};
 			constexpr const size_t OBJECT_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == OBJECT_TYPE_SIZE, "object type count not matching!");
@@ -189,7 +197,7 @@ namespace mcf
 			public:
 				inline static Pointer Make() { return std::make_unique<Invalid>(); }
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
-				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Object"; }
+				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Expression Object"; }
 			};
 
 			class TypeIdentifier final : public Interface
@@ -228,7 +236,7 @@ namespace mcf
 				const mcf::Object::Variable& GetInfo(void) const noexcept { return _variable;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::GLOBAL_VARIABLE_IDENTIFIER; }
-				virtual const std::string Inspect(void) const noexcept override final;
+				inline virtual const std::string Inspect(void) const noexcept override final { return _variable.Inspect(); }
 
 			private:
 				mcf::Object::Variable _variable;
@@ -290,6 +298,7 @@ namespace mcf
 				explicit Integer(const unsigned __int64 value) noexcept : _unsignedValue(value), _isUnsigned(true){}
 
 				inline const bool IsUnsignedValue(void) const noexcept { return _isUnsigned ? true : (_signedValue >= 0); }
+				const size_t GetSize(void) const noexcept;
 
 				const unsigned __int64 GetUInt64(void) const noexcept;
 
@@ -303,6 +312,35 @@ namespace mcf
 					__int64 _signedValue;
 				};
 				bool _isUnsigned = false;
+			};
+
+			class Initializer : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Initializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Initializer>(std::move(args)...); }
+
+			public:
+				explicit Initializer(void) noexcept = default;
+				explicit Initializer(PointerVector&& keyList) noexcept;
+
+				inline const size_t GetKeyExpressionCount(void) const noexcept { return _keyList.size(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept
+				{
+					return _keyList[index].get();
+				}
+				inline const mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept
+				{
+					return _keyList[index].get();
+				}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				PointerVector _keyList;
 			};
 		}
 
@@ -344,6 +382,26 @@ namespace mcf
 			std::string _name;
 			std::vector<mcf::Object::TypeInfo> _params;
 			bool _hasVariadic;
+		};
+
+		class Let final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Let>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Let>(std::move(args)...); }
+
+		public:
+			explicit Let(void) noexcept = default;
+			explicit Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::Pointer&& assignedExpression) noexcept;
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::LET; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			mcf::Object::VariableInfo _info;
+			mcf::IR::Expression::Pointer _assignedExpression;
 		};
 
 		class Program final : public Interface

@@ -278,6 +278,16 @@ namespace mcf
 				explicit Initializer(void) noexcept = default;
 				explicit Initializer(PointerVector&& keyList) noexcept;
 
+				inline const size_t GetKeyExpressionCount(void) const noexcept { return _keyList.size(); }
+				inline mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept
+				{
+					return _keyList[index].get();
+				}
+				inline const mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept
+				{
+					return _keyList[index].get();
+				}
+
 				inline virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
 				virtual const std::string ConvertToString(void) const noexcept override;
 
@@ -611,6 +621,9 @@ namespace mcf
 			public:
 				explicit Let(void) noexcept = default;
 				explicit Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept;
+
+				inline const mcf::AST::Intermediate::VariableSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
+				inline const mcf::AST::Expression::Interface* GetUnsafeExpressionointer(void) const noexcept { return _expression.get(); }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
