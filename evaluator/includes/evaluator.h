@@ -30,7 +30,10 @@ namespace mcf
 
 			mcf::IR::Expression::Pointer EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIdentifierExpression(_Notnull_ const mcf::AST::Expression::Identifier* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+			mcf::IR::Expression::Pointer EvalIntegerExpression(_Notnull_ const mcf::AST::Expression::Integer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+
+			mcf::Object::TypeInfo MakeArrayTypeInfo(_Notnull_ const mcf::IR::Expression::TypeIdentifier* left, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept;
 		};
 	}
 }

@@ -144,21 +144,21 @@ inline const bool mcf::Parser::Object::CheckErrorOnInit(void) noexcept
 
 	case mcf::Lexer::Error::INVALID_INPUT_LENGTH: __COUNTER__;
 	{
-		const std::string message = ErrorMessage(u8"input의 길이가 0입니다.");
+		const std::string message = mcf::Internal::ErrorMessage(u8"input의 길이가 0입니다.");
 		_errors.push(ErrorInfo{ ErrorID::INVALID_INPUT_LENGTH, _lexer.GetName(), message, 0, 0 });
 		break;
 	}
 
 	case mcf::Lexer::Error::FAIL_READ_FILE: __COUNTER__;
 	{
-		const std::string message = ErrorMessage(u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.GetName().c_str());
+		const std::string message = mcf::Internal::ErrorMessage(u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.GetName().c_str());
 		_errors.push(ErrorInfo{ ErrorID::FAIL_READ_FILE, _lexer.GetName(), message, 0, 0 });
 		break;
 	}
 
 	default:
 	{
-		const std::string message = ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ErrorID=INVALID_LEXER_ERROR_TOKEN");
+		const std::string message = mcf::Internal::ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ErrorID=INVALID_LEXER_ERROR_TOKEN");
 		_errors.push(ErrorInfo{ ErrorID::INVALID_LEXER_ERROR_TOKEN, _lexer.GetName(), message, 0, 0 });
 		break;
 	}

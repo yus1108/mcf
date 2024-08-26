@@ -5,14 +5,9 @@ namespace mcf
 {
 	namespace internal 
 	{
-		inline static constexpr const bool IS_ALPHABET(const char byte) noexcept
+		constexpr static const bool IS_ALPHABET(const char byte) noexcept
 		{
 			return ('a' <= byte && byte <= 'z') || ('A' <= byte && byte <= 'Z');
-		}
-
-		inline static constexpr const bool IS_DIGIT(const char byte) noexcept
-		{
-			return ('0' <= byte && byte <= '9');
 		}
 
 		inline static const std::string ReadFile(const std::string& path)
@@ -317,7 +312,7 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			token.Index = _currentIndex;
 			return token; 
 		}
-		else if (internal::IS_DIGIT(_currentByte))
+		else if (mcf::Internal::IS_DIGIT(_currentByte))
 		{
 			__COUNTER__; // count for INTEGER
 			return ReadNumeric();
@@ -484,7 +479,7 @@ inline const std::string mcf::Lexer::Object::ReadKeywordOrIdentifier(void) noexc
 	ReadNextByte();
 
 	// 첫 문자 이후로는 알파벳, 숫자, 또는 '_' 이어야 합니다.
-	while (internal::IS_ALPHABET(_currentByte) || internal::IS_DIGIT(_currentByte) || (_currentByte == '_'))
+	while (internal::IS_ALPHABET(_currentByte) || mcf::Internal::IS_DIGIT(_currentByte) || (_currentByte == '_'))
 	{
 		ReadNextByte();
 	}
@@ -493,11 +488,11 @@ inline const std::string mcf::Lexer::Object::ReadKeywordOrIdentifier(void) noexc
 
 inline const std::string mcf::Lexer::Object::ReadNumber(void) noexcept
 {
-	DebugAssert(internal::IS_DIGIT(_currentByte), u8"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(mcf::Internal::IS_DIGIT(_currentByte), u8"숫자의 시작은 0부터 9까지의 문자여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	const size_t firstLetterPosition = _currentPosition;
 
-	while (internal::IS_DIGIT(_currentByte))
+	while (mcf::Internal::IS_DIGIT(_currentByte))
 	{
 		ReadNextByte();
 	}
@@ -634,7 +629,7 @@ inline const mcf::Token::Data mcf::Lexer::Object::ReadMacroToken( void ) noexcep
 
 inline const mcf::Token::Data mcf::Lexer::Object::ReadNumeric(void) noexcept
 {
-	DebugAssert(internal::IS_DIGIT(_currentByte), u8"이 함수가 호출될 때 숫자로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
+	DebugAssert(mcf::Internal::IS_DIGIT(_currentByte), u8"이 함수가 호출될 때 숫자로 시작하여야 합니다. 시작 문자=%c, 값=%d", _currentByte, _currentByte);
 
 	mcf::Token::Data token;
 

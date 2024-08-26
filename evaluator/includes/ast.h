@@ -135,6 +135,8 @@ namespace mcf
 				explicit Integer(void) noexcept = default;
 				explicit Integer(const mcf::Token::Data& token) noexcept : _token(token) {}
 
+				inline const std::string& GetTokenLiteral(void) const noexcept { return _token.Literal; }
+
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Integer: " + _token.Literal + ">"; }
 

@@ -239,3 +239,14 @@ const std::string mcf::IR::Expression::FunctionIdentifier::Inspect(void) const n
 	DebugMessage(u8"구현 필요");
 	return std::string();
 }
+
+const unsigned __int64 mcf::IR::Expression::Integer::GetUInt64(void) const noexcept
+{
+	DebugAssert(IsUnsignedValue(), u8"unsigned가 아닌 값은 UInt64 타입의 값이 될 수 없습니다.");
+	return _unsignedValue;
+}
+
+const std::string mcf::IR::Expression::Integer::Inspect(void) const noexcept
+{
+	return std::to_string(_isUnsigned ? _unsignedValue : _signedValue);
+}

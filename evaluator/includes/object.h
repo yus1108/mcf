@@ -35,7 +35,7 @@ namespace mcf
 		struct VariableInfo final
 		{
 			Variable Variable;
-			bool IsGlobal;
+			bool IsGlobal = false;
 
 			inline const bool IsValid(void) const noexcept { return Variable.IsValid() == false; }
 		};
@@ -148,6 +148,7 @@ namespace mcf
 				GLOBAL_VARIABLE_IDENTIFIER,
 				LOCAL_VARIABLE_IDENTIFIER,
 				FUNCTION_IDENTIFIER,
+				INTEGER,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -161,6 +162,7 @@ namespace mcf
 				"GLOBAL_VARIABLE_IDENTIFIER",
 				"LOCAL_VARIABLE_IDENTIFIER",
 				"FUNCTION_IDENTIFIER",
+				"INTEGER",
 			};
 			constexpr const size_t OBJECT_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == OBJECT_TYPE_SIZE, "object type count not matching!");
@@ -272,6 +274,35 @@ namespace mcf
 
 			private:
 				mcf::Object::FunctionInfo _info;
+			};
+
+			class Integer final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Integer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Integer>(std::move(args)...); }
+
+			public:
+				explicit Integer(void) noexcept = default;
+				explicit Integer(const __int64 value) noexcept : _signedValue(value), _isUnsigned(false){}
+				explicit Integer(const unsigned __int64 value) noexcept : _unsignedValue(value), _isUnsigned(true){}
+
+				inline const bool IsUnsignedValue(void) const noexcept { return _isUnsigned ? true : (_signedValue >= 0); }
+
+				const unsigned __int64 GetUInt64(void) const noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				union
+				{
+					unsigned __int64 _unsignedValue;
+					__int64 _signedValue;
+				};
+				bool _isUnsigned = false;
 			};
 		}
 

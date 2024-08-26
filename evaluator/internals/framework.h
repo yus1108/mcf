@@ -22,19 +22,30 @@
 #define DebugMessage(FORMAT, ...)
 #endif
 
-template <class... Variadic>
-inline static std::string ErrorMessage(const char* const format, Variadic&& ...args)
-{ 
-	std::string message;
+namespace mcf
+{
+	namespace Internal
+	{
+		constexpr static const bool IS_DIGIT(const char byte) noexcept
+		{
+			return ('0' <= byte && byte <= '9');
+		}
 
-	int messageLength = snprintf(nullptr, 0, format, args...);
-	message.resize(messageLength + 1);
+		template <class... Variadic>
+		inline static std::string ErrorMessage(const char* const format, Variadic&& ...args)
+		{
+			std::string message;
 
-	snprintf(message.data(), messageLength + 1, format, args...);
+			int messageLength = snprintf(nullptr, 0, format, args...);
+			message.resize(messageLength + 1);
+
+			snprintf(message.data(), messageLength + 1, format, args...);
 
 #if defined(_DEBUG)
-	std::cout << message << std::endl;
-	__debugbreak();
+			std::cout << message << std::endl;
+			__debugbreak();
 #endif
-	return message;
+			return message;
+		}
+	}
 }
