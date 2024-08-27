@@ -465,7 +465,7 @@ namespace mcf
 				explicit FunctionSignature(void) noexcept = default;
 				explicit FunctionSignature(mcf::AST::Expression::Identifier::Pointer name, FunctionParams::Pointer params, TypeSignature::Pointer returnType) noexcept;
 
-				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+				inline const bool IsReturnTypeVoid(void) const noexcept { return _returnType.get() == nullptr; }
 
 				inline const std::string& GetName(void) const noexcept { return _name->GetTokenLiteral(); }
 				const mcf::AST::Intermediate::TypeSignature* GetUnsafeReturnTypePointer(void) const noexcept;
@@ -645,6 +645,16 @@ namespace mcf
 				explicit Block(void) noexcept = default;
 				explicit Block(Statement::PointerVector&& statements) noexcept;
 
+				inline const size_t GetStatementCount(void) const noexcept { return _statements.size(); }
+				inline mcf::AST::Statement::Interface* GetUnsafeStatementPointerAt(const size_t index) noexcept
+				{
+					return _statements[index].get();
+				}
+				inline const mcf::AST::Statement::Interface* GetUnsafeStatementPointerAt(const size_t index) const noexcept 
+				{
+					return _statements[index].get(); 
+				}
+
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
@@ -683,7 +693,10 @@ namespace mcf
 				explicit Func(void) noexcept = default;
 				explicit Func(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature, mcf::AST::Statement::Block::Pointer&& block) noexcept;
 
-				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				inline const mcf::AST::Intermediate::FunctionSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
+				inline const mcf::AST::Statement::Block* GetUnsafeBlockPointer(void) const noexcept { return _block.get(); }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::FUNC; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:

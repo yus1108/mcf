@@ -133,6 +133,69 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			return true;
 		}
 	);
+	_names.emplace_back( u8"func 평가 테스트" );
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"func foo(void) -> void {}",
+					"foo proc\n"
+						"\tsub rsp 08h\n"
+						"\tadd rsp 08h\n"
+						"\tret"
+					"foo endp",
+				},
+				{
+					"func joo(void) -> void { let var1: dword = 15; }",
+					"joo proc\n"
+						"\tsub rsp 08h\n"
+						"\tsub rsp 10h\n"
+						"\tmov dword ptr [rsp + 0h], 15\n" // var1 = 15;
+						"\tadd rsp 10h\n"
+						"\tadd rsp 08h\n"
+						"\tret"
+					"joo endp",
+				},
+				{
+					"func boo(void) -> byte { return 0; }",
+					"boo proc\n"
+						"\tsub rsp 08h\n"
+						"\tmov return byte 0\n"
+						"\tadd rsp 08h\n"
+						"\tret"
+					"boo endp",
+				},
+			};
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
+			for ( size_t i = 0; i < testCaseCount; i++ )
+			{
+				mcf::Parser::Object parser( testCases[i].Input, false );
+				mcf::AST::Program program;
+				parser.ParseProgram( program );
+				FATAL_ASSERT( CheckParserErrors( parser ), u8"파싱에 실패 하였습니다." );
+				mcf::Evaluator::Object evaluator;
+				mcf::Object::Scope global;
+				global.DefineType( "byte", mcf::Object::TypeInfo::MakePrimitive( "byte", 1 ) );
+				global.DefineType( "word", mcf::Object::TypeInfo::MakePrimitive( "word", 2 ) );
+				global.DefineType( "dword", mcf::Object::TypeInfo::MakePrimitive( "dword", 4 ) );
+				global.DefineType( "qword", mcf::Object::TypeInfo::MakePrimitive( "qword", 8 ) );
+				mcf::IR::Pointer object = evaluator.Eval( &program, &global );
+
+				FATAL_ASSERT( object.get() != nullptr, u8"object가 nullptr이면 안됩니다." );
+				const std::string actual = object->Inspect();
+				FATAL_ASSERT( actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str() );
+
+			}
+			return true;
+		}
+	);
 }
 
 bool UnitTest::EvaluatorTest::CheckParserErrors(mcf::Parser::Object& parser) noexcept

@@ -265,7 +265,7 @@ const mcf::AST::Intermediate::FunctionParams* mcf::AST::Intermediate::FunctionSi
 const std::string mcf::AST::Intermediate::FunctionSignature::ConvertToString(void) const noexcept
 {
 	std::string buffer = "<FunctionSignature: " + _name->ConvertToString() + " " + _params->ConvertToString() + " POINTING ";
-	buffer += IsReturnVoid() ? "KEYWORD_VOID" : _returnType->ConvertToString();
+	buffer += IsReturnTypeVoid() ? "KEYWORD_VOID" : _returnType->ConvertToString();
 	return buffer + ">";
 }
 
@@ -328,7 +328,6 @@ mcf::AST::Statement::Block::Block(Statement::PointerVector&& statements) noexcep
 {
 #if defined(_DEBUG)
 		const size_t size = _statements.size();
-		DebugAssert(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
 		for (size_t i = 0; i < size; i++)
 		{
 			DebugAssert(_statements[i].get() != nullptr, u8"_statements[%zu]는 nullptr 여선 안됩니다.", i);

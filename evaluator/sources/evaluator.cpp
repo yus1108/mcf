@@ -48,6 +48,25 @@ namespace mcf
 	}
 }
 
+mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept
+{
+	UNUSED(info);
+	DebugMessage(u8"구현 필요");
+}
+
+const bool mcf::Evaluator::FunctionIRGenerator::AddLocalVariable(_Notnull_ const mcf::IR::Let* object) noexcept
+{
+	UNUSED(object);
+	DebugMessage(u8"구현 필요");
+	return false;
+}
+
+mcf::IR::PointerVector mcf::Evaluator::FunctionIRGenerator::GenerateIRCode(void) const noexcept
+{
+	DebugMessage(u8"구현 필요");
+	return mcf::IR::PointerVector();
+}
+
 mcf::IR::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	DebugAssert(node != nullptr, u8"node가 nullptr이면 안됩니다.");
@@ -123,7 +142,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 		break;
 
 	case AST::Statement::Type::FUNC: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		object = EvalFuncStatement( static_cast<const mcf::AST::Statement::Func*>(statement), scope );
 		break;
 
 	case AST::Statement::Type::MAIN: __COUNTER__;
@@ -178,7 +197,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf
 	}
 
 	DebugAssert(functionInfo.Name.empty() == false, u8"");
-	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false )
+	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
 	{
 		DebugMessage(u8"구현 필요");
 		return mcf::IR::Invalid::Make();
@@ -224,6 +243,98 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::A
 	return mcf::IR::Let::Make(info, std::move(expressionObject));
 }
 
+mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
+	const mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	if (functionInfo.IsValid() == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	const size_t paramCount = functionInfo.Params.Variables.size();
+	std::vector<mcf::Object::TypeInfo> params;
+	for (size_t i = 0; i < paramCount; ++i)
+	{
+		DebugAssert(functionInfo.Params.Variables[i].IsValid(), u8"");
+		DebugAssert(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
+		DebugAssert(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
+
+		params.emplace_back(functionInfo.Params.Variables[i].DataType);
+	}
+
+	if (functionInfo.IsValid() == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	const mcf::AST::Statement::Block* functionBlock = statement->GetUnsafeBlockPointer();
+	DebugMessage(u8"함수 전용 스코프 처리 필요");
+	mcf::IR::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock, scope);
+	if (objects.empty() == true)
+	{
+		DebugMessage( u8"구현 필요" );
+		return mcf::IR::Invalid::Make();
+	}
+
+	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	return mcf::IR::Func::Make(functionInfo.Name, params, (functionInfo.Params.VariadicIdentifier.empty() == false), std::move(objects));
+}
+
+mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	UNUSED(info, statement, scope);
+	mcf::Evaluator::FunctionIRGenerator generator(info);
+	
+	mcf::IR::PointerVector objects;
+	const size_t statementCount = statement->GetStatementCount();
+	for (size_t i = 0; i < statementCount; i++)
+	{
+		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), scope);
+		if (object.get() == nullptr)
+		{
+			DebugMessage(u8"구현 필요");
+			return mcf::IR::PointerVector();
+		}
+
+		constexpr const size_t IR_TYPE_COUNT_BEGIN = __COUNTER__;
+		switch (object->GetType())
+		{
+		case IR::Type::LET: __COUNTER__;
+			generator.AddLocalVariable(static_cast<mcf::IR::Let*>(object.get()));
+			DebugMessage(u8"구현 필요");
+			break;
+
+		case IR::Type::EXPRESSION: __COUNTER__;
+			DebugMessage(u8"구현 필요");
+			break;
+
+		case IR::Type::INCLUDELIB: __COUNTER__; [[fallthrough]];
+		case IR::Type::EXTERN: __COUNTER__; [[fallthrough]];
+		case IR::Type::FUNC: __COUNTER__; [[fallthrough]];
+		case IR::Type::PROGRAM: __COUNTER__; [[fallthrough]];
+		default:
+			objects.clear();
+			DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. IRType=%s(%zu) ConvertedString=`%s`",
+				mcf::IR::CONVERT_TYPE_TO_STRING(object->GetType()), mcf::ENUM_INDEX(object->GetType()), object->Inspect().c_str());
+		}
+		constexpr const size_t IR_TYPE_COUNT = __COUNTER__ - IR_TYPE_COUNT_BEGIN;
+		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
+	}
+
+	objects = generator.GenerateIRCode();
+
+	DebugMessage(u8"구현 필요");
+	return std::move(objects);
+}
+
 mcf::Object::FunctionInfo mcf::Evaluator::Object::EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ const mcf::Object::Scope* scope) const noexcept
 {
 	mcf::Object::FunctionInfo functionInfo;
@@ -239,6 +350,11 @@ mcf::Object::FunctionInfo mcf::Evaluator::Object::EvalFunctionSignatureIntermedi
 	{
 		DebugMessage(u8"구현 필요");
 		return mcf::Object::FunctionInfo();
+	}
+
+	if (intermediate->IsReturnTypeVoid())
+	{
+		return functionInfo;
 	}
 
 	functionInfo.ReturnType = EvalTypeSignatureIntermediate(intermediate->GetUnsafeReturnTypePointer(), scope);

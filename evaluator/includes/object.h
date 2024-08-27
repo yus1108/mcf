@@ -59,6 +59,7 @@ namespace mcf
 			TypeInfo ReturnType;
 
 			inline const bool IsValid( void ) const noexcept { return Name.empty() == false; }
+			inline const bool IsReturnTypeVoid( void ) const noexcept { return ReturnType.IsValid() == false; }
 		};
 
 		class Scope final
@@ -98,6 +99,7 @@ namespace mcf
 			INCLUDELIB,
 			EXTERN,
 			LET,
+			FUNC,
 
 			PROGRAM,
 
@@ -114,6 +116,7 @@ namespace mcf
 			"INCLUDELIB",
 			"EXTERN",
 			"LET",
+			"FUNC",
 
 			"PROGRAM",
 		};
@@ -402,6 +405,28 @@ namespace mcf
 		private:
 			mcf::Object::VariableInfo _info;
 			mcf::IR::Expression::Pointer _assignedExpression;
+		};
+
+		class Func final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Func>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Func>(std::move(args)...); }
+
+		public:
+			explicit Func(void) noexcept = default;
+			explicit Func(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic, PointerVector&& body) noexcept;
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::FUNC; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			std::string _name;
+			std::vector<mcf::Object::TypeInfo> _params;
+			PointerVector _body;
+			bool _hasVariadic;
 		};
 
 		class Program final : public Interface

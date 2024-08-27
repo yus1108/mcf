@@ -302,6 +302,38 @@ const std::string mcf::IR::Let::Inspect(void) const noexcept
 	return std::string();
 }
 
+mcf::IR::Func::Func(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic, PointerVector&& body) noexcept
+	: _name(name)
+	, _params(params)
+	, _hasVariadic(hasVariadic)
+	, _body(std::move(body))
+{
+#if defined(_DEBUG)
+	size_t size = _params.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_params[i].IsValid(), u8"_params[%zu]가 유효하지 않습니다.", i);
+		const size_t arraySize = _params[i].ArraySizeList.size();
+		for (size_t j = 0; j < arraySize; ++j)
+		{
+			DebugAssert(_params[i].ArraySizeList[j] > 0, u8"_params[%zu].ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, j, _params[i].ArraySizeList[j]);
+		}
+	}
+	size = _body.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_body[i].get() != nullptr, u8"_body[%zu]가 nullptr 여선 안됩니다.", i);
+		DebugAssert(_body[i]->GetType() != Type::INVALID, u8"_body[%zu]가 유효하지 않습니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::IR::Func::Inspect(void) const noexcept
+{
+	DebugMessage(u8"구현 필요");
+	return std::string();
+}
+
 mcf::IR::Program::Program(PointerVector&& objects) noexcept
 	: _objects(std::move(objects))
 {

@@ -10,6 +10,18 @@ namespace mcf
 {
 	namespace Evaluator
 	{
+		class FunctionIRGenerator final
+		{
+		public:
+			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
+
+			const bool AddLocalVariable(_Notnull_ const mcf::IR::Let* object) noexcept;
+			mcf::IR::PointerVector GenerateIRCode(void) const noexcept;
+
+		private:
+
+		};
+
 		class Object final
 		{
 		public:
@@ -23,6 +35,9 @@ namespace mcf
 			mcf::IR::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+
+			mcf::IR::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
 			const bool EvalFunctionParamsIntermediate(_Out_ mcf::Object::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
