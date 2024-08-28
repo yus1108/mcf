@@ -48,9 +48,66 @@ namespace mcf
 	}
 }
 
+void mcf::Evaluator::Allocator::AddSize(const size_t size) noexcept
+{
+	DebugAssert(size > 0, u8"사이즈는 0일 수 없습니다.");
+	if (size > _sizeLeft)
+	{
+		if (size > _minimumAlignment)
+		{
+			const size_t mod = size % DEFAULT_ALIGNMENT;
+			_minimumAlignment = mod > 0 ? (size - mod + DEFAULT_ALIGNMENT) : size;
+		}
+
+		if (_totalSize <= _minimumAlignment)
+		{
+			paddings.emplace_back(_minimumAlignment - _totalSize);
+		}
+		else
+		{
+			const size_t mod = _totalSize % _minimumAlignment;
+			paddings.emplace_back(_minimumAlignment - mod);
+		}
+		_sizeLeft = _minimumAlignment;
+	}
+	else
+	{
+		paddings.emplace_back(0);
+		_sizeLeft -= size;
+		if (_sizeLeft == 0)
+		{
+			_sizeLeft = _minimumAlignment;
+		}
+	}
+	sizes.emplace_back(size);
+	_totalSize += paddings.back() + _minimumAlignment;
+}
+
 mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept
 {
-	UNUSED(info);
+
+	constexpr const mcf::IR::ASM::Register registerParams[] =
+	{
+		mcf::IR::ASM::Register::RCX,
+		mcf::IR::ASM::Register::RDX,
+		mcf::IR::ASM::Register::R8,
+		mcf::IR::ASM::Register::R9
+	};
+
+	codes.emplace_back(mcf::IR::ASM::Proc::Make(info.Name));
+	codes.emplace_back(mcf::IR::ASM::Push::Make(mcf::IR::ASM::Register::RBP));
+	alignedStack += 0x10;
+
+	const size_t paramCount = info.Params.Variables.size();
+	size_t paramSizeAllocation = 0;
+	size_t minimumParamSizeAllocation = ALIGNMENT;
+	size_t currParamSizeAllocation = ALIGNMENT;
+	for (size_t i = 0; i < paramCount && i < MCF_ARRAY_SIZE(registerParams); ++i)
+	{
+		paramSizeAllocation += info.Params.Variables[i].GetTypeSize();
+	}
+	alignedStack + 0x20; // 5th variable
+
 	DebugMessage(u8"구현 필요");
 }
 
@@ -178,7 +235,8 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
-	const mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	scope->MakeLocalScopeToFunctionInfo(functionInfo);
 	if (functionInfo.IsValid() == false)
 	{
 		DebugMessage(u8"구현 필요");
@@ -191,8 +249,13 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf
 	{
 		DebugAssert(functionInfo.Params.Variables[i].IsValid(), u8"");
 		DebugAssert(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
-		DebugAssert(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
 
+		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
+		{
+			continue;
+		}
+
+		DebugAssert(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
 		params.emplace_back(functionInfo.Params.Variables[i].DataType);
 	}
 
@@ -202,7 +265,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf
 		DebugMessage(u8"구현 필요");
 		return mcf::IR::Invalid::Make();
 	}
-	return mcf::IR::Extern::Make(functionInfo.Name, params, (functionInfo.Params.VariadicIdentifier.empty() == false));
+	return mcf::IR::Extern::Make(functionInfo.Name, params, functionInfo.Params.HasVariadic());
 }
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
@@ -246,7 +309,8 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::A
 mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
-	const mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	scope->MakeLocalScopeToFunctionInfo(functionInfo);
 	if (functionInfo.IsValid() == false)
 	{
 		DebugMessage(u8"구현 필요");
@@ -259,45 +323,42 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::
 	{
 		DebugAssert(functionInfo.Params.Variables[i].IsValid(), u8"");
 		DebugAssert(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
-		DebugAssert(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
+		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
+		{
+			continue;
+		}
 
+		DebugAssert(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
 		params.emplace_back(functionInfo.Params.Variables[i].DataType);
 	}
 
-	if (functionInfo.IsValid() == false)
+	if ( scope->DefineFunction( functionInfo.Name, functionInfo ) == false )
 	{
-		DebugMessage(u8"구현 필요");
+		DebugMessage( u8"구현 필요" );
 		return mcf::IR::Invalid::Make();
 	}
 
 	const mcf::AST::Statement::Block* functionBlock = statement->GetUnsafeBlockPointer();
-	DebugMessage(u8"함수 전용 스코프 처리 필요");
-	mcf::IR::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock, scope);
+	mcf::IR::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock);
 	if (objects.empty() == true)
 	{
 		DebugMessage( u8"구현 필요" );
 		return mcf::IR::Invalid::Make();
 	}
 
-	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
-	{
-		DebugMessage(u8"구현 필요");
-		return mcf::IR::Invalid::Make();
-	}
-
-	return mcf::IR::Func::Make(functionInfo.Name, params, (functionInfo.Params.VariadicIdentifier.empty() == false), std::move(objects));
+	return mcf::IR::Func::Make(functionInfo.Name, params, functionInfo.Params.HasVariadic(), std::move(objects));
 }
 
-mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept
 {
-	UNUSED(info, statement, scope);
+	UNUSED(info, statement);
 	mcf::Evaluator::FunctionIRGenerator generator(info);
 	
 	mcf::IR::PointerVector objects;
 	const size_t statementCount = statement->GetStatementCount();
 	for (size_t i = 0; i < statementCount; i++)
 	{
-		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), scope);
+		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), info.LocalScope);
 		if (object.get() == nullptr)
 		{
 			DebugMessage(u8"구현 필요");
@@ -316,6 +377,7 @@ mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const 
 			DebugMessage(u8"구현 필요");
 			break;
 
+		case IR::Type::ASM: __COUNTER__; [[fallthrough]];
 		case IR::Type::INCLUDELIB: __COUNTER__; [[fallthrough]];
 		case IR::Type::EXTERN: __COUNTER__; [[fallthrough]];
 		case IR::Type::FUNC: __COUNTER__; [[fallthrough]];
@@ -369,6 +431,7 @@ mcf::Object::FunctionInfo mcf::Evaluator::Object::EvalFunctionSignatureIntermedi
 		DebugMessage(u8"구현 필요");
 		return mcf::Object::FunctionInfo();
 	}
+
 	return functionInfo;
 }
 
@@ -391,7 +454,14 @@ const bool mcf::Evaluator::Object::EvalFunctionParamsIntermediate(_Out_ mcf::Obj
 			return false;
 		}
 	}
-	outParams.VariadicIdentifier = intermediate->HasVariadic() ? intermediate->GetUnsafeVariadic()->GetIdentifier() : std::string();
+
+	if (intermediate->HasVariadic())
+	{
+		mcf::Object::Variable variadic;
+		variadic.Name = intermediate->GetUnsafeVariadic()->GetIdentifier();
+		variadic.DataType.IsVariadic = true;
+		outParams.Variables.emplace_back(variadic);
+	}
 	return true;
 }
 
@@ -680,7 +750,7 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::O
 			return false;
 		}
 
-		if (integerObject->GetSize() > info.Variable.DataType.Size)
+		if (integerObject->GetSize() > info.Variable.DataType.IntrinsicSize)
 		{
 			DebugMessage(u8"구현 필요");
 			return false;

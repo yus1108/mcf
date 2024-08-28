@@ -15,6 +15,18 @@ const bool mcf::Object::TypeInfo::HasUnknownArrayIndex(void) const noexcept
 	return false;
 }
 
+const size_t mcf::Object::TypeInfo::GetSize( void ) const noexcept
+{
+	DebugAssert(IsVariadic == false, u8"variadic 은 사이즈를 알 수 없습니다.");
+	size_t totalSize = IntrinsicSize;
+	const size_t vectorCount = ArraySizeList.size();
+	for (size_t i = 0; i < vectorCount; ++i)
+	{
+		totalSize *= ArraySizeList[i];
+	}
+	return totalSize;
+}
+
 const std::string mcf::Object::TypeInfo::Inspect( void ) const noexcept
 {
 	DebugAssert(IsValid(), u8"TypeInfo가 유효하지 않습니다.");
@@ -113,7 +125,32 @@ const mcf::Object::VariableInfo mcf::Object::Scope::FindVariableInfo(const std::
 	return { infoFound->second, _parent == nullptr };
 }
 
-const bool mcf::Object::Scope::DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept
+const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept
+{
+	DebugAssert(info.Name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+	DebugAssert(info.LocalScope == nullptr, u8"로컬 스코프가 이미 할당 되어 있습니다.");
+
+	_tree->Locals.emplace_back(std::make_unique<Scope>(_tree, this));
+	if (_tree->Locals.back() == nullptr)
+	{
+		DebugMessage(u8"구현 필요");
+		return false;
+	}
+
+	if (info.Params.IsVoid() == false)
+	{
+		const size_t paramCount = info.Params.Variables.size();
+		for (size_t i = 0; i < paramCount; ++i)
+		{
+			_tree->Locals.back()->DefineVariable(info.Params.Variables[i].Name, info.Params.Variables[i]);
+		}
+	}
+
+	info.LocalScope = _tree->Locals.back().get();
+	return true;
+}
+
+const bool mcf::Object::Scope::DefineFunction(const std::string& name, mcf::Object::FunctionInfo info) noexcept
 {
 	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
 	DebugAssert(info.IsValid(), u8"함수 정보가 유효하지 않습니다.");
@@ -233,6 +270,59 @@ const std::string mcf::IR::Expression::Initializer::Inspect(void) const noexcept
 		buffer += _keyList[i]->Inspect() + ", ";
 	}
 	return buffer + "}";
+}
+
+mcf::IR::ASM::Proc::Proc(const std::string& name) noexcept
+	: _name(name)
+{
+	DebugAssert(_name.empty() == false, u8"프로시져의 이름이 반드시 존재해야 합니다.");
+}
+
+const std::string mcf::IR::ASM::Proc::Inspect( void ) const noexcept
+{
+	return _name + " proc";
+}
+
+mcf::IR::ASM::Push::Push(const Register address) noexcept
+	: _value(CONVERT_REGISTER_TO_STRING(address))
+{
+}
+
+const std::string mcf::IR::ASM::Push::Inspect( void ) const noexcept
+{
+	return "push " + _value;
+}
+
+mcf::IR::ASM::Sub::Sub(const Register minuend, const __int64 subtrahend) noexcept
+	: _minuend(CONVERT_REGISTER_TO_STRING(minuend))
+	, _subtrahend(std::to_string(subtrahend))
+{
+#if defined(_DEBUG)
+	// 8바이트 레지스터인지 검증
+	constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
+	switch (minuend)
+	{
+	case Register::RAX: __COUNTER__; [[fallthrough]];
+	case Register::RBX: __COUNTER__; [[fallthrough]];
+	case Register::RCX: __COUNTER__; [[fallthrough]];
+	case Register::RDX: __COUNTER__; [[fallthrough]];
+	case Register::R8: __COUNTER__; [[fallthrough]];
+	case Register::R9: __COUNTER__; [[fallthrough]];
+	case Register::RSP: __COUNTER__; [[fallthrough]];
+	case Register::RBP: __COUNTER__;
+		break;
+
+	default:
+		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. Register=%s(%zu)", mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(minuend), mcf::ENUM_INDEX(minuend));
+	}
+	constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
+#endif
+}
+
+const std::string mcf::IR::ASM::Sub::Inspect( void ) const noexcept
+{
+	return "sub " + _minuend + ", " + _subtrahend;
 }
 
 mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept

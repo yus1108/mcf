@@ -96,7 +96,7 @@ namespace mcf
 			class Invalid : public Interface
 			{
 			public:
-				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline static Pointer Make(void) noexcept { return std::make_unique<Invalid>(); }
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
@@ -108,7 +108,7 @@ namespace mcf
 				using PointerVector = std::vector<Pointer>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Identifier>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Identifier>(std::move(args)...); }
 
 			public:
 				explicit Identifier(void) noexcept = default;
@@ -129,7 +129,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Integer>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Integer>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Integer>(std::move(args)...); }
 
 			public:
 				explicit Integer(void) noexcept = default;
@@ -150,7 +150,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<String>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<String>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<String>(std::move(args)...); }
 
 			public:
 				explicit String(void) noexcept = default;
@@ -169,7 +169,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Prefix>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Prefix>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Prefix>(std::move(args)...); }
 
 			public:
 				explicit Prefix(void) noexcept = default;
@@ -189,7 +189,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Group>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Group>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Group>(std::move(args)...); }
 
 			public:
 				explicit Group(void) noexcept = default;
@@ -208,7 +208,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Infix>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Infix>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Infix>(std::move(args)...); }
 
 			public:
 				explicit Infix(void) noexcept = default;
@@ -229,7 +229,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Call>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Call>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Call>(std::move(args)...); }
 
 			public:
 				explicit Call(void) noexcept = default;
@@ -249,7 +249,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Index>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Index>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Index>(std::move(args)...); }
 
 			public:
 				explicit Index(void) noexcept = default;
@@ -272,7 +272,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Initializer>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Initializer>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Initializer>(std::move(args)...); }
 
 			public:
 				explicit Initializer(void) noexcept = default;
@@ -301,7 +301,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<MapInitializer>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<MapInitializer>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<MapInitializer>(std::move(args)...); }
 
 			public:
 				explicit MapInitializer(void) noexcept = default;
@@ -380,7 +380,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<TypeSignature>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<TypeSignature>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<TypeSignature>(std::move(args)...); }
 
 			public:
 				explicit TypeSignature(void) noexcept = default;
@@ -408,7 +408,7 @@ namespace mcf
 				using PointerVector = std::vector<Pointer>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<VariableSignature>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<VariableSignature>(std::move(args)...); }
 
 			public:
 				explicit VariableSignature(void) noexcept = default;
@@ -431,7 +431,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<FunctionParams>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionParams>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<FunctionParams>(std::move(args)...); }
 
 			public:
 				explicit FunctionParams(void) noexcept = default;
@@ -459,7 +459,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<FunctionSignature>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<FunctionSignature>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<FunctionSignature>(std::move(args)...); }
 
 			public:
 				explicit FunctionSignature(void) noexcept = default;
@@ -540,7 +540,7 @@ namespace mcf
 			class Invalid : public Interface
 			{
 			public:
-				inline static Pointer Make() { return std::make_unique<Invalid>(); }
+				inline static Pointer Make(void) noexcept { return std::make_unique<Invalid>(); }
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
@@ -551,7 +551,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<IncludeLibrary>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<IncludeLibrary>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<IncludeLibrary>(std::move(args)...); }
 
 			public:
 				explicit IncludeLibrary(void) noexcept = default;
@@ -575,7 +575,7 @@ namespace mcf
 				using BindMapPointer = mcf::AST::Expression::MapInitializer::Pointer;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Typedef>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Typedef>(std::move(args)...); }
 
 			public:
 				explicit Typedef(void) noexcept = default;
@@ -595,7 +595,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Extern>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Extern>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Extern>(std::move(args)...); }
 
 			public:
 				explicit Extern(void) noexcept = default;
@@ -616,7 +616,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Let>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Let>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Let>(std::move(args)...); }
 
 			public:
 				explicit Let(void) noexcept = default;
@@ -639,7 +639,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Block>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Block>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Block>(std::move(args)...); }
 
 			public:
 				explicit Block(void) noexcept = default;
@@ -668,7 +668,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Return>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Return>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Return>(std::move(args)...); }
 
 			public:
 				explicit Return(void) noexcept = default;
@@ -687,7 +687,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Func>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Func>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Func>(std::move(args)...); }
 
 			public:
 				explicit Func(void) noexcept = default;
@@ -710,7 +710,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Main>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Main>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Main>(std::move(args)...); }
 
 			public:
 				explicit Main(void) noexcept = default;
@@ -733,7 +733,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Expression>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Expression>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Expression>(std::move(args)...); }
 
 			public:
 				explicit Expression(void) noexcept = default;
@@ -755,7 +755,7 @@ namespace mcf
 				using Pointer = std::unique_ptr<Unused>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) { return std::make_unique<Unused>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Unused>(std::move(args)...); }
 
 			public:
 				explicit Unused(void) noexcept = default;

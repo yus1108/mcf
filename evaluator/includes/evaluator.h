@@ -10,6 +10,19 @@ namespace mcf
 {
 	namespace Evaluator
 	{
+		class Allocator final
+		{
+		public:
+			void AddSize(const size_t size) noexcept;
+
+		private:
+			static const unsigned __int64 DEFAULT_ALIGNMENT = 16;
+			std::vector<unsigned __int64> sizes;
+			std::vector<unsigned __int64> paddings;
+			unsigned __int64 _minimumAlignment = DEFAULT_ALIGNMENT;
+			unsigned __int64 _totalSize = 0;
+			unsigned __int64 _sizeLeft = DEFAULT_ALIGNMENT;
+		};
 		class FunctionIRGenerator final
 		{
 		public:
@@ -19,7 +32,10 @@ namespace mcf
 			mcf::IR::PointerVector GenerateIRCode(void) const noexcept;
 
 		private:
-
+			static const unsigned __int64 ALIGNMENT = 16;
+			static const unsigned __int64 ADDRESS_SIZE = 8;
+			mcf::IR::ASM::PointerVector codes;
+			unsigned __int64 alignedStack = 0;
 		};
 
 		class Object final
@@ -37,7 +53,7 @@ namespace mcf
 			mcf::IR::Pointer EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
-			mcf::IR::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
 			const bool EvalFunctionParamsIntermediate(_Out_ mcf::Object::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
