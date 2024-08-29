@@ -10,32 +10,38 @@ namespace mcf
 {
 	namespace Evaluator
 	{
-		class Allocator final
+		class MemoryAllocator final
 		{
+		public:
+			static const size_t DEFAULT_ALIGNMENT = 16;
+
 		public:
 			void AddSize(const size_t size) noexcept;
 
 		private:
-			static const unsigned __int64 DEFAULT_ALIGNMENT = 16;
-			std::vector<unsigned __int64> sizes;
-			std::vector<unsigned __int64> paddings;
-			unsigned __int64 _minimumAlignment = DEFAULT_ALIGNMENT;
-			unsigned __int64 _totalSize = 0;
-			unsigned __int64 _sizeLeft = DEFAULT_ALIGNMENT;
+			void Realign(const size_t alignment) noexcept;
+
+		private:
+			std::vector<size_t> _sizes;
+			std::vector<size_t> _paddings;
+			std::vector<size_t> _offsets;
+			size_t _alignment = DEFAULT_ALIGNMENT;
 		};
+
 		class FunctionIRGenerator final
 		{
 		public:
+			explicit FunctionIRGenerator(void) noexcept = delete;
 			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
 
 			const bool AddLocalVariable(_Notnull_ const mcf::IR::Let* object) noexcept;
 			mcf::IR::PointerVector GenerateIRCode(void) const noexcept;
 
 		private:
-			static const unsigned __int64 ALIGNMENT = 16;
-			static const unsigned __int64 ADDRESS_SIZE = 8;
-			mcf::IR::ASM::PointerVector codes;
-			unsigned __int64 alignedStack = 0;
+			mcf::IR::ASM::PointerVector _codes;
+			mcf::IR::ASM::PointerVector _endCodes;
+			size_t _paramOffset = 0x10;
+			size_t _currentStackOffset = 0;
 		};
 
 		class Object final

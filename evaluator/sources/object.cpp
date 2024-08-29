@@ -272,15 +272,44 @@ const std::string mcf::IR::Expression::Initializer::Inspect(void) const noexcept
 	return buffer + "}";
 }
 
-mcf::IR::ASM::Proc::Proc(const std::string& name) noexcept
+mcf::IR::ASM::Address::Address(const mcf::Object::TypeInfo& targetType, mcf::IR::ASM::Register targetRegister, const size_t offset)
+	: _targetType(targetType)
+	, _targetAddress(GetAddressOf(targetRegister, offset))
+{
+	DebugAssert(targetType.IsValid(), u8"유효하지 않은 타입입니다.");
+	DebugAssert(targetRegister != Register::INVALID && targetRegister < Register::COUNT, u8"유효하지 않은 레지스터 값입니다.");
+}
+
+const std::string mcf::IR::ASM::Address::GetAddressOf(const Register value, const size_t offset) noexcept
+{
+	return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? "-" : "+") + std::to_string(offset) + "]";
+}
+
+const std::string mcf::IR::ASM::Address::Inspect(void) const noexcept
+{
+	return _targetType.Inspect() + " ptr " + _targetAddress;
+}
+
+mcf::IR::ASM::ProcBegin::ProcBegin(const std::string& name) noexcept
 	: _name(name)
 {
 	DebugAssert(_name.empty() == false, u8"프로시져의 이름이 반드시 존재해야 합니다.");
 }
 
-const std::string mcf::IR::ASM::Proc::Inspect( void ) const noexcept
+const std::string mcf::IR::ASM::ProcBegin::Inspect(void) const noexcept
 {
 	return _name + " proc";
+}
+
+mcf::IR::ASM::ProcEnd::ProcEnd(const std::string& name) noexcept
+	: _name( name )
+{
+	DebugAssert(_name.empty() == false, u8"프로시져의 이름이 반드시 존재해야 합니다.");
+}
+
+const std::string mcf::IR::ASM::ProcEnd::Inspect(void) const noexcept
+{
+	return _name + " endp";
 }
 
 mcf::IR::ASM::Push::Push(const Register address) noexcept
@@ -288,9 +317,55 @@ mcf::IR::ASM::Push::Push(const Register address) noexcept
 {
 }
 
-const std::string mcf::IR::ASM::Push::Inspect( void ) const noexcept
+const std::string mcf::IR::ASM::Push::Inspect(void) const noexcept
 {
 	return "push " + _value;
+}
+
+mcf::IR::ASM::Pop::Pop(const Register target) noexcept
+	: _target(CONVERT_REGISTER_TO_STRING(target))
+{
+}
+
+const std::string mcf::IR::ASM::Pop::Inspect(void) const noexcept
+{
+	return "pop " + _target;
+}
+
+mcf::IR::ASM::Mov::Mov(const Address& target, const Register source) noexcept
+	: _target(target.Inspect())
+	, _source(mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(source))
+{
+#if defined(_DEBUG)
+	// 8바이트 레지스터인지 검증
+	constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
+	switch (source)
+	{
+	case Register::RAX: __COUNTER__; [[fallthrough]];
+	case Register::RBX: __COUNTER__; [[fallthrough]];
+	case Register::RCX: __COUNTER__; [[fallthrough]];
+	case Register::RDX: __COUNTER__; [[fallthrough]];
+	case Register::R8: __COUNTER__; [[fallthrough]];
+	case Register::R9: __COUNTER__; [[fallthrough]];
+	case Register::RSP: __COUNTER__; [[fallthrough]];
+	case Register::RBP: __COUNTER__;
+		if (target.GetTypeInfo().GetSize() != sizeof(__int64))
+		{
+			DebugMessage(u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
+		}
+		break;
+
+	default:
+		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. Register=%s(%zu)", mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(source), mcf::ENUM_INDEX(source));
+	}
+	constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
+#endif
+}
+
+const std::string mcf::IR::ASM::Mov::Inspect( void ) const noexcept
+{
+	return "mov " + _target + ", " + _source;
 }
 
 mcf::IR::ASM::Sub::Sub(const Register minuend, const __int64 subtrahend) noexcept

@@ -44,48 +44,68 @@ namespace mcf
 				}
 				return true;
 			}
+
+			inline static void MemoryAllocator_AddSize(_Inout_ std::vector<size_t>& outSizes, _Inout_ std::vector<size_t>& outPaddings, _Inout_ std::vector<size_t>& outOffsets, 
+				const size_t alignment, const size_t defaultAlignment, const size_t size) noexcept
+			{
+				DebugAssert(size > 0, u8"사이즈는 0일 수 없습니다.");
+				DebugAssert(size < alignment, u8"사이즈는 alignment 보다 크면 안됩니다.");
+				DebugAssert(outSizes.size() == outPaddings.size() && outPaddings.size() == outOffsets.size(), u8"모든 벡터들은 아이템의 갯수가 같아야 합니다.");
+
+				const size_t offsetWithoutPadding = outOffsets.empty() ? 0 : (outOffsets.back() + outSizes.back());
+				const size_t prevDefaultAlignedPadding = outOffsets.empty() ? alignment : (defaultAlignment - (offsetWithoutPadding % defaultAlignment));
+				const size_t prevAlignedPadding = alignment - (offsetWithoutPadding % alignment);
+
+				size_t estimatedOffset = offsetWithoutPadding;
+				if (size > prevDefaultAlignedPadding)
+				{
+					estimatedOffset = offsetWithoutPadding + prevDefaultAlignedPadding;
+				}
+
+				if (estimatedOffset + size > offsetWithoutPadding + prevAlignedPadding)
+				{
+					estimatedOffset = offsetWithoutPadding + prevAlignedPadding;
+				}
+
+				if (offsetWithoutPadding != estimatedOffset)
+				{
+					outPaddings.back() = estimatedOffset - offsetWithoutPadding;
+				}
+				outOffsets.emplace_back(estimatedOffset);
+				outSizes.emplace_back(size);
+				outPaddings.emplace_back(alignment - ((estimatedOffset + size) % alignment));
+			}
 		}
 	}
 }
 
-void mcf::Evaluator::Allocator::AddSize(const size_t size) noexcept
+void mcf::Evaluator::MemoryAllocator::AddSize(const size_t size) noexcept
 {
 	DebugAssert(size > 0, u8"사이즈는 0일 수 없습니다.");
-	if (size > _sizeLeft)
+	if (size > _alignment)
 	{
-		if (size > _minimumAlignment)
-		{
-			const size_t mod = size % DEFAULT_ALIGNMENT;
-			_minimumAlignment = mod > 0 ? (size - mod + DEFAULT_ALIGNMENT) : size;
-		}
+		Realign(size + DEFAULT_ALIGNMENT - (size % DEFAULT_ALIGNMENT));
+	}
+	Internal::MemoryAllocator_AddSize(_sizes, _paddings, _offsets, _alignment, DEFAULT_ALIGNMENT, size);
+}
 
-		if (_totalSize <= _minimumAlignment)
-		{
-			paddings.emplace_back(_minimumAlignment - _totalSize);
-		}
-		else
-		{
-			const size_t mod = _totalSize % _minimumAlignment;
-			paddings.emplace_back(_minimumAlignment - mod);
-		}
-		_sizeLeft = _minimumAlignment;
-	}
-	else
+void mcf::Evaluator::MemoryAllocator::Realign(const size_t alignment) noexcept
+{
+	DebugAssert(alignment > 0, u8"Alignment는 0일 수 없습니다.");
+	_alignment = alignment;
+	std::vector<size_t> outSizes;
+	std::vector<size_t> outPaddings;
+	std::vector<size_t> outOffsets;
+
+	const size_t prevSizesCount = _sizes.size();
+	for (size_t i = 0; i < prevSizesCount; ++i)
 	{
-		paddings.emplace_back(0);
-		_sizeLeft -= size;
-		if (_sizeLeft == 0)
-		{
-			_sizeLeft = _minimumAlignment;
-		}
+		Internal::MemoryAllocator_AddSize(outSizes, outPaddings, outOffsets, _alignment, DEFAULT_ALIGNMENT, _sizes[i]);
 	}
-	sizes.emplace_back(size);
-	_totalSize += paddings.back() + _minimumAlignment;
 }
 
 mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept
 {
-
 	constexpr const mcf::IR::ASM::Register registerParams[] =
 	{
 		mcf::IR::ASM::Register::RCX,
@@ -94,21 +114,20 @@ mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::Func
 		mcf::IR::ASM::Register::R9
 	};
 
-	codes.emplace_back(mcf::IR::ASM::Proc::Make(info.Name));
-	codes.emplace_back(mcf::IR::ASM::Push::Make(mcf::IR::ASM::Register::RBP));
-	alignedStack += 0x10;
+	_codes.emplace_back(mcf::IR::ASM::ProcBegin::Make(info.Name));
+	_endCodes.emplace_back(mcf::IR::ASM::ProcEnd::Make(info.Name));
+	_codes.emplace_back(mcf::IR::ASM::Push::Make(mcf::IR::ASM::Register::RBP));
+	_endCodes.emplace_back(mcf::IR::ASM::Pop::Make(mcf::IR::ASM::Register::RSP));
 
 	const size_t paramCount = info.Params.Variables.size();
-	size_t paramSizeAllocation = 0;
-	size_t minimumParamSizeAllocation = ALIGNMENT;
-	size_t currParamSizeAllocation = ALIGNMENT;
+	const mcf::Object::TypeInfo paramType = info.LocalScope->FindTypeInfo("qword");
 	for (size_t i = 0; i < paramCount && i < MCF_ARRAY_SIZE(registerParams); ++i)
 	{
-		paramSizeAllocation += info.Params.Variables[i].GetTypeSize();
+		mcf::IR::ASM::Address target(paramType, mcf::IR::ASM::Register::RSP, _currentStackOffset + _paramOffset + i * 0x8);
+		_codes.emplace_back(mcf::IR::ASM::Mov::Make(target, registerParams[i]));
 	}
-	alignedStack + 0x20; // 5th variable
 
-	DebugMessage(u8"구현 필요");
+	DebugMessage( u8"구현 필요" );
 }
 
 const bool mcf::Evaluator::FunctionIRGenerator::AddLocalVariable(_Notnull_ const mcf::IR::Let* object) noexcept
@@ -351,7 +370,6 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::
 
 mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept
 {
-	UNUSED(info, statement);
 	mcf::Evaluator::FunctionIRGenerator generator(info);
 	
 	mcf::IR::PointerVector objects;

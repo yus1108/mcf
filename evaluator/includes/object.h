@@ -428,10 +428,27 @@ namespace mcf
 			};
 			constexpr const size_t REGISTER_TYPE_SIZE = MCF_ARRAY_SIZE(REGISTER_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Register::COUNT) == REGISTER_TYPE_SIZE, "register count not matching!");
-			constexpr const char* CONVERT_REGISTER_TO_STRING(const Register value)
+			constexpr const char* CONVERT_REGISTER_TO_STRING(const Register value) noexcept
 			{
 				return REGISTER_STRING_ARRAY[mcf::ENUM_INDEX(value)];
 			}
+
+			class Address final
+			{
+			public:
+				explicit Address(void) noexcept = default;
+				explicit Address(const mcf::Object::TypeInfo& targetType, mcf::IR::ASM::Register targetRegister, const size_t offset);
+
+				static const std::string GetAddressOf( const Register value, const size_t offset ) noexcept;
+
+				const std::string Inspect(void) const noexcept;
+				inline const mcf::Object::TypeInfo GetTypeInfo(void) const noexcept { return _targetType; }
+
+			private:
+				mcf::Object::TypeInfo _targetType;
+				std::string _targetAddress;
+			};
+
 
 			class Interface : public mcf::IR::Interface
 			{
@@ -453,17 +470,37 @@ namespace mcf
 				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Expression Object"; }
 			};
 
-			class Proc : public Interface
+			class ProcBegin : public Interface
 			{
 			public:
-				using Pointer = std::unique_ptr<Proc>;
+				using Pointer = std::unique_ptr<ProcBegin>;
 
 				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Proc>(std::move(args)...); }
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<ProcBegin>(std::move(args)...); }
 
 			public:
-				explicit Proc(void) noexcept = default;
-				explicit Proc(const std::string& name) noexcept;
+				explicit ProcBegin(void) noexcept = default;
+				explicit ProcBegin(const std::string& name) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _name;
+			};
+
+			class ProcEnd : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<ProcEnd>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<ProcEnd>(std::move(args)...); }
+
+			public:
+				explicit ProcEnd(void) noexcept = default;
+				explicit ProcEnd(const std::string& name) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC; }
@@ -491,6 +528,47 @@ namespace mcf
 
 			protected:
 				std::string _value;
+			};
+
+			class Pop : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Pop>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Pop>(std::move(args)...); }
+
+			public:
+				explicit Pop(void) noexcept = default;
+				explicit Pop(const Register target) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _target;
+			};
+
+			class Mov : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Mov>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Mov>(std::move(args)...); }
+
+			public:
+				explicit Mov(void) noexcept = default;
+				explicit Mov(const Address& target, const Register source) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _target;
+				std::string _source;
 			};
 
 			class Sub : public Interface
