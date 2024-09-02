@@ -17,6 +17,10 @@ namespace mcf
 
 		public:
 			void AddSize(const size_t size) noexcept;
+			inline const bool IsEmpty(void) const noexcept { return _sizes.empty(); }
+			inline const size_t GetCount(void) const noexcept { return _sizes.size(); }
+			inline const size_t GetOffset(const size_t index) const noexcept { return _offsets[index]; }
+			inline const size_t GetTotalSize(void) const noexcept { return _offsets.back() + _sizes.back() + _paddings.back(); }
 
 		private:
 			void Realign(const size_t alignment) noexcept;
@@ -34,14 +38,16 @@ namespace mcf
 			explicit FunctionIRGenerator(void) noexcept = delete;
 			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
 
-			const bool AddLocalVariable(_Notnull_ const mcf::IR::Let* object) noexcept;
-			mcf::IR::PointerVector GenerateIRCode(void) const noexcept;
+			void AddLetStatement(_Notnull_ const mcf::IR::Let* object) noexcept;
+			mcf::IR::PointerVector GenerateIRCode(void) noexcept;
 
 		private:
-			mcf::IR::ASM::PointerVector _codes;
+			static const size_t PARAM_OFFSET = 0x10;
+
+			MemoryAllocator _localMemory;
+			mcf::IR::ASM::PointerVector _localAssignCodes;
+			mcf::IR::ASM::PointerVector _beginCodes;
 			mcf::IR::ASM::PointerVector _endCodes;
-			size_t _paramOffset = 0x10;
-			size_t _currentStackOffset = 0;
 		};
 
 		class Object final

@@ -322,6 +322,7 @@ namespace mcf
 				const size_t GetSize(void) const noexcept;
 
 				const unsigned __int64 GetUInt64(void) const noexcept;
+				const __int32 GetInt32(void) const noexcept;
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
 				virtual const std::string Inspect(void) const noexcept override final;
@@ -371,8 +372,10 @@ namespace mcf
 			{
 				INVALID = 0,
 
+				RET,
 				PROC,
 				PUSH,
+				ADD,
 				SUB,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -383,8 +386,10 @@ namespace mcf
 			{
 				"INVALID",
 
+				"RET",
 				"PROC",
 				"PUSH",
+				"ADD",
 				"SUB",
 			};
 			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
@@ -468,6 +473,14 @@ namespace mcf
 				inline static Pointer Make(void) noexcept { return std::make_unique<Invalid>(); }
 				inline virtual const Type GetASMType(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Expression Object"; }
+			};
+
+			class Ret : public Interface
+			{
+			public:
+				inline static Pointer Make(void) noexcept { return std::make_unique<Ret>(); }
+				inline virtual const Type GetASMType(void) const noexcept override final { return Type::RET; }
+				inline virtual const std::string Inspect(void) const noexcept override final { return "\tret\n"; }
 			};
 
 			class ProcBegin : public Interface
@@ -561,6 +574,8 @@ namespace mcf
 			public:
 				explicit Mov(void) noexcept = default;
 				explicit Mov(const Address& target, const Register source) noexcept;
+				explicit Mov(const Address& target, const unsigned __int64 source) noexcept;
+				explicit Mov(const Address& target, const __int32 source) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
@@ -582,6 +597,7 @@ namespace mcf
 			public:
 				explicit Sub(void) noexcept = default;
 				explicit Sub(const Register minuend, const __int64 subtrahend) noexcept;
+				explicit Sub(const Register minuend, const unsigned __int64 subtrahend) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::SUB; }
@@ -590,6 +606,28 @@ namespace mcf
 			protected:
 				std::string _minuend;
 				std::string _subtrahend;
+			};
+
+			class Add : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Add>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Add>(std::move(args)...); }
+
+			public:
+				explicit Add(void) noexcept = default;
+				explicit Add(const Register lhs, const __int64 rhs) noexcept;
+				explicit Add(const Register lhs, const unsigned __int64 rhs) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::ADD; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _lhs;
+				std::string _rhs;
 			};
 		}
 
@@ -645,12 +683,15 @@ namespace mcf
 			explicit Let(void) noexcept = default;
 			explicit Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::Pointer&& assignedExpression) noexcept;
 
+			inline const mcf::Object::VariableInfo GetInfo(void) const noexcept { return _info; }
+			inline const mcf::IR::Expression::Interface* GetUnsafeAssignExpressionPointer(void) const noexcept { return _assignExpression.get(); }
+
 			inline virtual const Type GetType(void) const noexcept override final { return Type::LET; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
 			mcf::Object::VariableInfo _info;
-			mcf::IR::Expression::Pointer _assignedExpression;
+			mcf::IR::Expression::Pointer _assignExpression;
 		};
 
 		class Func final : public Interface
@@ -663,16 +704,13 @@ namespace mcf
 
 		public:
 			explicit Func(void) noexcept = default;
-			explicit Func(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic, PointerVector&& body) noexcept;
+			explicit Func(PointerVector&& defines) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::FUNC; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
-			std::string _name;
-			std::vector<mcf::Object::TypeInfo> _params;
-			PointerVector _body;
-			bool _hasVariadic;
+			PointerVector _defines;
 		};
 
 		class Program final : public Interface

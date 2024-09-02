@@ -147,30 +147,30 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"func foo(void) -> void {}",
 					"foo proc\n"
-						"\tsub rsp 08h\n"
-						"\tadd rsp 08h\n"
-						"\tret"
-					"foo endp",
+						"\tpush rbp\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"foo endp\n",
 				},
 				{
 					"func joo(void) -> void { let var1: dword = 15; }",
 					"joo proc\n"
-						"\tsub rsp 08h\n"
-						"\tsub rsp 10h\n"
-						"\tmov dword ptr [rsp + 0h], 15\n" // var1 = 15;
-						"\tadd rsp 10h\n"
-						"\tadd rsp 08h\n"
-						"\tret"
-					"joo endp",
+						"\tpush rbp\n"
+						"\tsub rsp, 16\n"
+						"\tmov dword ptr [rsp + 0], 15\n" // var1 = 15;
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"joo endp\n",
 				},
 				{
 					"func boo(void) -> byte { return 0; }",
 					"boo proc\n"
-						"\tsub rsp 08h\n"
+						"\tpush rbp\n"
 						"\tmov return byte 0\n"
-						"\tadd rsp 08h\n"
-						"\tret"
-					"boo endp",
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp\n",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
@@ -179,7 +179,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				mcf::Parser::Object parser( testCases[i].Input, false );
 				mcf::AST::Program program;
 				parser.ParseProgram( program );
-				FATAL_ASSERT( CheckParserErrors( parser ), u8"파싱에 실패 하였습니다." );
+				FATAL_ASSERT(CheckParserErrors( parser ), u8"파싱에 실패 하였습니다.");
 				mcf::Evaluator::Object evaluator;
 				mcf::Object::ScopeTree scopeTree;
 				scopeTree.Global.DefineType("byte", mcf::Object::TypeInfo::MakePrimitive("byte", 1));
@@ -188,9 +188,9 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive("qword", 8));
 				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
 
-				FATAL_ASSERT( object.get() != nullptr, u8"object가 nullptr이면 안됩니다." );
+				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
-				FATAL_ASSERT( actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str() );
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 
 			}
 			return true;

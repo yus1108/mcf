@@ -674,7 +674,7 @@ namespace mcf
 				explicit Return(void) noexcept = default;
 				explicit Return(mcf::AST::Expression::Pointer&& returnValue) noexcept;
 
-				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BLOCK; }
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::RETURN; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:

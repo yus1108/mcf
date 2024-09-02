@@ -2,6 +2,42 @@
 #include "evaluator.h"
 #include "object.h"
 
+namespace mcf
+{
+	namespace IR
+	{
+		namespace ASM
+		{
+			namespace Internal
+			{
+				static const bool IsRegister64Bit(const mcf::IR::ASM::Register reg)
+				{
+					// 8바이트 레지스터인지 검증
+					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
+					switch (reg)
+					{
+					case Register::RAX: __COUNTER__; [[fallthrough]];
+					case Register::RBX: __COUNTER__; [[fallthrough]];
+					case Register::RCX: __COUNTER__; [[fallthrough]];
+					case Register::RDX: __COUNTER__; [[fallthrough]];
+					case Register::R8: __COUNTER__; [[fallthrough]];
+					case Register::R9: __COUNTER__; [[fallthrough]];
+					case Register::RSP: __COUNTER__; [[fallthrough]];
+					case Register::RBP: __COUNTER__;
+						return true;
+
+					default:
+						break;
+					}
+					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
+					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
+					return false;
+				}
+			}
+		}
+	}
+}
+
 const bool mcf::Object::TypeInfo::HasUnknownArrayIndex(void) const noexcept
 {
 	const size_t size = ArraySizeList.size();
@@ -239,6 +275,13 @@ const unsigned __int64 mcf::IR::Expression::Integer::GetUInt64(void) const noexc
 	return _unsignedValue;
 }
 
+const __int32 mcf::IR::Expression::Integer::GetInt32(void) const noexcept
+{
+	DebugAssert(IsUnsignedValue(), u8"signed가 아닌 값은 int32 타입의 값이 될 수 없습니다.");
+	DebugAssert(GetSize() < sizeof(__int32), u8"4바이트 값만 int32 값으로 변환 가능합니다.");
+	return static_cast<__int32>(_signedValue);
+}
+
 const std::string mcf::IR::Expression::Integer::Inspect(void) const noexcept
 {
 	return std::to_string(_isUnsigned ? _unsignedValue : _signedValue);
@@ -277,12 +320,15 @@ mcf::IR::ASM::Address::Address(const mcf::Object::TypeInfo& targetType, mcf::IR:
 	, _targetAddress(GetAddressOf(targetRegister, offset))
 {
 	DebugAssert(targetType.IsValid(), u8"유효하지 않은 타입입니다.");
+	DebugAssert(targetType.IsArrayType() == false, u8"배열 타입은 허용되지 않습니다.");
+	DebugAssert(targetType.IsVariadic == false, u8"variadic은 허용되지 않습니다.");
+	DebugAssert(targetType.GetSize() == targetType.IntrinsicSize, u8"타입의 고유 사이즈와 실제사이즈가 같아야 합니다.");
 	DebugAssert(targetRegister != Register::INVALID && targetRegister < Register::COUNT, u8"유효하지 않은 레지스터 값입니다.");
 }
 
 const std::string mcf::IR::ASM::Address::GetAddressOf(const Register value, const size_t offset) noexcept
 {
-	return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? "-" : "+") + std::to_string(offset) + "]";
+	return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? " - " : " + ") + std::to_string(offset) + "]";
 }
 
 const std::string mcf::IR::ASM::Address::Inspect(void) const noexcept
@@ -298,7 +344,7 @@ mcf::IR::ASM::ProcBegin::ProcBegin(const std::string& name) noexcept
 
 const std::string mcf::IR::ASM::ProcBegin::Inspect(void) const noexcept
 {
-	return _name + " proc";
+	return _name + " proc\n";
 }
 
 mcf::IR::ASM::ProcEnd::ProcEnd(const std::string& name) noexcept
@@ -309,7 +355,7 @@ mcf::IR::ASM::ProcEnd::ProcEnd(const std::string& name) noexcept
 
 const std::string mcf::IR::ASM::ProcEnd::Inspect(void) const noexcept
 {
-	return _name + " endp";
+	return _name + " endp\n";
 }
 
 mcf::IR::ASM::Push::Push(const Register address) noexcept
@@ -319,7 +365,7 @@ mcf::IR::ASM::Push::Push(const Register address) noexcept
 
 const std::string mcf::IR::ASM::Push::Inspect(void) const noexcept
 {
-	return "push " + _value;
+	return "\tpush " + _value + "\n";
 }
 
 mcf::IR::ASM::Pop::Pop(const Register target) noexcept
@@ -329,7 +375,7 @@ mcf::IR::ASM::Pop::Pop(const Register target) noexcept
 
 const std::string mcf::IR::ASM::Pop::Inspect(void) const noexcept
 {
-	return "pop " + _target;
+	return "\tpop " + _target + "\n";
 }
 
 mcf::IR::ASM::Mov::Mov(const Address& target, const Register source) noexcept
@@ -363,41 +409,63 @@ mcf::IR::ASM::Mov::Mov(const Address& target, const Register source) noexcept
 #endif
 }
 
+mcf::IR::ASM::Mov::Mov(const Address& target, const unsigned __int64 source) noexcept
+	: _target(target.Inspect())
+	, _source(std::to_string(source))
+{
+	DebugAssert(target.GetTypeInfo().GetSize() == sizeof(unsigned __int64), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
+	DebugAssert(target.GetTypeInfo().IsUnsigned == true, u8"source와 target의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Mov::Mov(const Address& target, const __int32 source) noexcept
+	: _target(target.Inspect())
+	, _source(std::to_string(source))
+{
+	DebugAssert(target.GetTypeInfo().GetSize() == sizeof(__int32), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
+	DebugAssert(target.GetTypeInfo().IsUnsigned == false, u8"source와 target의 사인 타입이 일치 하지 않습니다.");
+}
+
 const std::string mcf::IR::ASM::Mov::Inspect( void ) const noexcept
 {
-	return "mov " + _target + ", " + _source;
+	return "\tmov " + _target + ", " + _source + "\n";
 }
 
 mcf::IR::ASM::Sub::Sub(const Register minuend, const __int64 subtrahend) noexcept
 	: _minuend(CONVERT_REGISTER_TO_STRING(minuend))
 	, _subtrahend(std::to_string(subtrahend))
 {
-#if defined(_DEBUG)
-	// 8바이트 레지스터인지 검증
-	constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-	switch (minuend)
-	{
-	case Register::RAX: __COUNTER__; [[fallthrough]];
-	case Register::RBX: __COUNTER__; [[fallthrough]];
-	case Register::RCX: __COUNTER__; [[fallthrough]];
-	case Register::RDX: __COUNTER__; [[fallthrough]];
-	case Register::R8: __COUNTER__; [[fallthrough]];
-	case Register::R9: __COUNTER__; [[fallthrough]];
-	case Register::RSP: __COUNTER__; [[fallthrough]];
-	case Register::RBP: __COUNTER__;
-		break;
+	DebugAssert(Internal::IsRegister64Bit(minuend), u8"64비트 레지스터가 아닙니다.");
+}
 
-	default:
-		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. Register=%s(%zu)", mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(minuend), mcf::ENUM_INDEX(minuend));
-	}
-	constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-#endif
+mcf::IR::ASM::Sub::Sub(const Register minuend, const unsigned __int64 subtrahend) noexcept
+	: _minuend(CONVERT_REGISTER_TO_STRING(minuend))
+	, _subtrahend(std::to_string(subtrahend))
+{
+	DebugAssert(Internal::IsRegister64Bit(minuend), u8"64비트 레지스터가 아닙니다.");
 }
 
 const std::string mcf::IR::ASM::Sub::Inspect( void ) const noexcept
 {
-	return "sub " + _minuend + ", " + _subtrahend;
+	return "\tsub " + _minuend + ", " + _subtrahend + "\n";
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const __int64 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	DebugAssert(Internal::IsRegister64Bit(lhs), u8"64비트 레지스터가 아닙니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const unsigned __int64 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	DebugAssert(Internal::IsRegister64Bit(lhs), u8"64비트 레지스터가 아닙니다.");
+}
+
+const std::string mcf::IR::ASM::Add::Inspect(void) const noexcept
+{
+	return "\tadd " + _lhs + ", " + _rhs + "\n";
 }
 
 mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept
@@ -447,7 +515,7 @@ const std::string mcf::IR::Extern::Inspect(void) const noexcept
 
 mcf::IR::Let::Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::Pointer&& assignedExpression) noexcept
 	: _info(info)
-	, _assignedExpression(std::move(assignedExpression))
+	, _assignExpression(std::move(assignedExpression))
 {
 	DebugAssert(_info.IsValid(), u8"변수 정보가 유효하지 않습니다.");
 }
@@ -458,7 +526,7 @@ const std::string mcf::IR::Let::Inspect(void) const noexcept
 	if (_info.IsGlobal)
 	{
 		buffer = _info.Variable.Inspect() + " ";
-		return buffer + (_assignedExpression.get() == nullptr ? "{ default init }" : _assignedExpression->Inspect());
+		return buffer + (_assignExpression.get() == nullptr ? "{ default init }" : _assignExpression->Inspect());
 	}
 	else
 	{
@@ -467,36 +535,30 @@ const std::string mcf::IR::Let::Inspect(void) const noexcept
 	return std::string();
 }
 
-mcf::IR::Func::Func(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic, PointerVector&& body) noexcept
-	: _name(name)
-	, _params(params)
-	, _hasVariadic(hasVariadic)
-	, _body(std::move(body))
+mcf::IR::Func::Func(PointerVector&& defines) noexcept
+	: _defines(std::move(defines))
 {
 #if defined(_DEBUG)
-	size_t size = _params.size();
+	const size_t size = _defines.size();
 	for (size_t i = 0; i < size; i++)
 	{
-		DebugAssert(_params[i].IsValid(), u8"_params[%zu]가 유효하지 않습니다.", i);
-		const size_t arraySize = _params[i].ArraySizeList.size();
-		for (size_t j = 0; j < arraySize; ++j)
-		{
-			DebugAssert(_params[i].ArraySizeList[j] > 0, u8"_params[%zu].ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, j, _params[i].ArraySizeList[j]);
-		}
-	}
-	size = _body.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		DebugAssert(_body[i].get() != nullptr, u8"_body[%zu]가 nullptr 여선 안됩니다.", i);
-		DebugAssert(_body[i]->GetType() != Type::INVALID, u8"_body[%zu]가 유효하지 않습니다.", i);
+		DebugAssert(_defines[i].get() != nullptr, u8"_body[%zu]가 nullptr 여선 안됩니다.", i);
+		DebugAssert(_defines[i]->GetType() == Type::ASM, u8"_body[%zu]가 유효하지 않습니다.", i);
 	}
 #endif
 }
 
 const std::string mcf::IR::Func::Inspect(void) const noexcept
 {
-	DebugMessage(u8"구현 필요");
-	return std::string();
+	std::string buffer;
+	const size_t size = _defines.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		DebugAssert(_defines[i].get() != nullptr, u8"_body[%zu]가 nullptr 여선 안됩니다.", i);
+		DebugAssert(_defines[i]->GetType() == Type::ASM, u8"_body[%zu]가 유효하지 않습니다.", i);
+		buffer += _defines[i]->Inspect();
+	}
+	return buffer;
 }
 
 mcf::IR::Program::Program(PointerVector&& objects) noexcept
