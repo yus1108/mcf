@@ -1,6 +1,6 @@
 ﻿option casemap :none ; make the file case sensitive and define predefined function
 .code
-?AssignArray proc
+?CopyMemory proc
     push rsi
     push rdi
     push rcx
@@ -8,18 +8,18 @@
     mov rsi, rcx
     mov rdi, rdx
     mov rcx, r8
-?AssignArray?L1:
+?CopyMemory?L1:
     mov al, byte ptr [rsi]
     mov byte ptr [rdi], al
     inc rsi
     inc rdi
-    loop ?AssignArray?L1
+    loop ?CopyMemory?L1
 
     pop rcx
     pop rdi
     pop rsi
     ret
-?AssignArray endp
+?CopyMemory endp
 
 .data
 ?0	byte "Hello, Worlld! Value=%d", 10, 0   ; "Hello, World! Value=%d\n";
@@ -59,10 +59,10 @@ main proc,						; main(void) -> void {
 	
 	; message = "Hello, World! Value=%d\n";
     sub     rsp, 20h
-    mov     r8,  25
+    mov     r8,  sizeof ?0
     lea     rdx, [rsp + 20h]
     lea     rcx, [?0]
-    call    ?AssignArray
+    call    ?CopyMemory
     add     rsp, 20h
 	
 	; printf(&message, intVal);
@@ -107,10 +107,10 @@ main proc,
 	
 	; message = "Hello, World! Value=%d\n";
     sub     rsp, 20h
-    mov     r8,  25
+    mov     r8,  sizeof ?0
     lea     rdx, [rsp + 20h]
     lea     rcx, [?0]
-    call    ?AssignArray
+    call    ?CopyMemory
     add     rsp, 20h
 	
 	; printf(&message, intVal);

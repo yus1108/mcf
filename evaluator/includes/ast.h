@@ -761,6 +761,16 @@ namespace mcf
 				explicit Unused(void) noexcept = default;
 				explicit Unused(mcf::AST::Expression::Identifier::PointerVector&& identifiers) noexcept;
 
+				inline const size_t GetIdentifiersCount(void) const noexcept { return _identifiers.size(); }
+				inline mcf::AST::Expression::Identifier* GetUnsafeIdentifierPointerAt(const size_t index) noexcept
+				{
+					return _identifiers[index].get();
+				}
+				inline const mcf::AST::Expression::Identifier* GetUnsafeIdentifierPointerAt(const size_t index) const noexcept
+				{
+					return _identifiers[index].get();
+				}
+
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::UNUSED; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 

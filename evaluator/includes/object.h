@@ -33,6 +33,7 @@ namespace mcf
 		{
 			std::string Name;
 			TypeInfo DataType;
+			bool IsUsed = false;
 
 			inline const bool IsValid(void) const noexcept { return Name.empty() == false && DataType.IsValid(); }
 			inline const bool IsVariadic(void) const noexcept { return DataType.IsVariadic; }
@@ -101,6 +102,7 @@ namespace mcf
 		{
 			Scope Global = Scope(this);
 			std::vector<std::unique_ptr<Scope>> Locals;
+			std::vector<std::string> Constants;
 		};
 	}
 
@@ -117,6 +119,7 @@ namespace mcf
 			EXTERN,
 			LET,
 			FUNC,
+			UNUSED,
 
 			PROGRAM,
 
@@ -135,6 +138,7 @@ namespace mcf
 			"EXTERN",
 			"LET",
 			"FUNC",
+			"UNUSED",
 
 			"PROGRAM",
 		};
@@ -711,6 +715,14 @@ namespace mcf
 
 		private:
 			PointerVector _defines;
+		};
+
+		class Unused final : public Interface
+		{
+		public:
+			inline static Pointer Make(void) noexcept { return std::make_unique<Unused>(); }
+			inline virtual const Type GetType(void) const noexcept override final { return Type::UNUSED; }
+			inline virtual const std::string Inspect(void) const noexcept override final { return std::string(); }
 		};
 
 		class Program final : public Interface

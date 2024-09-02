@@ -121,7 +121,7 @@ mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::Func
 	_endCodes.emplace_back(mcf::IR::ASM::Pop::Make(mcf::IR::ASM::Register::RBP));
 
 	const size_t paramCount = info.Params.Variables.size();
-	const mcf::Object::TypeInfo paramType = info.LocalScope->FindTypeInfo("qword");
+	const mcf::Object::TypeInfo paramType = mcf::Object::TypeInfo::MakePrimitive("qword", sizeof(unsigned __int64));
 	DebugAssert(paramType.IsValid(), u8"");
 	for (size_t i = 0; i < paramCount && i < MCF_ARRAY_SIZE(registerParams); ++i)
 	{
@@ -333,7 +333,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 	}
 
 	case AST::Statement::Type::UNUSED: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		object = EvalUnusedStatement(static_cast<const mcf::AST::Statement::Unused*>(statement), scope);
 		break;
 
 	default:
@@ -461,6 +461,14 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::
 	return mcf::IR::Func::Make(std::move(objects));
 }
 
+mcf::IR::Pointer mcf::Evaluator::Object::EvalUnusedStatement(_Notnull_ const mcf::AST::Statement::Unused* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	const size_t identifierCount = statement->GetIdentifiersCount();
+	UNUSED(statement, scope, identifierCount);
+	DebugMessage(u8"구현 필요");
+	return mcf::IR::Unused::Make();
+}
+
 mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept
 {
 	mcf::Evaluator::FunctionIRGenerator generator(info);
@@ -485,6 +493,9 @@ mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const 
 
 		case IR::Type::EXPRESSION: __COUNTER__;
 			DebugMessage(u8"구현 필요");
+			break;
+
+		case IR::Type::UNUSED: __COUNTER__;
 			break;
 
 		case IR::Type::ASM: __COUNTER__; [[fallthrough]];
@@ -589,6 +600,8 @@ mcf::Object::Variable mcf::Evaluator::Object::EvalVariavbleSignatureIntermediate
 		DebugMessage(u8"구현 필요");
 		return mcf::Object::Variable();
 	}
+
+	variable.IsUsed = false;
 
 	return variable;
 }

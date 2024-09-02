@@ -413,7 +413,7 @@ mcf::IR::ASM::Mov::Mov(const Address& target, const unsigned __int64 source) noe
 	: _target(target.Inspect())
 	, _source(std::to_string(source))
 {
-	DebugAssert(target.GetTypeInfo().GetSize() == sizeof(unsigned __int64), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
+	DebugAssert(target.GetTypeInfo().GetSize() >= sizeof(unsigned __int64), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
 	DebugAssert(target.GetTypeInfo().IsUnsigned == true, u8"source와 target의 사인 타입이 일치 하지 않습니다.");
 }
 
@@ -421,11 +421,11 @@ mcf::IR::ASM::Mov::Mov(const Address& target, const __int32 source) noexcept
 	: _target(target.Inspect())
 	, _source(std::to_string(source))
 {
-	DebugAssert(target.GetTypeInfo().GetSize() == sizeof(__int32), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
+	DebugAssert(target.GetTypeInfo().GetSize() >= sizeof(__int32), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
 	DebugAssert(target.GetTypeInfo().IsUnsigned == false, u8"source와 target의 사인 타입이 일치 하지 않습니다.");
 }
 
-const std::string mcf::IR::ASM::Mov::Inspect( void ) const noexcept
+const std::string mcf::IR::ASM::Mov::Inspect(void) const noexcept
 {
 	return "\tmov " + _target + ", " + _source + "\n";
 }
@@ -444,7 +444,7 @@ mcf::IR::ASM::Sub::Sub(const Register minuend, const unsigned __int64 subtrahend
 	DebugAssert(Internal::IsRegister64Bit(minuend), u8"64비트 레지스터가 아닙니다.");
 }
 
-const std::string mcf::IR::ASM::Sub::Inspect( void ) const noexcept
+const std::string mcf::IR::ASM::Sub::Inspect(void) const noexcept
 {
 	return "\tsub " + _minuend + ", " + _subtrahend + "\n";
 }
@@ -526,7 +526,7 @@ const std::string mcf::IR::Let::Inspect(void) const noexcept
 	if (_info.IsGlobal)
 	{
 		buffer = _info.Variable.Inspect() + " ";
-		return buffer + (_assignExpression.get() == nullptr ? "{ default init }" : _assignExpression->Inspect());
+		return buffer + (_assignExpression.get() == nullptr ? "?" : _assignExpression->Inspect());
 	}
 	else
 	{
