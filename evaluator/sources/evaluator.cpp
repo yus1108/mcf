@@ -454,7 +454,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::
 	mcf::IR::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock);
 	if (objects.empty() == true)
 	{
-		DebugMessage( u8"구현 필요" );
+		DebugMessage(u8"구현 필요");
 		return mcf::IR::Invalid::Make();
 	}
 
@@ -464,8 +464,17 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::
 mcf::IR::Pointer mcf::Evaluator::Object::EvalUnusedStatement(_Notnull_ const mcf::AST::Statement::Unused* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	const size_t identifierCount = statement->GetIdentifiersCount();
-	UNUSED(statement, scope, identifierCount);
-	DebugMessage(u8"구현 필요");
+	for (size_t i = 0; i < identifierCount; ++i)
+	{
+		const mcf::AST::Expression::Identifier* identifier = statement->GetUnsafeIdentifierPointerAt(i);
+		DebugAssert(identifier != nullptr, u8"identifier가 nullptr이면 안됩니다.");
+		std::string tokenLiteral = identifier->GetTokenLiteral();
+		if (scope->UseVariableInfo(tokenLiteral) == false)
+		{
+			DebugMessage(u8"구현 필요");
+			return mcf::IR::Invalid::Make();
+		}
+	}
 	return mcf::IR::Unused::Make();
 }
 
@@ -510,6 +519,12 @@ mcf::IR::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const 
 		}
 		constexpr const size_t IR_TYPE_COUNT = __COUNTER__ - IR_TYPE_COUNT_BEGIN;
 		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
+	}
+
+	if (info.LocalScope->IsAllVariablesUsed() == false)
+	{
+		DebugMessage(u8"구현 필요");
+		return mcf::IR::PointerVector();
 	}
 
 	objects = generator.GenerateIRCode();

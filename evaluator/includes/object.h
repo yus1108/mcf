@@ -75,15 +75,17 @@ namespace mcf
 		public:
 			explicit Scope(void) noexcept = delete;
 			explicit Scope(ScopeTree* tree) noexcept : _tree(tree) {}
-			explicit Scope(ScopeTree* tree, const Scope* parent) noexcept : _tree(tree), _parent(parent) {}
+			explicit Scope(ScopeTree* tree, Scope* parent) noexcept : _tree(tree), _parent(parent) {}
 
 			const bool IsIdentifierRegistered(const std::string& name) const noexcept;
 
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
 
+			const bool IsAllVariablesUsed(void) const noexcept;
 			const mcf::Object::VariableInfo DefineVariable(const std::string& name, const mcf::Object::Variable& variable) noexcept;
 			const mcf::Object::VariableInfo FindVariableInfo(const std::string& name) const noexcept;
+			const bool UseVariableInfo(const std::string& name) noexcept;
 
 			const bool MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept;
 			const bool DefineFunction(const std::string& name, mcf::Object::FunctionInfo info) noexcept;
@@ -94,7 +96,7 @@ namespace mcf
 			std::unordered_map<std::string, mcf::Object::TypeInfo> _typeInfoMap;
 			std::unordered_map<std::string, mcf::Object::Variable> _variables;
 			std::unordered_map<std::string, mcf::Object::FunctionInfo> _functionInfoMap;
-			const Scope* _parent = nullptr;
+			Scope* _parent = nullptr;
 			ScopeTree* _tree = nullptr;
 		};
 

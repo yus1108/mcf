@@ -84,7 +84,7 @@ const std::string mcf::Object::Variable::Inspect(void) const noexcept
 
 const bool mcf::Object::Scope::IsIdentifierRegistered(const std::string& name) const noexcept
 {
-	if (_allIdentifierSet.find( name ) != _allIdentifierSet.end())
+	if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
 	{
 		return true;
 	}
@@ -128,6 +128,18 @@ const mcf::Object::TypeInfo mcf::Object::Scope::FindTypeInfo(const std::string& 
 	return infoFound->second;
 }
 
+const bool mcf::Object::Scope::IsAllVariablesUsed(void) const noexcept
+{
+	for (auto pair : _variables)
+	{
+		if (pair.second.IsUsed == false)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 const mcf::Object::VariableInfo mcf::Object::Scope::DefineVariable(const std::string& name, const mcf::Object::Variable& variable) noexcept
 {
 	DebugAssert(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
@@ -159,6 +171,31 @@ const mcf::Object::VariableInfo mcf::Object::Scope::FindVariableInfo(const std::
 		return _parent->FindVariableInfo(name);
 	}
 	return { infoFound->second, _parent == nullptr };
+}
+
+const bool mcf::Object::Scope::UseVariableInfo(const std::string& name) noexcept
+{
+	Scope* currentScope = this;
+	while (currentScope != nullptr)
+	{
+		auto infoFound = _variables.find( name );
+		if (infoFound == _variables.end())
+		{
+			if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
+			{
+				DebugMessage(u8"해당 식별자는 변수가 아닙니다.");
+				return false;
+			}
+			currentScope = currentScope->_parent;
+			continue;
+		}
+
+		infoFound->second.IsUsed = true;
+		return true;
+	}
+	
+	DebugMessage(u8"해당 식별자를 가지고 있는 변수를 찾을 수 없습니다.");
+	return false;
 }
 
 const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept

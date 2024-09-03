@@ -153,6 +153,15 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"foo endp\n",
 				},
 				{
+					"func joo(param1: dword) -> void { unused(param1); }",
+					"joo proc\n"
+						"\tpush rbp\n"
+						"\tmov qword ptr [rsp + 16], rcx\n" // var1 = 15;
+						"\tpop rbp\n"
+						"\tret\n"
+					"joo endp\n",
+				},
+				{
 					"func joo(void) -> void { let var1: dword = 15; unused(var1); }",
 					"joo proc\n"
 						"\tpush rbp\n"
@@ -173,13 +182,13 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"boo endp\n",
 				},
 			};
-			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
-			for ( size_t i = 0; i < testCaseCount; i++ )
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
+			for (size_t i = 0; i < testCaseCount; i++)
 			{
-				mcf::Parser::Object parser( testCases[i].Input, false );
+				mcf::Parser::Object parser(testCases[i].Input, false);
 				mcf::AST::Program program;
-				parser.ParseProgram( program );
-				FATAL_ASSERT(CheckParserErrors( parser ), u8"파싱에 실패 하였습니다.");
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 				mcf::Evaluator::Object evaluator;
 				mcf::Object::ScopeTree scopeTree;
 				scopeTree.Global.DefineType("byte", mcf::Object::TypeInfo::MakePrimitive("byte", 1));
