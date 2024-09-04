@@ -16,18 +16,33 @@ namespace mcf
 		{
 			std::vector<size_t> ArraySizeList;
 			std::string Name;
-			size_t IntrinsicSize;
+			size_t IntrinsicSize = 0;
+			bool IsStruct = false;
 			bool IsUnsigned = false;
 			bool IsVariadic = false;
 
 			static const mcf::Object::TypeInfo MakePrimitive(const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false }; }
 
-			inline const bool IsValid(void) const noexcept { return Name.empty() == false || IsVariadic; }
+			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
 			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
+			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
 			const size_t GetSize(void) const noexcept;
 			const std::string Inspect(void) const noexcept;
 		};
+		inline bool operator==(const TypeInfo& lhs, const TypeInfo& rhs) 
+		{ 
+			return (lhs.ArraySizeList == rhs.ArraySizeList) &&
+				(lhs.Name == rhs.Name) &&
+				(lhs.IntrinsicSize == rhs.IntrinsicSize) &&
+				(lhs.IsStruct == rhs.IsStruct) &&
+				(lhs.IsUnsigned == rhs.IsUnsigned) &&
+				(lhs.IsVariadic == rhs.IsVariadic);
+		}
+		inline bool operator!=(const TypeInfo& lhs, const TypeInfo& rhs) 
+		{ 
+			return (lhs == rhs) == false;
+		}
 
 		struct Variable final
 		{
@@ -74,9 +89,10 @@ namespace mcf
 		{
 		public:
 			explicit Scope(void) noexcept = delete;
-			explicit Scope(ScopeTree* tree) noexcept : _tree(tree) {}
-			explicit Scope(ScopeTree* tree, Scope* parent) noexcept : _tree(tree), _parent(parent) {}
+			explicit Scope(ScopeTree* tree, Scope* parent, bool isFunctionScope) noexcept : _tree(tree), _parent(parent), _isFunctionScope(isFunctionScope) {}
 
+			const bool IsGlobalScope(void) const noexcept;
+			inline const bool IsFunctionScope(void) const noexcept { return _isFunctionScope; }
 			const bool IsIdentifierRegistered(const std::string& name) const noexcept;
 
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
@@ -92,12 +108,17 @@ namespace mcf
 			const mcf::Object::FunctionInfo FindFunction(const std::string& name) const noexcept;
 
 		private:
+			friend ScopeTree;
+			explicit Scope(ScopeTree* tree) noexcept : _tree(tree) {}
+
+		private:
 			std::unordered_set<std::string> _allIdentifierSet;
 			std::unordered_map<std::string, mcf::Object::TypeInfo> _typeInfoMap;
 			std::unordered_map<std::string, mcf::Object::Variable> _variables;
 			std::unordered_map<std::string, mcf::Object::FunctionInfo> _functionInfoMap;
 			Scope* _parent = nullptr;
 			ScopeTree* _tree = nullptr;
+			bool _isFunctionScope = false;
 		};
 
 		struct ScopeTree final
@@ -121,7 +142,8 @@ namespace mcf
 			EXTERN,
 			LET,
 			FUNC,
-			UNUSED,
+			UNUSEDIR,
+			RETURN,
 
 			PROGRAM,
 
@@ -140,7 +162,8 @@ namespace mcf
 			"EXTERN",
 			"LET",
 			"FUNC",
-			"UNUSED",
+			"UNUSEDIR",
+			"RETURN",
 
 			"PROGRAM",
 		};
@@ -319,16 +342,34 @@ namespace mcf
 				template <class... Variadic>
 				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Integer>(std::move(args)...); }
 
+			private:
+				inline const bool IsUnsigned(void) const noexcept { return _isUnsigned; }
+
 			public:
 				explicit Integer(void) noexcept = default;
 				explicit Integer(const __int64 value) noexcept : _signedValue(value), _isUnsigned(false){}
 				explicit Integer(const unsigned __int64 value) noexcept : _unsignedValue(value), _isUnsigned(true){}
 
-				inline const bool IsUnsignedValue(void) const noexcept { return _isUnsigned ? true : (_signedValue >= 0); }
-				const size_t GetSize(void) const noexcept;
+				inline const bool IsNaturalInteger(void) const noexcept { return _isUnsigned ? true : (_signedValue >= 0); }
+				const bool IsCompatible(const mcf::Object::TypeInfo& dataType) const noexcept;
 
-				const unsigned __int64 GetUInt64(void) const noexcept;
+				inline const bool IsInt64(void) const noexcept { return _isUnsigned == false; }
+				const __int64 GetInt64(void) const noexcept;
+				inline const bool IsInt32(void) const noexcept { return (_isUnsigned == false && INT32_MIN <= _signedValue && _signedValue <= INT32_MAX) || (_isUnsigned == true && _unsignedValue <= INT32_MAX); }
 				const __int32 GetInt32(void) const noexcept;
+				inline const bool IsInt16(void) const noexcept { return (_isUnsigned == false && INT16_MIN <= _signedValue && _signedValue <= INT16_MAX) || (_isUnsigned == true && _unsignedValue <= INT16_MAX); }
+				const __int16 GetInt16(void) const noexcept;
+				inline const bool IsInt8(void) const noexcept { return (_isUnsigned == false && INT8_MIN <= _signedValue && _signedValue <= INT8_MAX) || (_isUnsigned == true && _unsignedValue <= INT8_MAX); }
+				const __int8 GetInt8(void) const noexcept;
+
+				inline const bool IsUInt64(void) const noexcept { return IsNaturalInteger(); }
+				const unsigned __int64 GetUInt64(void) const noexcept;
+				inline const bool IsUInt32(void) const noexcept { return (_isUnsigned == false && 0 <= _signedValue && _signedValue <= UINT32_MAX) || (_isUnsigned == true && _unsignedValue <= UINT32_MAX); }
+				const unsigned __int32 GetUInt32(void) const noexcept;
+				inline const bool IsUInt16(void) const noexcept { return (_isUnsigned == false && 0 <= _signedValue && _signedValue <= UINT16_MAX) || (_isUnsigned == true && _unsignedValue <= UINT16_MAX); }
+				const unsigned __int16 GetUInt16(void) const noexcept;
+				inline const bool IsUInt8(void) const noexcept { return (_isUnsigned == false && 0 <= _signedValue && _signedValue <= UINT8_MAX) || (_isUnsigned == true && _unsignedValue <= UINT8_MAX); }
+				const unsigned __int8 GetUInt8(void) const noexcept;
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INTEGER; }
 				virtual const std::string Inspect(void) const noexcept override final;
@@ -410,6 +451,10 @@ namespace mcf
 				INVALID = 0,
 
 				RAX,
+				EAX,
+				AX,
+				AL,
+
 				RBX,
 				RCX,
 				RDX,
@@ -428,6 +473,10 @@ namespace mcf
 				"INVALID",
 
 				"rax",
+				"eax",
+				"ax",
+				"al",
+
 				"rbx",
 				"rcx",
 				"rdx",
@@ -580,8 +629,23 @@ namespace mcf
 			public:
 				explicit Mov(void) noexcept = default;
 				explicit Mov(const Address& target, const Register source) noexcept;
-				explicit Mov(const Address& target, const unsigned __int64 source) noexcept;
+				explicit Mov(const Address& target, const __int64 source) noexcept;
 				explicit Mov(const Address& target, const __int32 source) noexcept;
+				explicit Mov(const Address& target, const __int16 source) noexcept;
+				explicit Mov(const Address& target, const __int8 source) noexcept;
+				explicit Mov(const Address& target, const unsigned __int64 source) noexcept;
+				explicit Mov(const Address& target, const unsigned __int32 source) noexcept;
+				explicit Mov(const Address& target, const unsigned __int16 source) noexcept;
+				explicit Mov(const Address& target, const unsigned __int8 source) noexcept;
+				explicit Mov(const Register target, const Address& source) noexcept;
+				explicit Mov(const Register target, const __int64 source) noexcept;
+				explicit Mov(const Register target, const __int32 source) noexcept;
+				explicit Mov(const Register target, const __int16 source) noexcept;
+				explicit Mov(const Register target, const __int8 source) noexcept;
+				explicit Mov(const Register target, const unsigned __int64 source) noexcept;
+				explicit Mov(const Register target, const unsigned __int32 source) noexcept;
+				explicit Mov(const Register target, const unsigned __int16 source) noexcept;
+				explicit Mov(const Register target, const unsigned __int8 source) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
@@ -590,28 +654,6 @@ namespace mcf
 			protected:
 				std::string _target;
 				std::string _source;
-			};
-
-			class Sub : public Interface
-			{
-			public:
-				using Pointer = std::unique_ptr<Sub>;
-
-				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Sub>(std::move(args)...); }
-
-			public:
-				explicit Sub(void) noexcept = default;
-				explicit Sub(const Register minuend, const __int64 subtrahend) noexcept;
-				explicit Sub(const Register minuend, const unsigned __int64 subtrahend) noexcept;
-
-
-				inline virtual const Type GetASMType(void) const noexcept override { return Type::SUB; }
-				virtual const std::string Inspect(void) const noexcept override final;
-
-			protected:
-				std::string _minuend;
-				std::string _subtrahend;
 			};
 
 			class Add : public Interface
@@ -634,6 +676,28 @@ namespace mcf
 			protected:
 				std::string _lhs;
 				std::string _rhs;
+			};
+
+			class Sub : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Sub>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Sub>(std::move(args)...); }
+
+			public:
+				explicit Sub(void) noexcept = default;
+				explicit Sub(const Register minuend, const __int64 subtrahend) noexcept;
+				explicit Sub(const Register minuend, const unsigned __int64 subtrahend) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::SUB; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _minuend;
+				std::string _subtrahend;
 			};
 		}
 
@@ -710,21 +774,42 @@ namespace mcf
 
 		public:
 			explicit Func(void) noexcept = default;
-			explicit Func(PointerVector&& defines) noexcept;
+			explicit Func(mcf::IR::ASM::PointerVector&& defines) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::FUNC; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
-			PointerVector _defines;
+			mcf::IR::ASM::PointerVector _defines;
 		};
 
 		class Unused final : public Interface
 		{
 		public:
 			inline static Pointer Make(void) noexcept { return std::make_unique<Unused>(); }
-			inline virtual const Type GetType(void) const noexcept override final { return Type::UNUSED; }
+			inline virtual const Type GetType(void) const noexcept override final { return Type::UNUSEDIR; }
 			inline virtual const std::string Inspect(void) const noexcept override final { return std::string(); }
+		};
+
+		class Return final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Return>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Return>(std::move(args)...); }
+
+		public:
+			explicit Return(void) noexcept = default;
+			explicit Return(mcf::IR::Expression::Pointer&& returnExpression) noexcept;
+
+			inline const mcf::IR::Expression::Interface* GetUnsafeReturnExpressionPointer(void) const noexcept { return _returnExpression.get(); }
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::RETURN; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			mcf::IR::Expression::Pointer _returnExpression;
 		};
 
 		class Program final : public Interface

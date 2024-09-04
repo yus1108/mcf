@@ -153,30 +153,79 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"foo endp\n",
 				},
 				{
-					"func joo(param1: dword) -> void { unused(param1); }",
-					"joo proc\n"
+					"func boo(param1: dword) -> void { unused(param1); }",
+					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov qword ptr [rsp + 16], rcx\n" // var1 = 15;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tpop rbp\n"
 						"\tret\n"
-					"joo endp\n",
+					"boo endp\n",
 				},
 				{
-					"func joo(void) -> void { let var1: dword = 15; unused(var1); }",
-					"joo proc\n"
+					"func boo(void) -> void { let var1: dword = 15; unused(var1); }",
+					"boo proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
 						"\tmov dword ptr [rsp + 0], 15\n" // var1 = 15;
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"joo endp\n",
+					"boo endp\n",
 				},
 				{
-					"func boo(void) -> byte { return 0; }",
+					"func boo(void) -> byte { return 100; }",
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov return byte 0\n"
+						"\tmov al, 100\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp\n",
+				},
+				{
+					"func boo(param1: dword) -> dword { return param1; }",
+					"boo proc\n"
+						"\tpush rbp\n"
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov eax, dword ptr [rsp + 16]\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp\n",
+				},
+				{
+					"func boo(void) -> dword { let var1: dword = 15; return var1; }",
+					"boo proc\n"
+						"\tpush rbp\n"
+						"\tsub rsp, 16\n"
+						"\tmov dword ptr [rsp + 0], 15\n"	// var1 = 15;
+						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp\n",
+				},
+				{
+					"func boo(param1: dword) -> dword { let var1: dword = 15; unused(param1); return var1; }",
+					"boo proc\n"
+						"\tpush rbp\n"
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tsub rsp, 16\n"
+						"\tmov dword ptr [rsp + 0], 15\n"	// var1 = 15;
+						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp\n",
+				},
+				{
+					"func boo(param1: dword) -> dword { let var1: dword = param1; return var1; }",
+					"boo proc\n"
+						"\tpush rbp\n"
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tsub rsp, 16\n"
+						"\tmov eax, dword ptr [rsp + 32]\n"	// eax = param1;
+						"\tmov dword ptr [rsp + 0], eax\n"	// var1 = eax;
+						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
+						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
 					"boo endp\n",

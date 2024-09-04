@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #if defined(UNUSED)
-#undef UNUSED
+#undef MCF_UNUSED
 #endif
-#define UNUSED(...) __VA_ARGS__
+#define MCF_UNUSED(...) __VA_ARGS__
 
 #if defined(MCF_ARRAY_SIZE)
 #undef MCF_ARRAY_SIZE

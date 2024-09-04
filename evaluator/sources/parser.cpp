@@ -141,7 +141,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseIncludeLibraryStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::MACRO_INCLUDE, u8"이 함수가 호출될때 현재 토큰이 `MACRO_INCLUDE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::MACRO_INCLUDE, u8"이 함수가 호출될때 현재 토큰이 `MACRO_INCLUDE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::LT) == false)
@@ -189,7 +189,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseIncludeLibraryStatement(v
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseTypedefStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_TYPEDEF, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_TYPEDEF`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_TYPEDEF, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_TYPEDEF`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -238,7 +238,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseTypedefStatement(void) no
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExternStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_EXTERN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_EXTERN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_EXTERN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_EXTERN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -264,7 +264,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExternStatement(void) noe
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseLetStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_LET, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_LET`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_LET, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_LET`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -304,7 +304,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseLetStatement(void) noexce
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseBlockStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::LBRACE, u8"이 함수가 호출될때 현재 토큰이 `LBRACE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::LBRACE, u8"이 함수가 호출될때 현재 토큰이 `LBRACE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	mcf::AST::Statement::PointerVector statements;
@@ -334,7 +334,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseBlockStatement(void) noex
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseReturnStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_RETURN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_RETURN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_RETURN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_RETURN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -360,7 +360,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseReturnStatement(void) noe
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseFuncStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_FUNC, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_FUNC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_FUNC, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_FUNC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	mcf::AST::Intermediate::FunctionSignature::Pointer signature = ParseFunctionSignatureIntermediate();
@@ -386,7 +386,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseFuncStatement(void) noexc
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseMainStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_MAIN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_MAIN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_MAIN, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_MAIN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -469,7 +469,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExpressionStatement(void)
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseUnusedStatement(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_UNUSED, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_UNUSED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_UNUSED, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_UNUSED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::LPAREN) == false)
@@ -541,7 +541,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseUnusedStatement(void) noe
 
 mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicIntermediate(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::VARIADIC, u8"이 함수가 호출될때 현재 토큰이 `VARIADIC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::VARIADIC, u8"이 함수가 호출될때 현재 토큰이 `VARIADIC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::IDENTIFIER) == false)
@@ -557,7 +557,7 @@ mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicInte
 
 mcf::AST::Intermediate::TypeSignature::Pointer mcf::Parser::Object::ParseTypeSignatureIntermediate(void) noexcept
 {
-	DebugAssert(IsCurrentTokenAny({ mcf::Token::Type::IDENTIFIER, mcf::Token::Type::KEYWORD_UNSIGNED }), u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER` 또는 `KEYWORD_UNSIGNED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(IsCurrentTokenAny({ mcf::Token::Type::IDENTIFIER, mcf::Token::Type::KEYWORD_UNSIGNED }), u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER` 또는 `KEYWORD_UNSIGNED`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	bool isUnsigned = false;
@@ -598,7 +598,7 @@ mcf::AST::Intermediate::TypeSignature::Pointer mcf::Parser::Object::ParseTypeSig
 
 mcf::AST::Intermediate::VariableSignature::Pointer mcf::Parser::Object::ParseVariableSignatureIntermediate(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::IDENTIFIER, u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::IDENTIFIER, u8"이 함수가 호출될때 현재 토큰이 `IDENTIFIER`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	mcf::AST::Expression::Identifier::Pointer name = mcf::AST::Expression::Identifier::Make(_currentToken);
@@ -625,7 +625,7 @@ mcf::AST::Intermediate::VariableSignature::Pointer mcf::Parser::Object::ParseVar
 
 mcf::AST::Intermediate::FunctionParams::Pointer mcf::Parser::Object::ParseFunctionParamsIntermediate(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::KEYWORD_VOID) == true)
@@ -729,7 +729,7 @@ mcf::AST::Intermediate::FunctionParams::Pointer mcf::Parser::Object::ParseFuncti
 
 mcf::AST::Intermediate::FunctionSignature::Pointer mcf::Parser::Object::ParseFunctionSignatureIntermediate(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::KEYWORD_FUNC, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_FUNC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_FUNC, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_FUNC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::IDENTIFIER) == false)
@@ -810,7 +810,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		break;
 
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__;
-		DebugMessage(u8"구현 필요");
+		MCF_DEBUG_BREAK(u8"구현 필요");
 		break;
 
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
@@ -953,7 +953,7 @@ mcf::AST::Expression::Prefix::Pointer mcf::Parser::Object::ParsePrefixExpression
 
 mcf::AST::Expression::Group::Pointer mcf::Parser::Object::ParseGroupExpression(void) noexcept
 {
-	DebugAssert( _currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT( _currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING( _currentToken.Type ), mcf::ENUM_INDEX( _currentToken.Type ), _currentToken.Literal.c_str() );
 
 	ReadNextToken();
@@ -995,7 +995,7 @@ mcf::AST::Expression::Infix::Pointer mcf::Parser::Object::ParseInfixExpression(m
 
 mcf::AST::Expression::Call::Pointer mcf::Parser::Object::ParseCallExpression(mcf::AST::Expression::Pointer&& left) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::LPAREN, u8"이 함수가 호출될때 현재 토큰이 `LPAREN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	mcf::AST::Expression::PointerVector params;
@@ -1053,7 +1053,7 @@ mcf::AST::Expression::Call::Pointer mcf::Parser::Object::ParseCallExpression(mcf
 
 mcf::AST::Expression::Index::Pointer mcf::Parser::Object::ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::LBRACKET, u8"이 함수가 호출될때 현재 토큰이 `LBRACKET`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::LBRACKET, u8"이 함수가 호출될때 현재 토큰이 `LBRACKET`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	if (ReadNextTokenIf(mcf::Token::Type::RBRACKET) == true)
@@ -1084,7 +1084,7 @@ mcf::AST::Expression::Index::Pointer mcf::Parser::Object::ParseIndexExpression(m
 
 mcf::AST::Expression::Initializer::Pointer mcf::Parser::Object::ParseInitializerExpression(void) noexcept
 {
-	DebugAssert(_currentToken.Type == mcf::Token::Type::LBRACE, u8"이 함수가 호출될때 현재 토큰이 `LBRACE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::LBRACE, u8"이 함수가 호출될때 현재 토큰이 `LBRACE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();
@@ -1148,9 +1148,9 @@ mcf::AST::Expression::Initializer::Pointer mcf::Parser::Object::ParseInitializer
 // 이 함수를 호출 하려면 첫번째 키까지 사전에 파싱을 하여야 합니다 (ParseInitializerExpression 참고)
 mcf::AST::Expression::MapInitializer::Pointer mcf::Parser::Object::ParseMapInitializerExpression(mcf::AST::Expression::PointerVector&& keyList) noexcept
 {
-	DebugAssert(keyList.size() == 1, u8"인자로 받은 keyList는 한개의 키를 들고 있어야 합니다.");
-	DebugAssert(keyList[0].get() != nullptr, u8"keyList[0]는 nullptr 여선 안됩니다.");
-	DebugAssert(_currentToken.Type == mcf::Token::Type::ASSIGN, u8"이 함수가 호출될때 현재 토큰이 `ASSIGN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+	MCF_DEBUG_ASSERT(keyList.size() == 1, u8"인자로 받은 keyList는 한개의 키를 들고 있어야 합니다.");
+	MCF_DEBUG_ASSERT(keyList[0].get() != nullptr, u8"keyList[0]는 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::ASSIGN, u8"이 함수가 호출될때 현재 토큰이 `ASSIGN`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
 		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
 
 	ReadNextToken();

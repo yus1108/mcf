@@ -623,7 +623,7 @@ namespace mcf
 				explicit Let(mcf::AST::Intermediate::VariableSignature::Pointer&& signature, mcf::AST::Expression::Pointer&& expression) noexcept;
 
 				inline const mcf::AST::Intermediate::VariableSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
-				inline const mcf::AST::Expression::Interface* GetUnsafeExpressionointer(void) const noexcept { return _expression.get(); }
+				inline const mcf::AST::Expression::Interface* GetUnsafeExpressionPointer(void) const noexcept { return _expression.get(); }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::LET; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
@@ -674,11 +674,13 @@ namespace mcf
 				explicit Return(void) noexcept = default;
 				explicit Return(mcf::AST::Expression::Pointer&& returnValue) noexcept;
 
+				inline const mcf::AST::Expression::Interface* GetUnsafeReturnValueExpressionPointer(void) const noexcept { return _returnValue.get(); }
+
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::RETURN; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
-				mcf::AST::Expression::Pointer _returnValue;;
+				mcf::AST::Expression::Pointer _returnValue;
 			};
 
 			class Func : public Interface

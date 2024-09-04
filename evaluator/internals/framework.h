@@ -5,21 +5,45 @@
 
 // ASSERT
 #if defined(_DEBUG)
-#define DebugAssert(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); } ((void)0)
+#define MCF_DEBUG_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); } ((void)0)
 #else
-#define DebugAssert(PREDICATE, FORMAT, ...)
+#define MCF_DEBUG_ASSERT(PREDICATE, FORMAT, ...)
 #endif
 
 #if defined(_DEBUG)
-#define DebugBreak(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); break
+#define MCF_DEBUG_BREAK(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak();
 #else
-#define DebugBreak(FORMAT, ...) break
+#define MCF_DEBUG_BREAK(FORMAT, ...)
 #endif
 
 #if defined(_DEBUG)
-#define DebugMessage(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak();
+#define MCF_DEBUG_TODO(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak();
 #else
-#define DebugMessage(FORMAT, ...)
+#define MCF_DEBUG_TODO(FORMAT, ...)
+#endif
+
+#if defined(_DEBUG)
+#define MCF_DEBUG_MESSAGE(FORMAT, ...) printf(FORMAT, __VA_ARGS__); printf("\n")
+#else
+#define MCF_DEBUG_MESSAGE(FORMAT, ...)
+#endif
+
+#if defined(_DEBUG)
+#define MCF_DEBUG_ASSERT_RETURN_BOOL(PREDICATE_TO_RETURN, FORMAT, ...) if ((PREDICATE_TO_RETURN) == false) { printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } return true
+#else
+#define MCF_DEBUG_ASSERT_RETURN_BOOL(PREDICATE_TO_RETURN, FORMAT, ...) return (PREDICATE_TO_RETURN)
+#endif
+
+#if defined(_DEBUG)
+#define MCF_DEBUG_MESSAGE_RETURN_BOOL(PREDICATE_TO_RETURN, FORMAT, ...) if ((PREDICATE_TO_RETURN) == false) { printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } return true
+#else
+#define MCF_DEBUG_MESSAGE_RETURN_BOOL(PREDICATE_TO_RETURN, FORMAT, ...) return (PREDICATE_TO_RETURN)
+#endif
+
+#if defined(_DEBUG)
+#define MCF_EXECUTE_AND_DEBUG_ASSERT(PREDICATE_TO_EXECUTE, FORMAT, ...) if ((PREDICATE_TO_EXECUTE) == false) { printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); } ((void)0)
+#else
+#define MCF_EXECUTE_AND_DEBUG_ASSERT(PREDICATE_TO_EXECUTE, FORMAT, ...) PREDICATE_TO_EXECUTE
 #endif
 
 namespace mcf
