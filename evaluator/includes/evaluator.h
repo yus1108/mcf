@@ -32,6 +32,15 @@ namespace mcf
 			size_t _alignment = DEFAULT_ALIGNMENT;
 		};
 
+		static class FunctionCallIRGenerator final
+		{
+		public:
+			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, _Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept;
+			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, const mcf::IR::ASM::UnsafePointerAddress& targetAddress) noexcept;
+			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, const mcf::IR::ASM::SizeOf& targetSizeOf) noexcept;
+			static mcf::IR::ASM::Pointer CallFunction(const size_t paramIndex, void) noexcept;
+		};
+
 		class FunctionIRGenerator final
 		{
 		public:
@@ -44,6 +53,7 @@ namespace mcf
 
 		private:
 			static const size_t PARAM_OFFSET = 0x10;
+			static const std::string INTERNAL_COPY_MEMORY_NAME;
 
 			MemoryAllocator _localMemory;
 			mcf::IR::ASM::PointerVector _localCodes;
@@ -67,9 +77,10 @@ namespace mcf
 			mcf::IR::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
-			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalUnusedStatement(_Notnull_ const mcf::AST::Statement::Unused* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalReturnStatement(_Notnull_ const mcf::AST::Statement::Return* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalMainStatement(_Notnull_ const mcf::AST::Statement::Main* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
 			mcf::IR::ASM::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
 
@@ -81,8 +92,11 @@ namespace mcf
 			mcf::IR::Expression::Pointer EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIdentifierExpression(_Notnull_ const mcf::AST::Expression::Identifier* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIntegerExpression(_Notnull_ const mcf::AST::Expression::Integer* expression, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
+			mcf::IR::Expression::Pointer EvalStringExpression(_Notnull_ const mcf::AST::Expression::String* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalInitializerExpression(_Notnull_ const mcf::AST::Expression::Initializer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+
+			mcf::Object::FunctionInfo BuildFunctionInfo(const std::string& name, _Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, const mcf::AST::Intermediate::TypeSignature* returnType, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
 			mcf::Object::TypeInfo MakeArrayTypeInfo(_Notnull_ mcf::Object::TypeInfo info, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept;
 			const bool ValidateVariableTypeAndValue(_Notnull_ mcf::Object::VariableInfo info, _Notnull_ const mcf::IR::Expression::Interface* value) const noexcept;

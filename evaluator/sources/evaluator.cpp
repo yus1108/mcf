@@ -117,6 +117,26 @@ namespace mcf
 	}
 }
 
+mcf::IR::ASM::Pointer mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const size_t paramIndex, _Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept
+{
+	constexpr mcf::IR::ASM::Register FIRST_FOUR_PARAM_TARGET[] =
+	{
+		mcf::IR::ASM::Register::RCX,
+		mcf::IR::ASM::Register::RDX,
+		mcf::IR::ASM::Register::R8,
+		mcf::IR::ASM::Register::R9,
+	};
+
+	if (paramIndex < MCF_ARRAY_SIZE(FIRST_FOUR_PARAM_TARGET))
+	{
+		mcf::IR::ASM::Lea::Make(FIRST_FOUR_PARAM_TARGET[paramIndex], "[" + stringExpression->Inspect() + "]");
+	}
+	else
+	{
+		MCF_DEBUG_TODO("구현 필요");
+	}
+}
+
 void mcf::Evaluator::MemoryAllocator::AddSize(const size_t size) noexcept
 {
 	MCF_DEBUG_ASSERT(size > 0, u8"사이즈는 0일 수 없습니다.");
@@ -231,6 +251,23 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 			MCF_DEBUG_BREAK(u8"integerExpression->IsCompatible(variable.DataType)에서 처리되어야 합니다.");
 			break;
 		}
+		break;
+	}
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__;
+	{
+		if (targetVariable.DataType.IsStringCompatibleType() == false)
+		{
+			MCF_DEBUG_TODO(u8"문자열 호환 가능한 타입(바이트 배열 타입)이 아닌 변수에 문자열을 대입하려 하고 있습니다. 타입[%s]", targetVariable.DataType.Inspect().c_str());
+			return;
+		}
+
+		const mcf::IR::Expression::String* stringExpression = static_cast<const mcf::IR::Expression::String*>(assignExpression);
+		const mcf::IR::ASM::UnsafePointerAddress targetAddress(mcf::IR::ASM::Register::RSP, _localMemory.GetOffset(targetVariableIndex));
+		_localCodes.emplace_back(FunctionCallIRGenerator::AddParameter(0, stringExpression));
+		_localCodes.emplace_back(FunctionCallIRGenerator::AddParameter(1, targetAddress));
+		_localCodes.emplace_back(FunctionCallIRGenerator::AddParameter(2, mcf::IR::ASM::SizeOf(stringExpression)));
+		_localCodes.emplace_back(FunctionCallIRGenerator::CallFunction());
 		break;
 	}
 
@@ -485,6 +522,8 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::FunctionIRGenerator::GenerateIRCode(
 	return std::move(finalCodes);
 }
 
+const std::string mcf::Evaluator::FunctionIRGenerator::INTERNAL_COPY_MEMORY_NAME = "?CopyMemory";
+
 mcf::IR::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	MCF_DEBUG_ASSERT(node != nullptr, u8"node가 nullptr이면 안됩니다.");
@@ -561,11 +600,11 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 		break;
 
 	case AST::Statement::Type::FUNC: __COUNTER__;
-		object = EvalFuncStatement( static_cast<const mcf::AST::Statement::Func*>(statement), scope );
+		object = EvalFuncStatement(static_cast<const mcf::AST::Statement::Func*>(statement), scope);
 		break;
 
 	case AST::Statement::Type::MAIN: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+		object = EvalMainStatement(static_cast<const mcf::AST::Statement::Main*>(statement), scope);
 		break;
 
 	case AST::Statement::Type::EXPRESSION: __COUNTER__;
@@ -669,47 +708,6 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::A
 	return mcf::IR::Let::Make(info, std::move(expressionObject));
 }
 
-mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
-{
-	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
-	mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
-	scope->MakeLocalScopeToFunctionInfo(functionInfo);
-	if (functionInfo.IsValid() == false)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::IR::Invalid::Make();
-	}
-
-	const size_t paramCount = functionInfo.Params.Variables.size();
-	for (size_t i = 0; i < paramCount; ++i)
-	{
-		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].IsValid(), u8"");
-		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
-		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
-		{
-			continue;
-		}
-
-		MCF_DEBUG_ASSERT(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
-	}
-
-	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::IR::Invalid::Make();
-	}
-
-	const mcf::AST::Statement::Block* functionBlock = statement->GetUnsafeBlockPointer();
-	mcf::IR::ASM::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock);
-	if (objects.empty() == true)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::IR::Invalid::Make();
-	}
-
-	return mcf::IR::Func::Make(std::move(objects));
-}
-
 mcf::IR::Pointer mcf::Evaluator::Object::EvalUnusedStatement(_Notnull_ const mcf::AST::Statement::Unused* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	const size_t identifierCount = statement->GetIdentifiersCount();
@@ -750,6 +748,95 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalReturnStatement(_Notnull_ const mcf
 		return mcf::IR::Invalid::Make();
 	}
 	return mcf::IR::Return::Make(std::move(returnObject));
+}
+
+mcf::IR::Pointer mcf::Evaluator::Object::EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	const mcf::AST::Intermediate::FunctionSignature* signature = statement->GetUnsafeSignaturePointer();
+	if (signature->GetName() == mcf::AST::Statement::Main::NAME)
+	{
+		MCF_DEBUG_TODO(u8"메인 함수는 func문이 아닌 main문으로 작성 해야 합니다.");
+		return mcf::IR::Invalid::Make();
+	}
+
+	mcf::Object::FunctionInfo functionInfo = EvalFunctionSignatureIntermediate(signature, scope);
+	scope->MakeLocalScopeToFunctionInfo(functionInfo);
+	if (functionInfo.IsValid() == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	const size_t paramCount = functionInfo.Params.Variables.size();
+	for (size_t i = 0; i < paramCount; ++i)
+	{
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].IsValid(), u8"");
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
+		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
+		{
+			continue;
+		}
+
+		MCF_DEBUG_ASSERT(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
+	}
+
+	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	const mcf::AST::Statement::Block* functionBlock = statement->GetUnsafeBlockPointer();
+	mcf::IR::ASM::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock);
+	if (objects.empty() == true)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	return mcf::IR::Func::Make(std::move(objects));
+}
+
+mcf::IR::Pointer mcf::Evaluator::Object::EvalMainStatement(_Notnull_ const mcf::AST::Statement::Main* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	MCF_DEBUG_ASSERT(mcf::AST::Statement::Main::NAME.empty() == false, u8"FunctionSignature에는 반드시 함수 이름이 있어야 합니다.");
+	mcf::Object::FunctionInfo functionInfo = BuildFunctionInfo(mcf::AST::Statement::Main::NAME, statement->GetUnsafeFunctionParamsPointer(), statement->IsReturnVoid() ? nullptr : statement->GetUnsafeReturnTypePointer(), scope);
+	scope->MakeLocalScopeToFunctionInfo(functionInfo);
+	if (functionInfo.IsValid() == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	// TODO : 메인 함수에서는 특정 인자들만 받을 수 있도록 개선
+	const size_t paramCount = functionInfo.Params.Variables.size();
+	for (size_t i = 0; i < paramCount; ++i)
+	{
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].IsValid(), u8"");
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
+		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
+		{
+			continue;
+		}
+
+		MCF_DEBUG_ASSERT(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
+	}
+
+	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	const mcf::AST::Statement::Block* functionBlock = statement->GetUnsafeBlockPointer();
+	mcf::IR::ASM::PointerVector objects = EvalFunctionBlockStatement(functionInfo, functionBlock);
+	if (objects.empty() == true)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	return mcf::IR::Func::Make(std::move(objects));
 }
 
 mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept
@@ -833,40 +920,8 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(c
 
 mcf::Object::FunctionInfo mcf::Evaluator::Object::EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept
 {
-	mcf::Object::FunctionInfo functionInfo;
-	functionInfo.Name = intermediate->GetName();
-	if (functionInfo.Name.empty())
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::Object::FunctionInfo();
-	}
-
-	const bool isParamsValid = EvalFunctionParamsIntermediate(functionInfo.Params, intermediate->GetUnsafeFunctionParamsPointer(), scope);
-	if (isParamsValid == false)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::Object::FunctionInfo();
-	}
-
-	if (intermediate->IsReturnTypeVoid())
-	{
-		return functionInfo;
-	}
-
-	functionInfo.ReturnType = EvalTypeSignatureIntermediate(intermediate->GetUnsafeReturnTypePointer(), scope);
-	if (functionInfo.ReturnType.IsValid() == false || scope->FindTypeInfo(functionInfo.ReturnType.Name).IsValid() == false)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::Object::FunctionInfo();
-	}
-
-	if (functionInfo.ReturnType.HasUnknownArrayIndex())
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::Object::FunctionInfo();
-	}
-
-	return functionInfo;
+	MCF_DEBUG_ASSERT(intermediate->GetName().empty() == false, u8"FunctionSignature에는 반드시 함수 이름이 있어야 합니다.");
+	return BuildFunctionInfo(intermediate->GetName(), intermediate->GetUnsafeFunctionParamsPointer(), intermediate->IsReturnTypeVoid() ? nullptr : intermediate->GetUnsafeReturnTypePointer(), scope);
 }
 
 const bool mcf::Evaluator::Object::EvalFunctionParamsIntermediate(_Out_ mcf::Object::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept
@@ -963,6 +1018,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ co
 		break;
 
 	case AST::Expression::Type::STRING: __COUNTER__;
+		object = EvalStringExpression(static_cast<const mcf::AST::Expression::String*>(expression), scope);
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -1071,6 +1127,15 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIntegerExpression(_Notn
 	return mcf::IR::Expression::Invalid::Make();
 }
 
+mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalStringExpression(_Notnull_ const mcf::AST::Expression::String* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
+{
+	// This is hard-coded because I assumed String TokenLiteral enclosing value by double quotations('"').
+	const std::string stringLiteral = expression->GetTokenLiteral().substr(1, expression->GetTokenLiteral().size() - 2);
+	mcf::Object::ScopeTree* const scopeTree = scope->GetUnsafeScopeTreePointer();
+	const auto emplacePairIter = scopeTree->LiteralIndexMap.try_emplace(stringLiteral, scopeTree->LiteralIndexMap.size());
+	return mcf::IR::Expression::String::Make(emplacePairIter.first->second);
+}
+
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
 {
 	const mcf::AST::Expression::Interface* leftExpression = expression->GetUnsafeLeftExpressionPointer();
@@ -1138,6 +1203,47 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalInitializerExpression(_
 		}
 	}
 	return mcf::IR::Expression::Initializer::Make(std::move(keyVector));
+}
+
+mcf::Object::FunctionInfo mcf::Evaluator::Object::BuildFunctionInfo(const std::string& name, 
+	_Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, 
+	const mcf::AST::Intermediate::TypeSignature* returnType, 
+	_Notnull_ mcf::Object::Scope* scope) const noexcept
+{
+	mcf::Object::FunctionInfo functionInfo;
+	functionInfo.Name = name;
+	if (functionInfo.Name.empty())
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::Object::FunctionInfo();
+	}
+
+	const bool isParamsValid = EvalFunctionParamsIntermediate(functionInfo.Params, functionParams, scope);
+	if (isParamsValid == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::Object::FunctionInfo();
+	}
+
+	if (returnType == nullptr)
+	{
+		return functionInfo;
+	}
+
+	functionInfo.ReturnType = EvalTypeSignatureIntermediate(returnType, scope);
+	if (functionInfo.ReturnType.IsValid() == false || scope->FindTypeInfo(functionInfo.ReturnType.Name).IsValid() == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::Object::FunctionInfo();
+	}
+
+	if (functionInfo.ReturnType.HasUnknownArrayIndex())
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::Object::FunctionInfo();
+	}
+
+	return functionInfo;
 }
 
 mcf::Object::TypeInfo mcf::Evaluator::Object::MakeArrayTypeInfo(_Notnull_ mcf::Object::TypeInfo info, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept

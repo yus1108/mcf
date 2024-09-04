@@ -141,11 +141,13 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			const struct TestCase
 			{
 				const std::string Input;
+				const std::vector<std::string> Literals;
 				const std::string Expected;
 			} testCases[] =
 			{
 				{
 					"func foo(void) -> void {}",
+					{},
 					"foo proc\n"
 						"\tpush rbp\n"
 						"\tpop rbp\n"
@@ -154,6 +156,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(param1: dword) -> void { unused(param1); }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
@@ -163,6 +166,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(void) -> void { let var1: dword = 15; unused(var1); }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -174,6 +178,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(void) -> byte { return 100; }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tmov al, 100\n"
@@ -183,6 +188,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(param1: dword) -> dword { return param1; }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
@@ -193,6 +199,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(void) -> dword { let var1: dword = 15; return var1; }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -205,6 +212,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(param1: dword) -> dword { let var1: dword = 15; unused(param1); return var1; }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
@@ -218,6 +226,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"func boo(param1: dword) -> dword { let var1: dword = param1; return var1; }",
+					{},
 					"boo proc\n"
 						"\tpush rbp\n"
 						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
@@ -246,6 +255,15 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive("qword", 8));
 				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
 
+				const size_t constantCount = scopeTree.LiteralIndexMap.size();
+				FATAL_ASSERT(constantCount == testCases[i].Literals.size(), u8"상수의 갯수가 예상되는 갯수와 다릅니다. 실제값[%zu] 예상값[%zu]", constantCount, testCases[i].Literals.size());
+				for (size_t j = 0; j < constantCount; ++j)
+				{
+					auto literalPairIter = scopeTree.LiteralIndexMap.find(testCases[i].Literals[i]);
+					FATAL_ASSERT(literalPairIter == scopeTree.LiteralIndexMap.end(), u8"예상되는 값을 실제 리터럴맵에서 찾을 수 없습니다. 인덱스[%zu] 예상값[%s]", j, testCases[i].Literals[j].c_str());
+					FATAL_ASSERT(literalPairIter->second == i, u8"실제값의 인덱스가 예상값의 인덱스와 다릅니다. 실제 인덱스[%zu] 예상 인덱스[%zu]", literalPairIter->second, j);
+				}
+
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
@@ -262,11 +280,13 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			const struct TestCase
 			{
 				const std::string Input;
+				const std::vector<std::string> Literals;
 				const std::string Expected;
 			} testCases[] =
 			{
 				{
 					"main(void) -> void {}",
+					{},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tpop rbp\n"
@@ -275,6 +295,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"main(void) -> void { let var1: dword = 15; unused(var1); }",
+					{},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -286,6 +307,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(byte); }",
+					{"Hello, World!Value = %d\\n"},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -305,6 +327,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(&message); }",
+					{"Hello, World!Value = %d\\n"},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -330,7 +353,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"let intVal: int32 = 10; main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(&message); }",
-					"main proc\n"
+					{"Hello, World!Value = %d\\n"},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -369,8 +392,17 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive("dword", 4));
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive("qword", 8));
 				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
-
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
+
+				const size_t constantCount = scopeTree.LiteralIndexMap.size();
+				FATAL_ASSERT(constantCount == testCases[i].Literals.size(), u8"상수의 갯수가 예상되는 갯수와 다릅니다. 실제값[%zu] 예상값[%zu]", constantCount, testCases[i].Literals.size());
+				for (size_t j = 0; j < constantCount; ++j)
+				{
+					auto literalPairIter = scopeTree.LiteralIndexMap.find(testCases[i].Literals[i]);
+					FATAL_ASSERT(literalPairIter == scopeTree.LiteralIndexMap.end(), u8"예상되는 값을 실제 리터럴맵에서 찾을 수 없습니다. 인덱스[%zu] 예상값[%s]", j, testCases[i].Literals[j].c_str());
+					FATAL_ASSERT(literalPairIter->second == i, u8"실제값의 인덱스가 예상값의 인덱스와 다릅니다. 실제 인덱스[%zu] 예상 인덱스[%zu]", literalPairIter->second, j);
+				}
+
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 

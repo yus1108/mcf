@@ -25,6 +25,7 @@ namespace mcf
 
 			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
 			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
+			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
 			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
 			const size_t GetSize(void) const noexcept;
@@ -95,6 +96,9 @@ namespace mcf
 			inline const bool IsFunctionScope(void) const noexcept { return _isFunctionScope; }
 			const bool IsIdentifierRegistered(const std::string& name) const noexcept;
 
+			inline ScopeTree* GetUnsafeScopeTreePointer(void) noexcept { return _tree;}
+			inline const ScopeTree* GetUnsafeScopeTreePointer(void) const noexcept { return _tree;}
+
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
 
@@ -125,7 +129,7 @@ namespace mcf
 		{
 			Scope Global = Scope(this);
 			std::vector<std::unique_ptr<Scope>> Locals;
-			std::vector<std::string> Constants;
+			std::unordered_map<std::string, size_t> LiteralIndexMap;
 		};
 	}
 
@@ -205,6 +209,7 @@ namespace mcf
 				LOCAL_VARIABLE_IDENTIFIER,
 				FUNCTION_IDENTIFIER,
 				INTEGER,
+				STRING,
 				INITIALIZER,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -220,6 +225,7 @@ namespace mcf
 				"LOCAL_VARIABLE_IDENTIFIER",
 				"FUNCTION_IDENTIFIER",
 				"INTEGER",
+				"STRING",
 				"INITIALIZER",
 			};
 			constexpr const size_t EXPRESSION_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
@@ -383,6 +389,27 @@ namespace mcf
 				bool _isUnsigned = false;
 			};
 
+			class String final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<String>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<String>(std::move(args)...); }
+
+			public:
+				explicit String(void) noexcept = default;
+				explicit String(const size_t literalIndex) noexcept : _literalIndex(literalIndex) {}
+
+				const size_t GetLiteralIndex(void) const noexcept { return _literalIndex;}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				const size_t _literalIndex;
+			};
+
 			class Initializer : public Interface
 			{
 			public:
@@ -499,8 +526,6 @@ namespace mcf
 				explicit Address(void) noexcept = default;
 				explicit Address(const mcf::Object::TypeInfo& targetType, mcf::IR::ASM::Register targetRegister, const size_t offset);
 
-				static const std::string GetAddressOf( const Register value, const size_t offset ) noexcept;
-
 				const std::string Inspect(void) const noexcept;
 				inline const mcf::Object::TypeInfo GetTypeInfo(void) const noexcept { return _targetType; }
 
@@ -509,6 +534,29 @@ namespace mcf
 				std::string _targetAddress;
 			};
 
+			class UnsafePointerAddress final
+			{
+			public:
+				explicit UnsafePointerAddress(void) noexcept = default;
+				explicit UnsafePointerAddress(mcf::IR::ASM::Register targetRegister, const size_t offset);
+
+				const std::string Inspect(void) const noexcept;
+
+			private:
+				std::string _targetAddress;
+			};
+
+			class SizeOf final
+			{
+			public:
+				explicit SizeOf(void) noexcept = default;
+				explicit SizeOf(const mcf::IR::Expression::String* stringExpression);
+
+				inline const std::string Inspect(void) const noexcept { return _targetSize; }
+
+			private:
+				std::string _targetSize;
+			};
 
 			class Interface : public mcf::IR::Interface
 			{

@@ -156,6 +156,8 @@ namespace mcf
 				explicit String(void) noexcept = default;
 				explicit String(const mcf::Token::Data& token) noexcept : _token(token) {}
 
+				inline const std::string& GetTokenLiteral(void) const noexcept { return _token.Literal; }
+
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<String: " + _token.Literal + ">"; }
 
@@ -709,6 +711,8 @@ namespace mcf
 			class Main : public Interface
 			{
 			public:
+				static std::string NAME;
+
 				using Pointer = std::unique_ptr<Main>;
 
 				template <class... Variadic>
@@ -719,12 +723,15 @@ namespace mcf
 				explicit Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept;
 
 				inline const bool IsReturnVoid(void) const noexcept { return _returnType.get() == nullptr; }
+				const mcf::AST::Intermediate::TypeSignature* GetUnsafeReturnTypePointer(void) const noexcept;
+				const mcf::AST::Intermediate::FunctionParams* GetUnsafeFunctionParamsPointer(void) const noexcept;
+				const mcf::AST::Statement::Block* GetUnsafeBlockPointer(void) const noexcept;
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::MAIN; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
-				mcf::AST::Intermediate::FunctionParams::Pointer _params;;
+				mcf::AST::Intermediate::FunctionParams::Pointer _params;
 				mcf::AST::Intermediate::TypeSignature::Pointer _returnType;
 				Block::Pointer _block;
 			};

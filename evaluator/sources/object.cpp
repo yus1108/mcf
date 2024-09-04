@@ -150,6 +150,11 @@ namespace mcf
 					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
 					return false;
 				}
+
+				const std::string GetAddressOf(const Register value, const size_t offset) noexcept
+				{
+					return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? " - " : " + ") + std::to_string(offset) + "]";
+				}
 			}
 		}
 	}
@@ -491,6 +496,11 @@ const std::string mcf::IR::Expression::Integer::Inspect(void) const noexcept
 	return std::to_string(_isUnsigned ? _unsignedValue : _signedValue);
 }
 
+const std::string mcf::IR::Expression::String::Inspect(void) const noexcept
+{
+	return "?" + std::to_string(_literalIndex);
+}
+
 mcf::IR::Expression::Initializer::Initializer(PointerVector&& keyList) noexcept
 	: _keyList(std::move(keyList))
 {
@@ -521,7 +531,7 @@ const std::string mcf::IR::Expression::Initializer::Inspect(void) const noexcept
 
 mcf::IR::ASM::Address::Address(const mcf::Object::TypeInfo& targetType, mcf::IR::ASM::Register targetRegister, const size_t offset)
 	: _targetType(targetType)
-	, _targetAddress(GetAddressOf(targetRegister, offset))
+	, _targetAddress(Internal::GetAddressOf(targetRegister, offset))
 {
 	MCF_DEBUG_ASSERT(targetType.IsValid(), u8"유효하지 않은 타입입니다.");
 	MCF_DEBUG_ASSERT(targetType.IsArrayType() == false, u8"배열 타입은 허용되지 않습니다.");
@@ -530,14 +540,25 @@ mcf::IR::ASM::Address::Address(const mcf::Object::TypeInfo& targetType, mcf::IR:
 	MCF_DEBUG_ASSERT(targetRegister != Register::INVALID && targetRegister < Register::COUNT, u8"유효하지 않은 레지스터 값입니다.");
 }
 
-const std::string mcf::IR::ASM::Address::GetAddressOf(const Register value, const size_t offset) noexcept
-{
-	return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? " - " : " + ") + std::to_string(offset) + "]";
-}
-
 const std::string mcf::IR::ASM::Address::Inspect(void) const noexcept
 {
 	return _targetType.Inspect() + " ptr " + _targetAddress;
+}
+
+mcf::IR::ASM::UnsafePointerAddress::UnsafePointerAddress(mcf::IR::ASM::Register targetRegister, const size_t offset)
+	: _targetAddress(Internal::GetAddressOf(targetRegister, offset))
+{
+	MCF_DEBUG_ASSERT(targetRegister != Register::INVALID && targetRegister < Register::COUNT, u8"유효하지 않은 레지스터 값입니다.");
+}
+
+const std::string mcf::IR::ASM::UnsafePointerAddress::Inspect(void) const noexcept
+{
+	return _targetAddress;
+}
+
+mcf::IR::ASM::SizeOf::SizeOf(const mcf::IR::Expression::String* stringExpression)
+	: _targetSize("sizeof " + stringExpression->Inspect())
+{
 }
 
 mcf::IR::ASM::ProcBegin::ProcBegin(const std::string& name) noexcept

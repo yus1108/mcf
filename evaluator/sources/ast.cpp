@@ -377,6 +377,8 @@ const std::string mcf::AST::Statement::Func::ConvertToString(void) const noexcep
 	return "[Func: " + _signature->ConvertToString() + " " + _block->ConvertToString() + "]";
 }
 
+std::string mcf::AST::Statement::Main::NAME = std::string("main");
+
 mcf::AST::Statement::Main::Main(mcf::AST::Intermediate::FunctionParams::Pointer&& params, mcf::AST::Intermediate::TypeSignature::Pointer&& returnType, Block::Pointer&& block) noexcept
 	: _params(std::move(params))
 	, _returnType(std::move(returnType))
@@ -384,6 +386,24 @@ mcf::AST::Statement::Main::Main(mcf::AST::Intermediate::FunctionParams::Pointer&
 {
 	MCF_DEBUG_ASSERT(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
 	MCF_DEBUG_ASSERT(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const mcf::AST::Intermediate::TypeSignature* mcf::AST::Statement::Main::GetUnsafeReturnTypePointer(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_returnType.get() != nullptr, u8"리턴 타입이 void일 경우 리턴 타입을 가져올 수 없습비다.");
+	return _returnType.get();
+}
+
+const mcf::AST::Intermediate::FunctionParams* mcf::AST::Statement::Main::GetUnsafeFunctionParamsPointer(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_params.get() != nullptr, u8"인자로 받은 _params은 nullptr 여선 안됩니다.");
+	return _params.get();
+}
+
+const mcf::AST::Statement::Block* mcf::AST::Statement::Main::GetUnsafeBlockPointer(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+	return _block.get();
 }
 
 const std::string mcf::AST::Statement::Main::ConvertToString(void) const noexcept
