@@ -120,6 +120,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -564,11 +565,11 @@ mcf::AST::Intermediate::TypeSignature::Pointer mcf::Parser::Object::ParseTypeSig
 	if (_currentToken.Type == mcf::Token::Type::KEYWORD_UNSIGNED)
 	{
 		isUnsigned = true;
-		if ( ReadNextTokenIf( mcf::Token::Type::IDENTIFIER ) == false )
+		if (ReadNextTokenIf( mcf::Token::Type::IDENTIFIER ) == false)
 		{
-			const std::string message = mcf::Internal::ErrorMessage( u8"다음 토큰은 `IDENTIFIER`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
-				mcf::Token::CONVERT_TYPE_TO_STRING( _nextToken.Type ) );
-			_errors.push( ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index } );
+			const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `IDENTIFIER`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
 			return nullptr;
 		}
 	}
@@ -842,6 +843,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -885,6 +887,11 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		case Token::Type::LBRACKET: __COUNTER__;
 			ReadNextToken();
 			expression = ParseIndexExpression(std::move(expression));
+			break;
+		
+		case Token::Type::KEYWORD_AS: __COUNTER__;
+			ReadNextToken();
+			expression = ParseAsExpression(std::move(expression));
 			break;
 
 		case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
@@ -1080,6 +1087,24 @@ mcf::AST::Expression::Index::Pointer mcf::Parser::Object::ParseIndexExpression(m
 	}
 
 	return mcf::AST::Expression::Index::Make(std::move(left), std::move(index));
+}
+
+mcf::AST::Expression::As::Pointer mcf::Parser::Object::ParseAsExpression(mcf::AST::Expression::Pointer&& left) noexcept
+{
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_AS, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_AS`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
+
+	ReadNextToken();
+	mcf::AST::Intermediate::TypeSignature::Pointer typeCastedAs = ParseTypeSignatureIntermediate();
+	if (typeCastedAs.get() == nullptr || typeCastedAs->GetIntermediateType() == mcf::AST::Intermediate::Type::INVALID)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"As 표현식 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_EXPRESSION_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return nullptr;
+	}
+
+	return mcf::AST::Expression::As::Make(std::move(left), std::move(typeCastedAs));
 }
 
 mcf::AST::Expression::Initializer::Pointer mcf::Parser::Object::ParseInitializerExpression(void) noexcept

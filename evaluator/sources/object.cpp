@@ -151,6 +151,16 @@ namespace mcf
 					return false;
 				}
 
+				const std::string GetAddressOf(const std::string& identifier) noexcept
+				{
+					return std::string( "[" ) + identifier + "]";
+				}
+
+				const std::string GetAddressOf(const std::string& identifier, const size_t offset) noexcept
+				{
+					return std::string( "[" ) + identifier + std::string( offset < 0 ? " - " : " + " ) + std::to_string( offset ) + "]";
+				}
+
 				const std::string GetAddressOf(const Register value, const size_t offset) noexcept
 				{
 					return std::string("[") + CONVERT_REGISTER_TO_STRING(value) + std::string(offset < 0 ? " - " : " + ") + std::to_string(offset) + "]";
@@ -325,10 +335,25 @@ const bool mcf::Object::Scope::UseVariableInfo(const std::string& name) noexcept
 	return false;
 }
 
+void mcf::Object::Scope::DetermineUnknownVariableTypeSize(const std::string& name, const size_t arrayDimension, const size_t size) noexcept
+{
+	MCF_DEBUG_ASSERT(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
+
+	auto infoFound = _variables.find(name);
+	if (infoFound == _variables.end())
+	{
+		MCF_DEBUG_ASSERT(_parent != nullptr, u8"현재 스코프에서 해당 이름의 변수를 찾을 수 없습니다.");
+		return;
+	}
+	MCF_DEBUG_ASSERT(arrayDimension < infoFound->second.DataType.ArraySizeList.size(), u8"해당 변수에 주어진 변수 차원이 존재하지 않습니다.");
+	MCF_DEBUG_ASSERT(infoFound->second.DataType.ArraySizeList[arrayDimension] == 0, u8"해당 배열의 차수의 크기가 unknown이 아닙니다.");
+	infoFound->second.DataType.ArraySizeList[arrayDimension] = size;
+}
+
 const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept
 {
 	MCF_DEBUG_ASSERT(info.Name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
-	MCF_DEBUG_ASSERT(info.LocalScope == nullptr, u8"로컬 스코프가 이미 할당 되어 있습니다.");
+	MCF_DEBUG_ASSERT(info.Definition.LocalScope == nullptr, u8"로컬 스코프가 이미 할당 되어 있습니다.");
 
 	_tree->Locals.emplace_back(std::make_unique<Scope>(_tree, this, true));
 	if (_tree->Locals.back() == nullptr)
@@ -346,11 +371,11 @@ const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object:
 		}
 	}
 
-	info.LocalScope = _tree->Locals.back().get();
+	info.Definition.LocalScope = _tree->Locals.back().get();
 	return true;
 }
 
-const bool mcf::Object::Scope::DefineFunction(const std::string& name, mcf::Object::FunctionInfo info) noexcept
+const bool mcf::Object::Scope::DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept
 {
 	MCF_DEBUG_ASSERT(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
 	MCF_DEBUG_ASSERT(info.IsValid(), u8"함수 정보가 유효하지 않습니다.");
@@ -381,6 +406,11 @@ const mcf::Object::FunctionInfo mcf::Object::Scope::FindFunction(const std::stri
 		return _parent->FindFunction(name);
 	}
 	return infoFound->second;
+}
+
+const mcf::Object::FunctionInfo mcf::Object::Scope::FindInternalFunction(const InternalFunctionType functionType) const noexcept
+{
+	return _tree->InternalFunctionInfosByTypes[mcf::ENUM_INDEX(functionType)];
 }
 
 mcf::IR::Expression::TypeIdentifier::TypeIdentifier(const mcf::Object::TypeInfo& info) noexcept
@@ -498,7 +528,7 @@ const std::string mcf::IR::Expression::Integer::Inspect(void) const noexcept
 
 const std::string mcf::IR::Expression::String::Inspect(void) const noexcept
 {
-	return "?" + std::to_string(_literalIndex);
+	return "?" + std::to_string(_index);
 }
 
 mcf::IR::Expression::Initializer::Initializer(PointerVector&& keyList) noexcept
@@ -529,6 +559,37 @@ const std::string mcf::IR::Expression::Initializer::Inspect(void) const noexcept
 	return buffer + "}";
 }
 
+mcf::IR::Expression::Call::Call(mcf::IR::ASM::PointerVector&& generatedCallIRCodes) noexcept
+	: _codes(std::move(generatedCallIRCodes))
+{
+#if defined(_DEBUG)
+	const size_t size = _codes.size();
+	MCF_DEBUG_ASSERT(size != 0, u8"_codes에 값이 최소 한개 이상 있어야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		MCF_DEBUG_ASSERT(_codes[i].get() != nullptr, u8"_codes[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::IR::Expression::Call::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
+}
+
+void mcf::IR::Expression::Call::Transfer(_Out_ mcf::IR::ASM::PointerVector& outParent) noexcept
+{
+	const size_t size = _codes.size();
+	MCF_DEBUG_ASSERT(size != 0, u8"_codes에 값이 최소 한개 이상 있어야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		MCF_DEBUG_ASSERT(_codes[i].get() != nullptr, u8"_codes[%zu]는 nullptr 여선 안됩니다.", i);
+		outParent.emplace_back(std::move(_codes[i]));
+	}
+	_codes.clear();
+}
+
 mcf::IR::ASM::Address::Address(const mcf::Object::TypeInfo& targetType, mcf::IR::ASM::Register targetRegister, const size_t offset)
 	: _targetType(targetType)
 	, _targetAddress(Internal::GetAddressOf(targetRegister, offset))
@@ -545,15 +606,28 @@ const std::string mcf::IR::ASM::Address::Inspect(void) const noexcept
 	return _targetType.Inspect() + " ptr " + _targetAddress;
 }
 
+mcf::IR::ASM::UnsafePointerAddress::UnsafePointerAddress(_Notnull_ const mcf::IR::Expression::String* stringExpression)
+	: _identifier(stringExpression->Inspect())
+	, _hasOffset(false)
+{}
+
 mcf::IR::ASM::UnsafePointerAddress::UnsafePointerAddress(mcf::IR::ASM::Register targetRegister, const size_t offset)
-	: _targetAddress(Internal::GetAddressOf(targetRegister, offset))
+	: _identifier(CONVERT_REGISTER_TO_STRING(targetRegister))
+	, _offset(offset)
+	, _hasOffset(true)
 {
 	MCF_DEBUG_ASSERT(targetRegister != Register::INVALID && targetRegister < Register::COUNT, u8"유효하지 않은 레지스터 값입니다.");
 }
 
+mcf::IR::ASM::UnsafePointerAddress::UnsafePointerAddress(const UnsafePointerAddress& targetAddress, const size_t offset)
+	: _identifier(targetAddress._identifier)
+	, _offset(targetAddress._offset + offset)
+	, _hasOffset(true)
+{}
+
 const std::string mcf::IR::ASM::UnsafePointerAddress::Inspect(void) const noexcept
 {
-	return _targetAddress;
+	return _hasOffset ? Internal::GetAddressOf(_identifier, _offset) : Internal::GetAddressOf(_identifier);
 }
 
 mcf::IR::ASM::SizeOf::SizeOf(const mcf::IR::Expression::String* stringExpression)
@@ -681,6 +755,13 @@ mcf::IR::ASM::Mov::Mov(const Register target, const Address& source) noexcept
 	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(target, source.GetTypeInfo().GetSize()), u8"레지스터가 source의 데이터 크기와 맞지 않는 레지스터 입니다.");
 }
 
+mcf::IR::ASM::Mov::Mov(const Register target, const SizeOf& source) noexcept
+	: _target(CONVERT_REGISTER_TO_STRING(target))
+	, _source(source.Inspect())
+{
+	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
+}
+
 mcf::IR::ASM::Mov::Mov(const Register target, const __int64 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
@@ -742,6 +823,18 @@ const std::string mcf::IR::ASM::Mov::Inspect(void) const noexcept
 	return "\tmov " + _target + ", " + _source + "\n";
 }
 
+mcf::IR::ASM::Lea::Lea(const Register target, const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
+	: _target(CONVERT_REGISTER_TO_STRING(target))
+	, _source(source.Inspect())
+{
+	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
+}
+
+const std::string mcf::IR::ASM::Lea::Inspect(void) const noexcept
+{
+	return "\tlea " + _target + ", " + _source + "\n";
+}
+
 mcf::IR::ASM::Add::Add(const Register lhs, const __int64 rhs) noexcept
 	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
 	, _rhs(std::to_string(rhs))
@@ -778,6 +871,15 @@ mcf::IR::ASM::Sub::Sub(const Register minuend, const unsigned __int64 subtrahend
 const std::string mcf::IR::ASM::Sub::Inspect(void) const noexcept
 {
 	return "\tsub " + _minuend + ", " + _subtrahend + "\n";
+}
+
+mcf::IR::ASM::Call::Call(const std::string& procName) noexcept
+	: _procName(procName)
+{}
+
+const std::string mcf::IR::ASM::Call::Inspect(void) const noexcept
+{
+	return "\tcall " + _procName + "\n";
 }
 
 mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept

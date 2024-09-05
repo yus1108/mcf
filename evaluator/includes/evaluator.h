@@ -21,6 +21,7 @@ namespace mcf
 			inline const size_t GetCount(void) const noexcept { return _sizes.size(); }
 			inline const size_t GetOffset(const size_t index) const noexcept { return _offsets[index]; }
 			inline const size_t GetTotalSize(void) const noexcept { return IsEmpty() ? 0 : (_offsets.back() + _sizes.back() + _paddings.back()); }
+			inline void Clear(void) noexcept { _sizes.clear(); _paddings.clear(); _offsets.clear(); _alignment = DEFAULT_ALIGNMENT; }
 
 		private:
 			void Realign(const size_t alignment) noexcept;
@@ -32,13 +33,27 @@ namespace mcf
 			size_t _alignment = DEFAULT_ALIGNMENT;
 		};
 
-		static class FunctionCallIRGenerator final
+		class FunctionCallIRGenerator final
 		{
 		public:
-			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, _Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept;
-			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, const mcf::IR::ASM::UnsafePointerAddress& targetAddress) noexcept;
-			static mcf::IR::ASM::Pointer AddParameter(const size_t paramIndex, const mcf::IR::ASM::SizeOf& targetSizeOf) noexcept;
-			static mcf::IR::ASM::Pointer CallFunction(const size_t paramIndex, void) noexcept;
+			explicit FunctionCallIRGenerator(void) noexcept = delete;
+			explicit FunctionCallIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
+
+			void AddParameter(_Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept;
+			void AddParameter(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept;
+			void AddParameter(const mcf::IR::ASM::SizeOf& source) noexcept;
+			void AddGeneratedIRCode(_Out_ mcf::IR::ASM::PointerVector& outVector) noexcept;
+
+		private:
+			void AddParameterInternal(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept;
+
+
+		private:
+			const mcf::Object::FunctionInfo _info;
+			MemoryAllocator _localMemory;
+			mcf::IR::ASM::PointerVector _localCodes;
+			size_t _reservedMemory = 0;
+			size_t _currParamIndex = 0;
 		};
 
 		class FunctionIRGenerator final
@@ -47,7 +62,7 @@ namespace mcf
 			explicit FunctionIRGenerator(void) noexcept = delete;
 			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
 
-			void AddLetStatement(_Notnull_ const mcf::IR::Let* object) noexcept;
+			void AddLetStatement(_Notnull_ const mcf::IR::Let* object, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			void AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept;
 			mcf::IR::ASM::PointerVector GenerateIRCode(void) noexcept;
 
@@ -93,12 +108,13 @@ namespace mcf
 			mcf::IR::Expression::Pointer EvalIdentifierExpression(_Notnull_ const mcf::AST::Expression::Identifier* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIntegerExpression(_Notnull_ const mcf::AST::Expression::Integer* expression, _Notnull_ const mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalStringExpression(_Notnull_ const mcf::AST::Expression::String* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+			mcf::IR::Expression::Pointer EvalCallExpression(_Notnull_ const mcf::AST::Expression::Call* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalInitializerExpression(_Notnull_ const mcf::AST::Expression::Initializer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
 			mcf::Object::FunctionInfo BuildFunctionInfo(const std::string& name, _Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, const mcf::AST::Intermediate::TypeSignature* returnType, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
-			mcf::Object::TypeInfo MakeArrayTypeInfo(_Notnull_ mcf::Object::TypeInfo info, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept;
+			mcf::Object::TypeInfo MakeArrayTypeInfo(_In_ mcf::Object::TypeInfo info, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept;
 			const bool ValidateVariableTypeAndValue(_Notnull_ mcf::Object::VariableInfo info, _Notnull_ const mcf::IR::Expression::Interface* value) const noexcept;
 		};
 	}

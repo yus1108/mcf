@@ -298,10 +298,11 @@ namespace UnitTest
 				TokenDword,
 				TokenSemicolon,
 
-				// typedef address: qword;
+				// typedef address: unsigned qword;
 				TokenTypedef,
 				TokenIdentifier("address"),
 				TokenColon,
+				TokenUnsigned,
 				TokenQword,
 				TokenSemicolon,
 
@@ -423,7 +424,7 @@ namespace UnitTest
 				* {
 				*	unused(foo, boo, arr, arr2);
 				*	let message: byte[] = "Hello, World! Value=%d\n";
-				*	printf(&message, intVal);
+				*	printf(message as unsigned qword, intVal);
 				* }
 				*/
 				TokenMain,
@@ -455,8 +456,10 @@ namespace UnitTest
 				TokenSemicolon,
 				TokenIdentifier("printf"),
 				TokenLParen,
-				TokenAmpersand,
 				TokenIdentifier("message"),
+				TokenAs,
+				TokenUnsigned,
+				TokenQword,
 				TokenComma,
 				TokenIdentifier("intVal"),
 				TokenRParen,

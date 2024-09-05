@@ -75,6 +75,9 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::LBRACKET: __COUNTER__;
 		return Precedence::INDEX;
 
+	case Token::Type::KEYWORD_AS: __COUNTER__;
+		return Precedence::AS;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];

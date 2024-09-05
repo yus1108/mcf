@@ -21,12 +21,15 @@ namespace mcf
 			bool IsUnsigned = false;
 			bool IsVariadic = false;
 
-			static const mcf::Object::TypeInfo MakePrimitive(const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false }; }
+			static const mcf::Object::TypeInfo GetVoidTypeInfo(void) { return mcf::Object::TypeInfo(); }
+			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false, isUnsigned, false }; }
 
 			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
 			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
 			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
 			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
+			inline const bool IsCompatibleAddressType(void) const noexcept { return IsUnsigned && IsIntegerType() && IntrinsicSize == sizeof(size_t); }
+			inline const bool IsArraySizeUnknown(const size_t arrayIndex) const noexcept { return IsArrayType() && ArraySizeList[arrayIndex] == 0; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
 			const size_t GetSize(void) const noexcept;
 			const std::string Inspect(void) const noexcept;
@@ -79,11 +82,34 @@ namespace mcf
 			std::string Name;
 			FunctionParams Params;
 			TypeInfo ReturnType;
-			Scope* LocalScope = nullptr;
+			union
+			{
+				Scope* LocalScope = nullptr;
+				bool IsExternal;
+			} Definition;
 
-			inline const bool IsValid(void) const noexcept { return Name.empty() == false && LocalScope != nullptr; }
+			inline const bool IsValid(void) const noexcept { return Name.empty() == false && Definition.LocalScope != nullptr; }
 			inline const bool IsReturnTypeVoid(void) const noexcept { return ReturnType.IsValid() == false; }
 		};
+
+		enum class InternalFunctionType : unsigned char
+		{
+			INVALID = 0,
+
+			COPY_MEMORY,
+
+			// 이 밑으로는 수정하면 안됩니다.
+			COUNT,
+		};
+
+		constexpr const char* INTERNAL_FUNCTION_TYPE_STRING_ARRAY[] =
+		{
+			"INVALID",
+
+			"?CopyMemory",
+		};
+		constexpr const size_t INTERNAL_FUNCTION_TYPES_SIZE = MCF_ARRAY_SIZE(INTERNAL_FUNCTION_TYPE_STRING_ARRAY);
+		static_assert(mcf::ENUM_COUNT<InternalFunctionType>() == INTERNAL_FUNCTION_TYPES_SIZE, "internal function type count not matching!");
 
 		struct ScopeTree;
 		class Scope final
@@ -106,10 +132,12 @@ namespace mcf
 			const mcf::Object::VariableInfo DefineVariable(const std::string& name, const mcf::Object::Variable& variable) noexcept;
 			const mcf::Object::VariableInfo FindVariableInfo(const std::string& name) const noexcept;
 			const bool UseVariableInfo(const std::string& name) noexcept;
+			void DetermineUnknownVariableTypeSize(const std::string& name, const size_t arrayDimension, const size_t size) noexcept;
 
 			const bool MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept;
-			const bool DefineFunction(const std::string& name, mcf::Object::FunctionInfo info) noexcept;
+			const bool DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept;
 			const mcf::Object::FunctionInfo FindFunction(const std::string& name) const noexcept;
+			const mcf::Object::FunctionInfo FindInternalFunction(const InternalFunctionType functionType) const noexcept;
 
 		private:
 			friend ScopeTree;
@@ -130,6 +158,22 @@ namespace mcf
 			Scope Global = Scope(this);
 			std::vector<std::unique_ptr<Scope>> Locals;
 			std::unordered_map<std::string, size_t> LiteralIndexMap;
+			mcf::Object::FunctionInfo InternalFunctionInfosByTypes[mcf::ENUM_COUNT<InternalFunctionType>()] =
+			{
+				mcf::Object::FunctionInfo(),
+				mcf::Object::FunctionInfo
+				{
+					INTERNAL_FUNCTION_TYPE_STRING_ARRAY[mcf::ENUM_INDEX(InternalFunctionType::COPY_MEMORY)], 
+					std::vector<Variable>
+					({
+						Variable{"src", mcf::Object::TypeInfo::MakePrimitive(true, "qword", 8), false},
+						Variable{"dest", mcf::Object::TypeInfo::MakePrimitive(true, "qword", 8), false},
+						Variable{"size", mcf::Object::TypeInfo::MakePrimitive(true, "qword", 8), false},
+					}),
+					mcf::Object::TypeInfo::GetVoidTypeInfo(),
+					reinterpret_cast<Scope*>(true), // Definition.IsExternal = true
+				}
+			};
 		};
 	}
 
@@ -172,7 +216,7 @@ namespace mcf
 			"PROGRAM",
 		};
 		constexpr const size_t IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
-		static_assert(static_cast<size_t>(Type::COUNT) == IR_TYPE_SIZE, "ir type count not matching!");
+		static_assert(static_cast<size_t>(Type::COUNT) == IR_TYPE_SIZE, "IR type count not matching!");
 
 		constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
 		{
@@ -211,6 +255,7 @@ namespace mcf
 				INTEGER,
 				STRING,
 				INITIALIZER,
+				CALL,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -227,6 +272,7 @@ namespace mcf
 				"INTEGER",
 				"STRING",
 				"INITIALIZER",
+				"CALL",
 			};
 			constexpr const size_t EXPRESSION_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == EXPRESSION_IR_TYPE_SIZE, "expression ir type count not matching!");
@@ -255,7 +301,121 @@ namespace mcf
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Expression Object"; }
 			};
+		}
 
+		namespace ASM
+		{
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
+
+				RET,
+				PROC_BEGIN,
+				PROC_END,
+				PUSH,
+				POP,
+				MOV,
+				LEA,
+				ADD,
+				SUB,
+				CALL,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT
+			};
+
+			constexpr const char* TYPE_STRING_ARRAY[] =
+			{
+				"INVALID",
+
+				"RET",
+				"PROC_BEGIN",
+				"PROC_END",
+				"PUSH",
+				"POP",
+				"MOV",
+				"LEA",
+				"ADD",
+				"SUB",
+				"CALL",
+			};
+			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
+			static_assert(static_cast<size_t>(Type::COUNT) == ASM_IR_TYPE_SIZE, "asm ir type count not matching!");
+			constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
+			{
+				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			}
+
+			enum class Register : unsigned char
+			{
+				INVALID = 0,
+
+				RAX,
+				EAX,
+				AX,
+				AL,
+
+				RBX,
+				RCX,
+				RDX,
+				R8,
+				R9,
+
+				RSP,
+				RBP,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT
+			};
+
+			constexpr const char* REGISTER_STRING_ARRAY[] =
+			{
+				"INVALID",
+
+				"rax",
+				"eax",
+				"ax",
+				"al",
+
+				"rbx",
+				"rcx",
+				"rdx",
+				"r8",
+				"r9",
+
+				"rsp",
+				"rbp",
+			};
+			constexpr const size_t REGISTER_TYPE_SIZE = MCF_ARRAY_SIZE(REGISTER_STRING_ARRAY);
+			static_assert(static_cast<size_t>(Register::COUNT) == REGISTER_TYPE_SIZE, "register count not matching!");
+			constexpr const char* CONVERT_REGISTER_TO_STRING(const Register value) noexcept
+			{
+				return REGISTER_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			}
+
+			class Interface : public mcf::IR::Interface
+			{
+			public:
+				virtual const Type GetASMType( void ) const noexcept = 0;
+
+				inline virtual const mcf::IR::Type GetType( void ) const noexcept override final { return mcf::IR::Type::ASM; }
+				virtual const std::string Inspect( void ) const noexcept override = 0;
+			};
+
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
+			{
+			public:
+				inline static Pointer Make( void ) noexcept { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetASMType( void ) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string Inspect( void ) const noexcept override final { return "Invalid Expression Object"; }
+			};
+		}
+
+		namespace Expression
+		{
 			class TypeIdentifier final : public Interface
 			{
 			public:
@@ -399,15 +559,17 @@ namespace mcf
 
 			public:
 				explicit String(void) noexcept = default;
-				explicit String(const size_t literalIndex) noexcept : _literalIndex(literalIndex) {}
+				explicit String(const size_t index, const size_t size) noexcept : _index(index), _size(size) {}
 
-				const size_t GetLiteralIndex(void) const noexcept { return _literalIndex;}
+				const size_t GetIndex(void) const noexcept { return _index;}
+				const size_t GetSize(void) const noexcept { return _size;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STRING; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			private:
-				const size_t _literalIndex;
+				const size_t _index;
+				const size_t _size;
 			};
 
 			class Initializer : public Interface
@@ -438,88 +600,31 @@ namespace mcf
 			protected:
 				PointerVector _keyList;
 			};
+
+			class Call final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Call>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Call>(std::move(args)...); }
+
+			public:
+				explicit Call(void) noexcept = default;
+				explicit Call(mcf::IR::ASM::PointerVector&& generatedCallIRCodes) noexcept;
+
+				void Transfer(_Out_ mcf::IR::ASM::PointerVector& outParent) noexcept;
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::IR::ASM::PointerVector _codes;
+			};
 		}
 
 		namespace ASM
 		{
-			enum class Type : unsigned char
-			{
-				INVALID = 0,
-
-				RET,
-				PROC,
-				PUSH,
-				ADD,
-				SUB,
-
-				// 이 밑으로는 수정하면 안됩니다.
-				COUNT
-			};
-
-			constexpr const char* TYPE_STRING_ARRAY[] =
-			{
-				"INVALID",
-
-				"RET",
-				"PROC",
-				"PUSH",
-				"ADD",
-				"SUB",
-			};
-			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
-			static_assert(static_cast<size_t>(Type::COUNT) == ASM_IR_TYPE_SIZE, "asm ir type count not matching!");
-			constexpr const char* CONVERT_TYPE_TO_STRING(const Type value)
-			{
-				return TYPE_STRING_ARRAY[mcf::ENUM_INDEX(value)];
-			}
-
-			enum class Register : unsigned char
-			{
-				INVALID = 0,
-
-				RAX,
-				EAX,
-				AX,
-				AL,
-
-				RBX,
-				RCX,
-				RDX,
-				R8,
-				R9,
-
-				RSP,
-				RBP,
-
-				// 이 밑으로는 수정하면 안됩니다.
-				COUNT
-			};
-
-			constexpr const char* REGISTER_STRING_ARRAY[] =
-			{
-				"INVALID",
-
-				"rax",
-				"eax",
-				"ax",
-				"al",
-
-				"rbx",
-				"rcx",
-				"rdx",
-				"r8",
-				"r9",
-
-				"rsp",
-				"rbp",
-			};
-			constexpr const size_t REGISTER_TYPE_SIZE = MCF_ARRAY_SIZE(REGISTER_STRING_ARRAY);
-			static_assert(static_cast<size_t>(Register::COUNT) == REGISTER_TYPE_SIZE, "register count not matching!");
-			constexpr const char* CONVERT_REGISTER_TO_STRING(const Register value) noexcept
-			{
-				return REGISTER_STRING_ARRAY[mcf::ENUM_INDEX(value)];
-			}
-
 			class Address final
 			{
 			public:
@@ -538,12 +643,16 @@ namespace mcf
 			{
 			public:
 				explicit UnsafePointerAddress(void) noexcept = default;
+				explicit UnsafePointerAddress(_Notnull_ const mcf::IR::Expression::String* stringExpression);
 				explicit UnsafePointerAddress(mcf::IR::ASM::Register targetRegister, const size_t offset);
+				explicit UnsafePointerAddress(const UnsafePointerAddress& targetAddress, const size_t offset);
 
 				const std::string Inspect(void) const noexcept;
 
 			private:
-				std::string _targetAddress;
+				std::string _identifier;
+				size_t _offset = 0;
+				bool _hasOffset = false;
 			};
 
 			class SizeOf final
@@ -556,26 +665,6 @@ namespace mcf
 
 			private:
 				std::string _targetSize;
-			};
-
-			class Interface : public mcf::IR::Interface
-			{
-			public:
-				virtual const Type GetASMType(void) const noexcept = 0;
-
-				inline virtual const mcf::IR::Type GetType(void) const noexcept override final { return mcf::IR::Type::ASM; }
-				virtual const std::string Inspect(void) const noexcept override = 0;
-			};
-
-			using Pointer = std::unique_ptr<Interface>;
-			using PointerVector = std::vector<Pointer>;
-
-			class Invalid : public Interface
-			{
-			public:
-				inline static Pointer Make(void) noexcept { return std::make_unique<Invalid>(); }
-				inline virtual const Type GetASMType(void) const noexcept override final { return Type::INVALID; }
-				inline virtual const std::string Inspect(void) const noexcept override final { return "Invalid Expression Object"; }
 			};
 
 			class Ret : public Interface
@@ -599,7 +688,7 @@ namespace mcf
 				explicit ProcBegin(const std::string& name) noexcept;
 
 
-				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC; }
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC_BEGIN; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
@@ -619,7 +708,7 @@ namespace mcf
 				explicit ProcEnd(const std::string& name) noexcept;
 
 
-				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC; }
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::PROC_END; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
@@ -659,7 +748,7 @@ namespace mcf
 				explicit Pop(const Register target) noexcept;
 
 
-				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::POP; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
@@ -686,6 +775,7 @@ namespace mcf
 				explicit Mov(const Address& target, const unsigned __int16 source) noexcept;
 				explicit Mov(const Address& target, const unsigned __int8 source) noexcept;
 				explicit Mov(const Register target, const Address& source) noexcept;
+				explicit Mov(const Register target, const SizeOf& source) noexcept;
 				explicit Mov(const Register target, const __int64 source) noexcept;
 				explicit Mov(const Register target, const __int32 source) noexcept;
 				explicit Mov(const Register target, const __int16 source) noexcept;
@@ -696,7 +786,28 @@ namespace mcf
 				explicit Mov(const Register target, const unsigned __int8 source) noexcept;
 
 
-				inline virtual const Type GetASMType(void) const noexcept override { return Type::PUSH; }
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::MOV; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _target;
+				std::string _source;
+			};
+
+			class Lea : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Lea>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Lea>(std::move(args)...); }
+
+			public:
+				explicit Lea(void) noexcept = default;
+				explicit Lea(const Register target, const mcf::IR::ASM::UnsafePointerAddress& source) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::LEA; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
@@ -746,6 +857,26 @@ namespace mcf
 			protected:
 				std::string _minuend;
 				std::string _subtrahend;
+			};
+
+			class Call : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Call>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Call>(std::move(args)...); }
+
+			public:
+				explicit Call(void) noexcept = default;
+				explicit Call(const std::string& procName) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::CALL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _procName;
 			};
 		}
 

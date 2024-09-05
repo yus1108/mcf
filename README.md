@@ -90,6 +90,13 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<As>`
+
+#### PARSER :
+`<Expression>` `KEYWORD_AS` `<TypeSignature>`
+
+---
+
 ### `<Initializer>`
 
 #### PARSER :

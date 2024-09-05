@@ -1,6 +1,0 @@
-﻿  lexer.cpp
-C:\Users\yus11\source\repos\yus1108\mcf\evaluator\sources\lexer.cpp(350,2): error C2220: 다음 경고는 오류로 처리됩니다.
-C:\Users\yus11\source\repos\yus1108\mcf\evaluator\sources\lexer.cpp(350,2): warning C4477: 'printf' : 서식 문자열 '%llu'에 'unsigned __int64' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'const size_t'입니다.
-C:\Users\yus11\source\repos\yus1108\mcf\evaluator\sources\lexer.cpp(350,2): warning C4477: 'printf' : 서식 문자열 '%llu'에 'unsigned __int64' 형식의 인수가 필요하지만 variadic 인수 2의 형식이 'size_t'입니다.
-  parser.cpp
-  코드를 생성하고 있습니다...

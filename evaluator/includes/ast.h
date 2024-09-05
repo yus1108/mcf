@@ -49,6 +49,7 @@ namespace mcf
 				GROUP,
 				INFIX,
 				CALL,
+				AS,
 				INDEX,
 				INITIALIZER,
 				MAP_INITIALIZER,
@@ -68,6 +69,7 @@ namespace mcf
 				"GROUP",
 				"INFIX",
 				"CALL",
+				"AS",
 				"INDEX",
 				"INITIALIZER",
 				"MAP_INITIALIZER",
@@ -100,7 +102,76 @@ namespace mcf
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
 			};
+		}
 
+		namespace Intermediate
+		{
+			enum class Type : unsigned char
+			{
+				INVALID = 0,
+
+				VARIADIC,
+				TYPE_SIGNATURE,
+				VARIABLE_SIGNATURE,
+				FUNCTION_SIGNATURE,
+				FUNCTION_PARAMS,
+				STATEMENTS,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
+
+			class Interface : public mcf::AST::Node::Interface
+			{
+			public:
+				virtual const Type GetIntermediateType(void) const noexcept = 0;
+				inline virtual const mcf::AST::Node::Type GetNodeType(void) const noexcept override final
+				{
+					return mcf::AST::Node::Type::INTERMEDIATE;
+				}
+			};
+
+			using Pointer = std::unique_ptr<Interface>;
+			using PointerVector = std::vector<Pointer>;
+
+			class Invalid : public Interface
+			{
+			public:
+				inline static Pointer Make(void) { return std::make_unique<Invalid>(); }
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::INVALID; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
+			};
+
+			class TypeSignature : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<TypeSignature>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<TypeSignature>(std::move(args)...); }
+
+			public:
+				explicit TypeSignature(void) noexcept = default;
+				explicit TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept;
+
+				inline const bool IsUnsigned(void) const noexcept { return _isUnsigned; }
+				const mcf::AST::Expression::Interface* GetUnsafeSignaturePointer(void) const noexcept;
+
+				inline const mcf::AST::Expression::Type GetSignatureExpressionType(void) const noexcept { return _signature->GetExpressionType(); }
+				inline const std::string ConvertToString(std::function<const std::string(const bool isUnsigned, const mcf::AST::Expression::Interface* signature)> function) 
+					const noexcept { return function(_isUnsigned, _signature.get()); }
+
+				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::TYPE_SIGNATURE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				bool _isUnsigned;
+				mcf::AST::Expression::Pointer _signature;
+			};
+		}
+
+		namespace Expression
+		{
 			class Identifier : public Interface
 			{
 			public:
@@ -237,6 +308,9 @@ namespace mcf
 				explicit Call(void) noexcept = default;
 				explicit Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept;
 
+				const mcf::AST::Expression::Interface* GetUnsafeLeftExpressionPointer(void) const noexcept { return _left.get(); }
+
+
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
@@ -266,6 +340,29 @@ namespace mcf
 			private:
 				mcf::AST::Expression::Pointer _left;
 				mcf::AST::Expression::Pointer _index;
+			};
+
+			class As : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<As>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<As>(std::move(args)...); }
+
+			public:
+				explicit As(void) noexcept = default;
+				explicit As(mcf::AST::Expression::Pointer&& left, mcf::AST::Intermediate::TypeSignature::Pointer&& typeSignature) noexcept;
+
+				const mcf::AST::Expression::Interface* GetUnsafeLeftExpressionPointer(void) const noexcept { return _left.get(); }
+				const mcf::AST::Intermediate::TypeSignature* GetUnsafeTypeSignatureIntermediatePointer(void) const noexcept { return _typeSignature.get(); }
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::AS; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Intermediate::TypeSignature::Pointer _typeSignature;
 			};
 
 			class Initializer : public Interface
@@ -319,42 +416,6 @@ namespace mcf
 
 		namespace Intermediate
 		{
-			enum class Type : unsigned char
-			{
-				INVALID = 0,
-
-				VARIADIC,
-				TYPE_SIGNATURE,
-				VARIABLE_SIGNATURE,
-				FUNCTION_SIGNATURE,
-				FUNCTION_PARAMS,
-				STATEMENTS,
-
-				// 이 밑으로는 수정하면 안됩니다.
-				COUNT,
-			};
-
-			class Interface : public mcf::AST::Node::Interface
-			{
-			public:
-				virtual const Type GetIntermediateType(void) const noexcept = 0;
-				inline virtual const mcf::AST::Node::Type GetNodeType(void) const noexcept override final
-				{
-					return mcf::AST::Node::Type::INTERMEDIATE;
-				}
-			};
-
-			using Pointer = std::unique_ptr<Interface>;
-			using PointerVector = std::vector<Pointer>;
-
-			class Invalid : public Interface
-			{
-			public:
-				inline static Pointer Make(void) { return std::make_unique<Invalid>(); }
-				inline virtual const Type GetIntermediateType(void) const noexcept override final { return Type::INVALID; }
-				inline virtual const std::string ConvertToString(void) const noexcept override final { return "<Invalid>"; }
-			};
-
 			class Variadic : public Interface
 			{
 			public:
@@ -374,33 +435,6 @@ namespace mcf
 
 			private:
 				mcf::AST::Expression::Identifier::Pointer _name;
-			};
-
-			class TypeSignature : public Interface
-			{
-			public:
-				using Pointer = std::unique_ptr<TypeSignature>;
-
-				template <class... Variadic>
-				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<TypeSignature>(std::move(args)...); }
-
-			public:
-				explicit TypeSignature(void) noexcept = default;
-				explicit TypeSignature(const bool isUnsigned, mcf::AST::Expression::Pointer&& signature) noexcept;
-
-				inline const bool IsUnsigned(void) const noexcept { return _isUnsigned; }
-				const mcf::AST::Expression::Interface* GetUnsafeSignaturePointer(void) const noexcept;
-
-				inline const mcf::AST::Expression::Type GetSignatureExpressionType(void) const noexcept { return _signature->GetExpressionType(); }
-				inline const std::string ConvertToString(std::function<const std::string(const bool isUnsigned, const mcf::AST::Expression::Interface* signature)> function) 
-					const noexcept { return function(_isUnsigned, _signature.get()); }
-
-				inline virtual const Type GetIntermediateType( void ) const noexcept override final { return Type::TYPE_SIGNATURE; }
-				virtual const std::string ConvertToString(void) const noexcept override final;
-
-			private:
-				bool _isUnsigned;
-				mcf::AST::Expression::Pointer _signature;
 			};
 
 			class VariableSignature : public Interface

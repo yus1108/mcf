@@ -2,7 +2,7 @@
 
 typedef int32: dword;
 typedef uint32: unsigned dword;
-typedef address: qword;
+typedef address: unsigned qword;
 
 typedef bool: byte -> bind
 {
@@ -25,5 +25,5 @@ main(void) -> void
 {
 	unused(foo, boo, arr, arr2);
 	let message: byte[] = "Hello, World! Value=%d\n";
-	printf(&message, intVal);
+	printf(message as unsigned qword, intVal);
 }

@@ -85,6 +85,21 @@ const std::string mcf::AST::Expression::Index::ConvertToString(void) const noexc
 		("<Index: " + _left->ConvertToString() + " LBRACKET " + _index->ConvertToString() + " RBRACKET>");
 }
 
+mcf::AST::Expression::As::As(mcf::AST::Expression::Pointer&& left, mcf::AST::Intermediate::TypeSignature::Pointer&& typeSignature) noexcept
+	: _left(std::move(left))
+	, _typeSignature(std::move(typeSignature))
+{
+	MCF_DEBUG_ASSERT(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Expression::As::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_left.get() != nullptr, u8"인자로 받은 _left는 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_typeSignature.get() != nullptr, u8"인자로 받은 _typeSignature는 nullptr 여선 안됩니다.");
+	return "<As: " + _left->ConvertToString() + " KEYWORD_AS " + _typeSignature->ConvertToString() + ">";
+}
+
 mcf::AST::Expression::Initializer::Initializer(PointerVector&& keyList) noexcept
 	: _keyList(std::move(keyList))
 {

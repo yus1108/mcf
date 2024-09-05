@@ -95,6 +95,7 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 		"unsigned",
 		"return",
 		"unused",
+		"as",
 	};
 	constexpr const size_t KEYWORDS_SIZE = MCF_ARRAY_SIZE(IDENTIFIER_KEYWORDS);
 	static_assert(ENUM_INDEX(Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
@@ -306,6 +307,7 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for KEYWORD_UNSIGNED
 			__COUNTER__; // count for KEYWORD_RETURN
 			__COUNTER__; // count for KEYWORD_UNUSED
+			__COUNTER__; // count for KEYWORD_AS
 			token.Literal = ReadKeywordOrIdentifier(); 
 			token.Type = DetermineKeywordOrIdentifier(token.Literal);
 			token.Line = _currentLine;
@@ -343,7 +345,7 @@ inline const char mcf::Lexer::Object::GetNextByte(void) const noexcept
 inline void mcf::Lexer::Object::ReadNextByte(void) noexcept
 {
 	const size_t length = _input.length();
-	MCF_DEBUG_ASSERT(_nextPosition <= length, u8"currentPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%llu, nextPosition=%llu", length, _nextPosition);
+	MCF_DEBUG_ASSERT(_nextPosition <= length, u8"currentPosition 은 inputLength 보다 크거나 같을 수 없습니다!. inputLength=%zu, nextPosition=%zu", length, _nextPosition);
 
 	_currentByte = (_nextPosition > length) ? 0 : _input[_nextPosition];
 	_currentPosition = _nextPosition;

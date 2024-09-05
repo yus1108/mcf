@@ -20,6 +20,7 @@ namespace mcf
 			PREFIX,			// -foo | !boo
 			CALL,			// func(x)
 			INDEX,			// foo[0]
+			AS,				// "Hello, World!" as unsigned qword
 
 			// 이 밑으로는 수정하면 안됩니다.
 			COUNT
@@ -89,6 +90,7 @@ namespace mcf
 			mcf::AST::Expression::Infix::Pointer ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Call::Pointer ParseCallExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Index::Pointer ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept;
+			mcf::AST::Expression::As::Pointer ParseAsExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Initializer::Pointer ParseInitializerExpression(void) noexcept;
 			mcf::AST::Expression::MapInitializer::Pointer ParseMapInitializerExpression(mcf::AST::Expression::PointerVector&& keyList) noexcept;
 

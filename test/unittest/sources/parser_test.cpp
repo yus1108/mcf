@@ -451,7 +451,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				"[IncludeLibrary: LT KEYWORD_ASM COMMA \"kernel32.lib\" GT]\n"
 				"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Identifier: dword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: uint32> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: dword>>> SEMICOLON]\n"
-				"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: <Identifier: qword>>> SEMICOLON]\n"
+				"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND "
 				"<MapInitializer: LBRACE "
 					"<Identifier: false> ASSIGN <Integer: 0> COMMA "
@@ -478,7 +478,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				"[Block: LBRACE "
 					"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: boo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON] "
 					"[Let: <VariableSignature: <Identifier: message> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN <String: \"Hello, World! Value=%d\\n\"> SEMICOLON] "
-					"[Expression: <Call: <Identifier: printf> LPAREN <Prefix: AMPERSAND <Identifier: message>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
+					"[Expression: <Call: <Identifier: printf> LPAREN <As: <Identifier: message> KEYWORD_AS <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
 				"RBRACE]]"
 				;
 			const size_t expectedResultLength = expectedResult.size();
