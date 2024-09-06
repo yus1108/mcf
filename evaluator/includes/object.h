@@ -25,12 +25,16 @@ namespace mcf
 			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false, isUnsigned, false }; }
 
 			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
-			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
-			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
 			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
 			inline const bool IsCompatibleAddressType(void) const noexcept { return IsUnsigned && IsIntegerType() && IntrinsicSize == sizeof(size_t); }
+
+			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
 			inline const bool IsArraySizeUnknown(const size_t arrayIndex) const noexcept { return IsArrayType() && ArraySizeList[arrayIndex] == 0; }
+			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
+
+			const bool IsStaticCastable(const TypeInfo& typeToCast) const noexcept;
+
 			const size_t GetSize(void) const noexcept;
 			const std::string Inspect(void) const noexcept;
 		};
@@ -74,6 +78,8 @@ namespace mcf
 
 			inline const bool IsVoid(void) const noexcept { return Variables.empty(); }
 			inline const bool HasVariadic(void) const noexcept { return IsVoid() == false && Variables.back().IsVariadic(); }
+
+			const size_t GetVariadicIndex(void) const noexcept;
 		};
 
 		class Scope;
@@ -90,6 +96,7 @@ namespace mcf
 
 			inline const bool IsValid(void) const noexcept { return Name.empty() == false && Definition.LocalScope != nullptr; }
 			inline const bool IsReturnTypeVoid(void) const noexcept { return ReturnType.IsValid() == false; }
+			
 		};
 
 		enum class InternalFunctionType : unsigned char
@@ -256,6 +263,7 @@ namespace mcf
 				STRING,
 				INITIALIZER,
 				CALL,
+				STATIC_CAST,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -273,6 +281,7 @@ namespace mcf
 				"STRING",
 				"INITIALIZER",
 				"CALL",
+				"STATIC_CAST",
 			};
 			constexpr const size_t EXPRESSION_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == EXPRESSION_IR_TYPE_SIZE, "expression ir type count not matching!");
@@ -286,6 +295,8 @@ namespace mcf
 			{
 			public:
 				virtual const Type GetExpressionType(void) const noexcept = 0;
+
+				static const mcf::Object::TypeInfo GetDatTypeFromExpression(const mcf::IR::Expression::Interface* expression) noexcept;
 
 				inline virtual const mcf::IR::Type GetType(void) const noexcept override final { return mcf::IR::Type::EXPRESSION; }
 				virtual const std::string Inspect(void) const noexcept override = 0;
@@ -449,7 +460,8 @@ namespace mcf
 				explicit GlobalVariableIdentifier(void) noexcept = default;
 				explicit GlobalVariableIdentifier(const mcf::Object::Variable& variable) noexcept;
 
-				const mcf::Object::Variable& GetInfo(void) const noexcept { return _variable;}
+				mcf::Object::Variable& GetVariable(void) noexcept { return _variable; }
+				const mcf::Object::Variable& GetVariable(void) const noexcept { return _variable;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::GLOBAL_VARIABLE_IDENTIFIER; }
 				inline virtual const std::string Inspect(void) const noexcept override final { return _variable.Inspect(); }
@@ -468,15 +480,16 @@ namespace mcf
 
 			public:
 				explicit LocalVariableIdentifier(void) noexcept = default;
-				explicit LocalVariableIdentifier(const mcf::Object::Variable& info) noexcept;
+				explicit LocalVariableIdentifier(const mcf::Object::Variable& variable) noexcept;
 
-				const mcf::Object::Variable& GetInfo(void) const noexcept { return _info;}
+				mcf::Object::Variable& GetVariable(void) noexcept { return _variable;}
+				const mcf::Object::Variable& GetVariable(void) const noexcept { return _variable;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::LOCAL_VARIABLE_IDENTIFIER; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			private:
-				mcf::Object::Variable _info;
+				mcf::Object::Variable _variable;
 			};
 
 			class FunctionIdentifier final : public Interface
@@ -491,7 +504,7 @@ namespace mcf
 				explicit FunctionIdentifier(void) noexcept = default;
 				explicit FunctionIdentifier(const mcf::Object::FunctionInfo& info) noexcept;
 
-				const mcf::Object::FunctionInfo& GetInfo(void) const noexcept { return _info;}
+				inline const mcf::Object::FunctionInfo& GetInfo(void) const noexcept { return _info;}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::FUNCTION_IDENTIFIER; }
 				virtual const std::string Inspect(void) const noexcept override final;
@@ -611,15 +624,49 @@ namespace mcf
 
 			public:
 				explicit Call(void) noexcept = default;
-				explicit Call(mcf::IR::ASM::PointerVector&& generatedCallIRCodes) noexcept;
+				explicit Call(const mcf::Object::FunctionInfo& info, mcf::IR::Expression::PointerVector&& paramObjects) noexcept;
 
-				void Transfer(_Out_ mcf::IR::ASM::PointerVector& outParent) noexcept;
+				inline const mcf::Object::FunctionInfo& GetInfo(void) const noexcept { return _info; }
+				inline const size_t GetParamCount(void) const noexcept { return _paramObjects.size(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeParamPointerAt(const size_t index) noexcept
+				{
+					return _paramObjects[index].get();
+				}
+				inline const mcf::IR::Expression::Interface* GetUnsafeParamPointerAt(const size_t index) const noexcept
+				{
+					return _paramObjects[index].get();
+				}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			private:
-				mcf::IR::ASM::PointerVector _codes;
+				mcf::Object::FunctionInfo _info;
+				mcf::IR::Expression::PointerVector _paramObjects;
+			};
+
+			class StaticCast final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<StaticCast>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<StaticCast>(std::move(args)...); }
+
+			public:
+				explicit StaticCast(void) noexcept = default;
+				explicit StaticCast(mcf::IR::Expression::Pointer&& castingValue, const mcf::Object::TypeInfo& castedType) noexcept;
+
+				inline const mcf::Object::TypeInfo GetOriginalDatType(void) const noexcept { return GetDatTypeFromExpression(_castingValue.get()); }
+				inline const mcf::Object::TypeInfo GetCastedDatType(void) const noexcept { return _castedType; }
+				inline mcf::IR::Expression::Interface* GetUnsafeOriginalExpressionPointer(void) const noexcept { return _castingValue.get(); }
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::STATIC_CAST; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::IR::Expression::Pointer _castingValue;
+				mcf::Object::TypeInfo _castedType;
 			};
 		}
 

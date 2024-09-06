@@ -309,7 +309,15 @@ namespace mcf
 				explicit Call(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::PointerVector&& params) noexcept;
 
 				const mcf::AST::Expression::Interface* GetUnsafeLeftExpressionPointer(void) const noexcept { return _left.get(); }
-
+				inline const size_t GetParamExpressionsCount(void) const noexcept { return _params.size(); }
+				inline mcf::AST::Expression::Interface* GetUnsafeParamExpressionPointerAt(const size_t index) noexcept
+				{
+					return _params[index].get();
+				}
+				inline const mcf::AST::Expression::Interface* GetUnsafeParamExpressionPointerAt(const size_t index) const noexcept
+				{
+					return _params[index].get();
+				}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CALL; }
 				virtual const std::string ConvertToString(void) const noexcept override final;

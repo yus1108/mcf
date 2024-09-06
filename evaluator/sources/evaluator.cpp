@@ -7,13 +7,14 @@ namespace mcf
 	{
 		namespace Internal
 		{
-			constexpr mcf::IR::ASM::Register FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[] =
+			constexpr const mcf::IR::ASM::Register FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[] =
 			{
 				mcf::IR::ASM::Register::RCX,
 				mcf::IR::ASM::Register::RDX,
 				mcf::IR::ASM::Register::R8,
 				mcf::IR::ASM::Register::R9,
 			};
+			constexpr const size_t MINIMUM_FUNCTION_PARAM_STACK_SIZE = MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS) * sizeof(size_t);
 
 			inline static const bool IsStringConvertibleToInt64(const std::string& stringValue) noexcept
 			{
@@ -120,6 +121,7 @@ namespace mcf
 				outOffsets.emplace_back(estimatedOffset);
 				outSizes.emplace_back(size);
 				outPaddings.emplace_back(alignment - ((estimatedOffset + size) % alignment));
+				outPaddings.emplace_back((estimatedOffset % alignment == 0 && size == alignment) ? 0 : (alignment - ((estimatedOffset + size) % alignment)));
 			}
 		}
 	}
@@ -133,6 +135,8 @@ mcf::Evaluator::FunctionCallIRGenerator::FunctionCallIRGenerator(const mcf::Obje
 	const size_t paramCount = _info.Params.Variables.size();
 	for (size_t i = 0; i < paramCount; ++i)
 	{
+		if (_info.Params.Variables[i].IsVariadic())
+			break;
 		_localMemory.AddSize(_info.Params.Variables[i].GetTypeSize());
 	}
 	_reservedMemory = _localMemory.GetTotalSize() < MemoryAllocator::DEFAULT_ALIGNMENT ? MemoryAllocator::DEFAULT_ALIGNMENT : _localMemory.GetTotalSize();
@@ -141,15 +145,139 @@ mcf::Evaluator::FunctionCallIRGenerator::FunctionCallIRGenerator(const mcf::Obje
 void mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept
 {
 	AddParameterInternal(mcf::IR::ASM::UnsafePointerAddress(stringExpression));
+
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CALL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expression->GetExpressionType()), mcf::ENUM_INDEX(expression->GetExpressionType()), expression->Inspect().c_str());
+		break;
+	}
+	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 }
 
-void mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
+void mcf::Evaluator::FunctionCallIRGenerator::FinishAddingVariadicMemory(void) noexcept
 {
-	AddParameterInternal(mcf::IR::ASM::UnsafePointerAddress(source, _reservedMemory));
+	MCF_DEBUG_ASSERT(_info.Params.HasVariadic() == true && _isNeedToAddVariadicMemory == true, u8"variadic 변수 메모리 할당이 필요하지 않습니다.");
+	_isNeedToAddVariadicMemory = false;
 }
 
-void mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const mcf::IR::ASM::SizeOf& source) noexcept
+const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const mcf::IR::Expression::Interface* expression, _Notnull_ const FunctionIRGenerator* functionGenerator) noexcept
 {
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
+
+	if (mcf::Evaluator::Object::ValidateVariableTypeAndValue(_info.Params.Variables[_currParamIndex], expression) == false)
+	{
+		MCF_DEBUG_TODO(u8"함수 정의의 인자 타입과 호출시의 인자 타입이 다릅니다.");
+		return false;
+	}
+
+	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (expression->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+	{
+		const mcf::Object::Variable& variable = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(expression)->GetVariable();
+		const mcf::IR::ASM::Address address(variable.DataType, mcf::IR::ASM::Register::RSP, GetReservedMemory() + functionGenerator->GetLocalVariableOffset(variable.Name));
+		if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+		{
+			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], address));
+		}
+		else
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+		return true;
+	}
+
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__; 
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CALL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+	
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+	{
+		const mcf::IR::Expression::StaticCast* staticCastExpression = static_cast<const mcf::IR::Expression::StaticCast*>(expression);
+		const mcf::Object::TypeInfo& originalValueType = staticCastExpression->GetOriginalDatType();
+		const mcf::Object::TypeInfo& castedValueType = staticCastExpression->GetCastedDatType();
+		if (originalValueType.IsArrayType() && castedValueType.IsIntegerType())
+		{
+			return AddUnsafePointerParameterInternal(staticCastExpression->GetUnsafeOriginalExpressionPointer(), functionGenerator);
+		}
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+	}
+		
+
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expression->GetExpressionType()), mcf::ENUM_INDEX(expression->GetExpressionType()), expression->Inspect().c_str());
+		break;
+	}
+	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+
+	return false;
+}
+
+const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const mcf::IR::ASM::SizeOf& source) noexcept
+{
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
 	if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
 	{
 		_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], source));
@@ -157,12 +285,31 @@ void mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const mcf::IR::ASM::S
 	else
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
+		return false;
 	}
+	return true;
+}
+
+const bool mcf::Evaluator::FunctionCallIRGenerator::AddUnsafePointerParameter(_Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept
+{
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
+	AddPointerParameterInternal(mcf::IR::ASM::UnsafePointerAddress(stringExpression));
+	return true;
+}
+
+const bool mcf::Evaluator::FunctionCallIRGenerator::AddUnsafePointerParameter(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
+{
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
+	AddPointerParameterInternal(mcf::IR::ASM::UnsafePointerAddress(source, GetReservedMemory()));
+	return true;
 }
 
 void mcf::Evaluator::FunctionCallIRGenerator::AddGeneratedIRCode(_Out_ mcf::IR::ASM::PointerVector& outVector) noexcept
 {
-	outVector.emplace_back(mcf::IR::ASM::Sub::Make(mcf::IR::ASM::Register::RSP, static_cast<unsigned __int64>(_reservedMemory)));
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	outVector.emplace_back(mcf::IR::ASM::Sub::Make(mcf::IR::ASM::Register::RSP, GetReservedMemory()));
 	
 	const size_t localCodeCount = _localCodes.size();
 	for (size_t i = 0; i < localCodeCount; ++i)
@@ -171,14 +318,20 @@ void mcf::Evaluator::FunctionCallIRGenerator::AddGeneratedIRCode(_Out_ mcf::IR::
 	}
 	outVector.emplace_back(mcf::IR::ASM::Call::Make(_info.Name));
 
-	outVector.emplace_back(mcf::IR::ASM::Add::Make(mcf::IR::ASM::Register::RSP, static_cast<unsigned __int64>(_reservedMemory)));
+	outVector.emplace_back(mcf::IR::ASM::Add::Make(mcf::IR::ASM::Register::RSP, GetReservedMemory()));
 
 	_localCodes.clear();
 	_localMemory.Clear();
 	_currParamIndex = 0;
 }
 
-void mcf::Evaluator::FunctionCallIRGenerator::AddParameterInternal(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
+const size_t mcf::Evaluator::FunctionCallIRGenerator::GetReservedMemory(void) const noexcept
+{
+	const size_t localMemorySize = _localMemory.GetTotalSize();
+	return localMemorySize < Internal::MINIMUM_FUNCTION_PARAM_STACK_SIZE ? Internal::MINIMUM_FUNCTION_PARAM_STACK_SIZE : localMemorySize;
+}
+
+void mcf::Evaluator::FunctionCallIRGenerator::AddPointerParameterInternal(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
 {
 	if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
 	{
@@ -188,6 +341,72 @@ void mcf::Evaluator::FunctionCallIRGenerator::AddParameterInternal(const mcf::IR
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
 	}
+}
+
+const bool mcf::Evaluator::FunctionCallIRGenerator::AddUnsafePointerParameterInternal(_Notnull_ const mcf::IR::Expression::Interface* expression, _Notnull_ const FunctionIRGenerator* functionGenerator) noexcept
+{
+	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
+	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
+
+	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (expression->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+	{
+		const mcf::Object::Variable& variable = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(expression)->GetVariable();
+		const mcf::IR::ASM::UnsafePointerAddress address(mcf::IR::ASM::Register::RSP, GetReservedMemory() + functionGenerator->GetLocalVariableOffset(variable.Name));
+		if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+		{
+			_localCodes.emplace_back(mcf::IR::ASM::Lea::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], address));
+		}
+		else
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+		return true;
+	}
+
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__;
+		AddUnsafePointerParameter(mcf::IR::ASM::UnsafePointerAddress(static_cast<const mcf::IR::Expression::String*>(expression)));
+		return true;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CALL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expression->GetExpressionType()), mcf::ENUM_INDEX(expression->GetExpressionType()), expression->Inspect().c_str());
+		break;
+	}
+	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+	return false;
 }
 
 void mcf::Evaluator::MemoryAllocator::AddSize(const size_t size) noexcept
@@ -264,7 +483,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
 	{
 		const mcf::IR::Expression::LocalVariableIdentifier* localVariableIdentifier = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(assignExpression);
-		if (targetVariable.DataType != localVariableIdentifier->GetInfo().DataType)
+		if (targetVariable.DataType != localVariableIdentifier->GetVariable().DataType)
 		{
 			MCF_DEBUG_TODO(u8"타입이 일치 하지 않습니다.");
 			return;
@@ -287,7 +506,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 		const bool isTargetVariableSizeUnknown = targetVariableSize == 0 ? targetVariable.DataType.IsArraySizeUnknown(lastTargetVariableArrayIndex) : false;
 		if (isTargetVariableSizeUnknown)
 		{
-			_localMemory.AddSize(localVariableIdentifier->GetInfo().GetTypeSize());
+			_localMemory.AddSize(localVariableIdentifier->GetVariable().GetTypeSize());
 		}
 		else
 		{
@@ -312,35 +531,10 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 		MCF_DEBUG_ASSERT(targetTypeSize % sizeof(__int8) == 0 && sizeof(__int8) <= targetTypeSize && targetTypeBytes <= sizeof(__int64), u8"유효하지 않은 데이터 크기가 들어왔습니다.");
 		if (registers[targetTypeBytes] != mcf::IR::ASM::Register::INVALID)
 		{
-			const std::string sourceVariableName = localVariableIdentifier->GetInfo().Name;
-			size_t sourceOffset, targetOffset;
-
-			auto sourceParamOffsetPairIter = _paramOffsetMap.find(sourceVariableName);
-			if (sourceParamOffsetPairIter != _paramOffsetMap.end())
-			{
-				sourceOffset = _localMemory.GetTotalSize() + sourceParamOffsetPairIter->second;
-			}
-			else
-			{
-				auto localVariableIndexPairIter = _localVariableIndicesMap.find(sourceVariableName);
-				MCF_DEBUG_ASSERT(localVariableIndexPairIter != _localVariableIndicesMap.end(), u8"해당 이름의 지역변수를 찾을 수 없습니다. Name=`%s`", sourceVariableName.c_str());
-				sourceOffset = _localMemory.GetOffset(localVariableIndexPairIter->second);
-			}
-			const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetInfo().DataType, mcf::IR::ASM::Register::RSP, sourceOffset);
+			const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetVariable().DataType, mcf::IR::ASM::Register::RSP, GetLocalVariableOffset(localVariableIdentifier->GetVariable().Name));
 			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(registers[targetTypeBytes], sourceAddress));
 
-			auto targetParamOffsetPairIter = _paramOffsetMap.find(targetVariable.Name);
-			if (targetParamOffsetPairIter != _paramOffsetMap.end())
-			{
-				targetOffset = _localMemory.GetTotalSize() + targetParamOffsetPairIter->second;
-			}
-			else
-			{
-				auto localVariableIndexPairIter = _localVariableIndicesMap.find(targetVariable.Name);
-				MCF_DEBUG_ASSERT(localVariableIndexPairIter != _localVariableIndicesMap.end(), u8"해당 이름의 지역변수를 찾을 수 없습니다. Name=`%s`", targetVariable.Name.c_str());
-				targetOffset = _localMemory.GetOffset(localVariableIndexPairIter->second);
-			}
-			const mcf::IR::ASM::Address targetAddress(targetVariable.DataType, mcf::IR::ASM::Register::RSP, targetOffset);
+			const mcf::IR::ASM::Address targetAddress(targetVariable.DataType, mcf::IR::ASM::Register::RSP, GetLocalVariableOffset(targetVariable.Name));
 			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(targetAddress, registers[targetTypeBytes]));
 			break;
 		}
@@ -415,8 +609,8 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 
 		const mcf::IR::ASM::UnsafePointerAddress targetAddress(mcf::IR::ASM::Register::RSP, _localMemory.GetOffset(targetVariableIndex));
 		FunctionCallIRGenerator generator(scope->FindInternalFunction(mcf::Object::InternalFunctionType::COPY_MEMORY));
-		generator.AddParameter(stringExpression);
-		generator.AddParameter(targetAddress);
+		generator.AddUnsafePointerParameter(stringExpression);
+		generator.AddUnsafePointerParameter(targetAddress);
 		generator.AddParameter(mcf::IR::ASM::SizeOf(stringExpression));
 		generator.AddGeneratedIRCode(_localCodes);
 		break;
@@ -430,6 +624,10 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 		MCF_DEBUG_TODO(u8"구현 필요.");
 		break;
 
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	default:
@@ -440,6 +638,80 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 
+}
+
+void mcf::Evaluator::FunctionIRGenerator::AddExpressionObject(_Notnull_ const mcf::IR::Expression::Interface* object, _Notnull_ const mcf::Object::Scope* scope) noexcept
+{
+	MCF_UNUSED(scope);
+	constexpr const size_t EXPRESSION_OBJECT_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (object->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CALL: __COUNTER__;
+	{
+		const mcf::IR::Expression::Call* callObject = static_cast<const mcf::IR::Expression::Call*>(object);
+		const mcf::Object::FunctionInfo& functionInfo = callObject->GetInfo();
+		FunctionCallIRGenerator callIRGenerator(functionInfo);
+
+		if (functionInfo.Params.IsVoid() == false)
+		{
+			const size_t paramCount = callObject->GetParamCount();
+			if (functionInfo.Params.HasVariadic())
+			{
+				for (size_t i = functionInfo.Params.GetVariadicIndex(); i < paramCount; i++)
+				{
+					callIRGenerator.AddVariadicMemory(callObject->GetUnsafeParamPointerAt(i));
+				}
+				callIRGenerator.FinishAddingVariadicMemory();
+			}
+
+			for (size_t i = 0; i < paramCount; i++)
+			{
+				callIRGenerator.AddParameter(callObject->GetUnsafeParamPointerAt(i), this);
+			}
+		}
+		callIRGenerator.AddGeneratedIRCode(_localCodes);
+		break;
+	}
+
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(object->GetExpressionType()), mcf::ENUM_INDEX(object->GetExpressionType()), object->Inspect().c_str());
+		break;
+	}
+	constexpr const size_t EXPRESSION_OBJECT_TYPE_COUNT = __COUNTER__ - EXPRESSION_OBJECT_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_OBJECT_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 }
 
 void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept
@@ -459,7 +731,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
 	{
 		const mcf::IR::Expression::LocalVariableIdentifier* localVariableIdentifier = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(retrunExpression);
-		if (_returnType != localVariableIdentifier->GetInfo().DataType)
+		if (_returnType != localVariableIdentifier->GetVariable().DataType)
 		{
 			MCF_DEBUG_TODO(u8"타입이 일치 하지 않습니다.");
 			return;
@@ -495,12 +767,12 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 		MCF_DEBUG_ASSERT(returnTypeSize % sizeof(__int8) == 0 && sizeof(__int8) <= returnTypeSize && returnTypeBytes <= sizeof(__int64), u8"유효하지 않은 데이터 크기가 들어왔습니다.");
 		if (returnRegisters[returnTypeBytes] != mcf::IR::ASM::Register::INVALID)
 		{
-			const std::string varName = localVariableIdentifier->GetInfo().Name;
+			const std::string varName = localVariableIdentifier->GetVariable().Name;
 			auto paramOffsetPairIter = _paramOffsetMap.find(varName);
 			if (paramOffsetPairIter != _paramOffsetMap.end())
 			{
 				const size_t offset = _localMemory.GetTotalSize() + paramOffsetPairIter->second;
-				const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetInfo().DataType, mcf::IR::ASM::Register::RSP, offset);
+				const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetVariable().DataType, mcf::IR::ASM::Register::RSP, offset);
 				_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(returnRegisters[returnTypeBytes], sourceAddress ));
 			}
 			else
@@ -508,7 +780,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 				auto localVariableIndexPairIter = _localVariableIndicesMap.find(varName);
 				MCF_DEBUG_ASSERT(localVariableIndexPairIter != _localVariableIndicesMap.end(), u8"해당 이름의 지역변수를 찾을 수 없습니다. Name=`%s`", varName.c_str());
 				const size_t offset = _localMemory.GetOffset(localVariableIndexPairIter->second);
-				const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetInfo().DataType, mcf::IR::ASM::Register::RSP, offset);
+				const mcf::IR::ASM::Address sourceAddress(localVariableIdentifier->GetVariable().DataType, mcf::IR::ASM::Register::RSP, offset);
 				_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(returnRegisters[returnTypeBytes], sourceAddress ));
 			}
 			break;
@@ -577,7 +849,9 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 		MCF_DEBUG_TODO( u8"구현 필요." );
 		break;
 
-	
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
 
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
@@ -624,6 +898,23 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::FunctionIRGenerator::GenerateIRCode(
 	_endCodes.clear();
 
 	return std::move(finalCodes);
+}
+
+const size_t mcf::Evaluator::FunctionIRGenerator::GetLocalVariableOffset(const std::string& variableName) const noexcept
+{
+	size_t offset;
+	auto sourceParamOffsetPairIter = _paramOffsetMap.find(variableName);
+	if (sourceParamOffsetPairIter != _paramOffsetMap.end())
+	{
+		offset = _localMemory.GetTotalSize() + sourceParamOffsetPairIter->second;
+	}
+	else
+	{
+		auto localVariableIndexPairIter = _localVariableIndicesMap.find(variableName);
+		MCF_DEBUG_ASSERT(localVariableIndexPairIter != _localVariableIndicesMap.end(), u8"해당 이름의 지역변수를 찾을 수 없습니다. Name=`%s`", variableName.c_str());
+		offset = _localMemory.GetOffset(localVariableIndexPairIter->second);
+	}
+	return offset;
 }
 
 const std::string mcf::Evaluator::FunctionIRGenerator::INTERNAL_COPY_MEMORY_NAME = "?CopyMemory";
@@ -803,7 +1094,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::A
 		return mcf::IR::Invalid::Make();
 	}
 
-	if (ValidateVariableTypeAndValue(info, expressionObject.get()) == false)
+	if (ValidateVariableTypeAndValue(info.Variable, expressionObject.get()) == false)
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
 		return mcf::IR::Invalid::Make();
@@ -974,7 +1265,7 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(c
 			break;
 
 		case IR::Type::EXPRESSION: __COUNTER__;
-			MCF_DEBUG_TODO(u8"구현 필요");
+			generator.AddExpressionObject(static_cast<mcf::IR::Expression::Interface*>(object.get()), info.Definition.LocalScope);
 			break;
 
 		case IR::Type::UNUSEDIR: __COUNTER__;
@@ -1139,7 +1430,15 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ co
 
 	case AST::Expression::Type::CALL: __COUNTER__;
 		object = EvalCallExpression(static_cast<const mcf::AST::Expression::Call*>(expression), scope);
-		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case AST::Expression::Type::AS: __COUNTER__;
+		object = EvalAsExpression(static_cast<const mcf::AST::Expression::As*>(expression), scope);
+		if (object.get() == nullptr || object->GetExpressionType() != mcf::IR::Expression::Type::STATIC_CAST)
+		{
+			MCF_DEBUG_TODO(u8"정적 캐스팅에 실패 하였습니다.");
+			break;
+		}
 		break;
 
 	case AST::Expression::Type::INDEX: __COUNTER__;
@@ -1160,7 +1459,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ co
 		break;
 	}
 	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::AST::Statement::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::AST::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 	return std::move(object);
 }
 
@@ -1229,7 +1528,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalStringExpression(_Notnu
 	const std::string stringLiteral = expression->GetTokenLiteral().substr(1, expression->GetTokenLiteral().size() - 2);
 	mcf::Object::ScopeTree* const scopeTree = scope->GetUnsafeScopeTreePointer();
 	const auto emplacePairIter = scopeTree->LiteralIndexMap.try_emplace(stringLiteral, scopeTree->LiteralIndexMap.size());
-	return mcf::IR::Expression::String::Make(emplacePairIter.first->second, stringLiteral.size());
+	return mcf::IR::Expression::String::Make(emplacePairIter.first->second, stringLiteral.size() + 1);
 }
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull_ const mcf::AST::Expression::Call* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
@@ -1237,13 +1536,11 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull
 	const mcf::AST::Expression::Interface* leftExpression = expression->GetUnsafeLeftExpressionPointer();
 	mcf::IR::Expression::Pointer leftObject = EvalExpression(leftExpression, scope);
 
+	mcf::Object::FunctionInfo functionInfo;
+
 	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (leftObject->GetExpressionType())
 	{
-	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
@@ -1252,26 +1549,22 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
-	case mcf::IR::Expression::Type::STRING: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
-	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		functionInfo = static_cast<mcf::IR::Expression::FunctionIdentifier*>(leftObject.get())->GetInfo();
 		break;
 
 	case mcf::IR::Expression::Type::CALL: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
-	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
-	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
+	case mcf::IR::Expression::Type::STRING: __COUNTER__; [[fallthrough]];
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
 			mcf::AST::Expression::CONVERT_TYPE_TO_STRING(leftExpression->GetExpressionType()), mcf::ENUM_INDEX(leftExpression->GetExpressionType()), leftExpression->ConvertToString().c_str());
@@ -1280,8 +1573,60 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull
 	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == LEFT_EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 
-	MCF_DEBUG_TODO(u8"구현 필요");
-	return mcf::IR::Expression::Invalid::Make();
+	if (functionInfo.IsValid() == false)
+	{
+		MCF_DEBUG_TODO(u8"함수 정보를 가져올수 없습니다.");
+		return mcf::IR::Expression::Invalid::Make();
+	}
+
+	const size_t functionDefineParamCount = functionInfo.Params.HasVariadic() ? (functionInfo.Params.Variables.size() - 1) : functionInfo.Params.Variables.size();
+	const size_t paramCount = expression->GetParamExpressionsCount();
+	if (paramCount < functionDefineParamCount)
+	{
+		MCF_DEBUG_TODO(u8"함수 정보와 실제 함수 호출이 일치 하지 않습니다.");
+		return mcf::IR::Expression::Invalid::Make();
+	}
+
+	mcf::IR::Expression::PointerVector paramObjects;
+	if (functionInfo.Params.IsVoid() == false)
+	{
+		for (size_t i = 0; i < paramCount; i++)
+		{
+			paramObjects.emplace_back(EvalExpression(expression->GetUnsafeParamExpressionPointerAt(i), scope));
+			if (paramObjects.back().get() == nullptr || paramObjects.back()->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+			{
+				MCF_DEBUG_TODO(u8"함수 인자 정보가 잘못 되었습니다.");
+				return mcf::IR::Expression::Invalid::Make();
+			}
+
+			if (i < functionDefineParamCount && ValidateVariableTypeAndValue(functionInfo.Params.Variables[i], paramObjects.back().get()) == false)
+			{
+				MCF_DEBUG_TODO(u8"함수에 정의된 인자 타입과 호출 인자의 타입이 일치하지 않습니다.");
+				return mcf::IR::Expression::Invalid::Make();
+			}
+		}
+	}
+
+	return mcf::IR::Expression::Call::Make(functionInfo, std::move(paramObjects));
+}
+
+mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalAsExpression(_Notnull_ const mcf::AST::Expression::As* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
+{
+	const mcf::Object::TypeInfo targetType = EvalTypeSignatureIntermediate(expression->GetUnsafeTypeSignatureIntermediatePointer(), scope);
+	if (targetType.IsValid() == false)
+	{
+		MCF_DEBUG_TODO(u8"as 표현식 평가에 실패하였습니다.");
+		return mcf::IR::Expression::Invalid::Make();
+	}
+
+	mcf::IR::Expression::Pointer leftObject = EvalExpression(expression->GetUnsafeLeftExpressionPointer(), scope);
+	const mcf::Object::TypeInfo originalDataType = mcf::IR::Expression::Interface::GetDatTypeFromExpression(leftObject.get());
+	if (originalDataType.IsStaticCastable(targetType) == false)
+	{
+		MCF_DEBUG_TODO(u8"정적 캐스팅이 불가능합니다. 현재 타입[%s] 캐스팅 타입[%s]", originalDataType.Inspect().c_str(), targetType.Inspect().c_str());
+		return mcf::IR::Expression::Invalid::Make();
+	}
+	return mcf::IR::Expression::StaticCast::Make(std::move(leftObject), targetType);
 }
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
@@ -1331,17 +1676,21 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIndexExpression(_Notnul
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
-			mcf::AST::Expression::CONVERT_TYPE_TO_STRING(leftExpression->GetExpressionType()), mcf::ENUM_INDEX(leftExpression->GetExpressionType()), leftExpression->ConvertToString().c_str());
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(leftObject->GetExpressionType()), mcf::ENUM_INDEX(leftObject->GetExpressionType()), leftObject->Inspect().c_str());
 		break;
 	}
 	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == LEFT_EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 
-	return mcf::IR::Expression::Pointer();
+	return mcf::IR::Expression::Invalid::Make();
 }
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalInitializerExpression(_Notnull_ const mcf::AST::Expression::Initializer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
@@ -1436,6 +1785,10 @@ mcf::Object::TypeInfo mcf::Evaluator::Object::MakeArrayTypeInfo(_In_ mcf::Object
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__; [[fallthrough]];
@@ -1451,7 +1804,7 @@ mcf::Object::TypeInfo mcf::Evaluator::Object::MakeArrayTypeInfo(_In_ mcf::Object
 	return info;
 }
 
-const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::Object::VariableInfo info, _Notnull_ const mcf::IR::Expression::Interface* value) const noexcept
+const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ const mcf::Object::Variable& variable, _Notnull_ const mcf::IR::Expression::Interface* value) noexcept
 {
 	constexpr const size_t ASSIGNED_EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (value->GetExpressionType())
@@ -1459,7 +1812,7 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::O
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
 	{
 		const mcf::IR::Expression::GlobalVariableIdentifier* globalVariableIdentifier = static_cast<const mcf::IR::Expression::GlobalVariableIdentifier*>(value);
-		if (info.Variable.DataType != globalVariableIdentifier->GetInfo().DataType)
+		if (variable.DataType != globalVariableIdentifier->GetVariable().DataType)
 		{
 			MCF_DEBUG_TODO(u8"구현 필요");
 			return false;
@@ -1470,7 +1823,7 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::O
 	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
 	{
 		const mcf::IR::Expression::LocalVariableIdentifier* localVariableIdentifier = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(value);
-		if (info.Variable.DataType != localVariableIdentifier->GetInfo().DataType)
+		if (variable.DataType != localVariableIdentifier->GetVariable().DataType)
 		{
 			MCF_DEBUG_TODO(u8"구현 필요");
 			return false;
@@ -1478,29 +1831,28 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::O
 		break;
 	}
 
-
 	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
-		return static_cast<const mcf::IR::Expression::Integer*>(value)->IsCompatible(info.Variable.DataType);
+		return static_cast<const mcf::IR::Expression::Integer*>(value)->IsCompatible(variable.DataType);
 
 	case mcf::IR::Expression::Type::STRING: __COUNTER__;
-		return info.Variable.DataType.IsStringCompatibleType();
+		return variable.DataType.IsStringCompatibleType();
 
 	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
 	{
-		if (info.Variable.DataType.IsArrayType() == false)
+		if (variable.DataType.IsArrayType() == false)
 		{
 			MCF_DEBUG_TODO(u8"구현 필요");
 			return false;
 		}
 
-		mcf::Object::VariableInfo newInfo = info;
-		newInfo.Variable.DataType.ArraySizeList.pop_back();
+		mcf::Object::Variable arrayItem = variable;
+		arrayItem.DataType.ArraySizeList.pop_back();
 
 		const mcf::IR::Expression::Initializer* initializerObject = static_cast<const mcf::IR::Expression::Initializer*>(value);
 		const size_t expressionCount = initializerObject->GetKeyExpressionCount();
 		for (size_t i = 0; i < expressionCount; i++)
 		{
-			if (ValidateVariableTypeAndValue(newInfo, initializerObject->GetUnsafeKeyExpressionPointerAt(i)) == false)
+			if (ValidateVariableTypeAndValue(arrayItem, initializerObject->GetUnsafeKeyExpressionPointerAt(i)) == false)
 			{
 				MCF_DEBUG_TODO(u8"구현 필요");
 				return false;
@@ -1511,6 +1863,14 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(_Notnull_ mcf::O
 
 	case mcf::IR::Expression::Type::CALL: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		if (variable.DataType != static_cast<const mcf::IR::Expression::StaticCast*>(value)->GetCastedDatType())
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
 		break;
 
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];

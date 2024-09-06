@@ -336,7 +336,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
-					{"Hello, World!Value = %d\\n"},
+					{"Hello, World!\\n"},
 					"printf PROTO : unsigned qword, VARARG\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -363,12 +363,14 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
-					"let intVal: int32 = 10; main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
-					{"Hello, World!Value = %d\\n"},
+					"let intVal: dword = 10;"
+					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
+					{"Hello, World!\\n"},
 					"printf PROTO : unsigned qword, VARARG\n"
+					"intVal dword 10\n"
 					"main proc\n"
 						"\tpush rbp\n"
-						"\tsub rsp, 32\n"
+						"\tsub rsp, 16\n"
 						
 						/* CopyMemory(&0, message, sizeof(message)); */
 						"\tsub rsp, 32\n"
@@ -384,7 +386,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tcall printf\n"
 						"\tadd rsp, 32\n"
 
-						"\tadd rsp, 32\n"
+						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
 					"main endp\n",
