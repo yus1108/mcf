@@ -625,6 +625,9 @@ namespace mcf
 				explicit Typedef(void) noexcept = default;
 				explicit Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept;
 
+				inline const mcf::AST::Intermediate::VariableSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
+				inline const mcf::AST::Expression::MapInitializer* GetUnsafeBindMapPointer(void) const noexcept { return _bindMap.get(); }
+
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::TYPEDEF; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 

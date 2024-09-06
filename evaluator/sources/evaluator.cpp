@@ -95,8 +95,8 @@ namespace mcf
 			inline static void MemoryAllocator_AddSize(_Inout_ std::vector<size_t>& outSizes, _Inout_ std::vector<size_t>& outPaddings, _Inout_ std::vector<size_t>& outOffsets, 
 				const size_t alignment, const size_t defaultAlignment, const size_t size) noexcept
 			{
-				MCF_DEBUG_ASSERT(size > 0, u8"사이즈는 0일 수 없습니다.");
-				MCF_DEBUG_ASSERT(size < alignment, u8"사이즈는 alignment 보다 크면 안됩니다.");
+				MCF_DEBUG_ASSERT(0 < size, u8"사이즈는 0일 수 없습니다.");
+				MCF_DEBUG_ASSERT(size <= alignment, u8"사이즈는 alignment 보다 크면 안됩니다.");
 				MCF_DEBUG_ASSERT(outSizes.size() == outPaddings.size() && outPaddings.size() == outOffsets.size(), u8"모든 벡터들은 아이템의 갯수가 같아야 합니다.");
 
 				const size_t offsetWithoutPadding = outOffsets.empty() ? 0 : (outOffsets.back() + outSizes.back());
@@ -120,7 +120,6 @@ namespace mcf
 				}
 				outOffsets.emplace_back(estimatedOffset);
 				outSizes.emplace_back(size);
-				outPaddings.emplace_back(alignment - ((estimatedOffset + size) % alignment));
 				outPaddings.emplace_back((estimatedOffset % alignment == 0 && size == alignment) ? 0 : (alignment - ((estimatedOffset + size) % alignment)));
 			}
 		}
@@ -136,19 +135,28 @@ mcf::Evaluator::FunctionCallIRGenerator::FunctionCallIRGenerator(const mcf::Obje
 	for (size_t i = 0; i < paramCount; ++i)
 	{
 		if (_info.Params.Variables[i].IsVariadic())
+		{
+			_isNeedToAddVariadicMemory = true;
 			break;
+		}
 		_localMemory.AddSize(_info.Params.Variables[i].GetTypeSize());
 	}
-	_reservedMemory = _localMemory.GetTotalSize() < MemoryAllocator::DEFAULT_ALIGNMENT ? MemoryAllocator::DEFAULT_ALIGNMENT : _localMemory.GetTotalSize();
 }
 
-void mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept
+void mcf::Evaluator::FunctionCallIRGenerator::AddVariadicMemory(_Notnull_ const mcf::IR::Expression::Interface* expression) noexcept
 {
-	AddParameterInternal(mcf::IR::ASM::UnsafePointerAddress(stringExpression));
+	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (expression->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
 
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
 
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -975,8 +983,10 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 		break;
 
 	case AST::Statement::Type::TYPEDEF: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+	{
+		object = EvalTypedefStatement(static_cast<const mcf::AST::Statement::Typedef*>(statement), scope);
 		break;
+	}
 
 	case AST::Statement::Type::EXTERN: __COUNTER__;
 		object = EvalExternStatement(static_cast<const mcf::AST::Statement::Extern*>(statement), scope);
@@ -1027,6 +1037,20 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 	constexpr const size_t STATEMENT_TYPE_COUNT = __COUNTER__ - STATEMENT_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::AST::Statement::Type::COUNT) == STATEMENT_TYPE_COUNT, "statement type count is changed. this SWITCH need to be changed as well.");
 	return std::move(object);
+}
+
+mcf::IR::Pointer mcf::Evaluator::Object::EvalTypedefStatement(_Notnull_ const mcf::AST::Statement::Typedef* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	mcf::Object::Variable variable = EvalVariavbleSignatureIntermediate(statement->GetUnsafeSignaturePointer(), scope);
+	mcf::Object::TypeInfo typeToDefine = variable.DataType;
+	typeToDefine.Name = variable.Name;
+	
+	if (scope->DefineType(typeToDefine.Name, typeToDefine) == false)
+	{
+		MCF_DEBUG_TODO(u8"타입 정의에 실패 하였습니다.");
+		return mcf::IR::Invalid::Make();
+	}
+	return mcf::IR::Typedef::Make(typeToDefine, variable.DataType);
 }
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
@@ -1283,6 +1307,7 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(c
 
 		case IR::Type::ASM: __COUNTER__; [[fallthrough]];
 		case IR::Type::INCLUDELIB: __COUNTER__; [[fallthrough]];
+		case IR::Type::TYPEDEF: __COUNTER__; [[fallthrough]];
 		case IR::Type::EXTERN: __COUNTER__; [[fallthrough]];
 		case IR::Type::FUNC: __COUNTER__; [[fallthrough]];
 		case IR::Type::PROGRAM: __COUNTER__; [[fallthrough]];

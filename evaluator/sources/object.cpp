@@ -979,11 +979,26 @@ const std::string mcf::IR::ASM::Call::Inspect(void) const noexcept
 
 mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept
 	: _libPath(libPath)
-{}
+{
+	MCF_DEBUG_ASSERT(_libPath.empty() == false, u8"유효하지 않은 _libPath입니다.");
+}
 
 const std::string mcf::IR::IncludeLib::Inspect(void) const noexcept
 {
 	return "includelib " + _libPath;
+}
+
+mcf::IR::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept
+	: _definedType(definedType)
+	, _sourceType(sourceType)
+{
+	MCF_DEBUG_ASSERT(_definedType.IsValid(), u8"유효하지 않은 _definedType입니다.");
+	MCF_DEBUG_ASSERT(_sourceType.IsValid(), u8"유효하지 않은 _sourceType입니다.");
+}
+
+const std::string mcf::IR::Typedef::Inspect(void) const noexcept
+{
+	return _definedType.Name + " typedef " + _sourceType.Inspect();
 }
 
 mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept

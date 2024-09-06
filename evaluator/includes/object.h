@@ -11,9 +11,12 @@ namespace mcf
 {
 	namespace Object
 	{
+		using Data = std::vector<unsigned __int8>;
+
 		// if any item in ArraySizeList has the value as 0, it means it's unknown
 		struct TypeInfo final
 		{
+			std::unordered_map<std::string, Data> BindedValueMap;
 			std::vector<size_t> ArraySizeList;
 			std::string Name;
 			size_t IntrinsicSize = 0;
@@ -22,7 +25,7 @@ namespace mcf
 			bool IsVariadic = false;
 
 			static const mcf::Object::TypeInfo GetVoidTypeInfo(void) { return mcf::Object::TypeInfo(); }
-			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) { return { std::vector<size_t>(), name, size, false, isUnsigned, false }; }
+			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) { return { std::unordered_map<std::string, Data>(), std::vector<size_t>(), name, size, false, isUnsigned, false }; }
 
 			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
 			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
@@ -32,6 +35,8 @@ namespace mcf
 			inline const bool IsArraySizeUnknown(const size_t arrayIndex) const noexcept { return IsArrayType() && ArraySizeList[arrayIndex] == 0; }
 			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
+
+			inline const bool HasBindedValue(void) const noexcept { return BindedValueMap.empty() == false; }
 
 			const bool IsStaticCastable(const TypeInfo& typeToCast) const noexcept;
 
@@ -133,6 +138,7 @@ namespace mcf
 			inline const ScopeTree* GetUnsafeScopeTreePointer(void) const noexcept { return _tree;}
 
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
+			const bool DefineTypeValue(const std::string& typeName, const std::string , const Data& data) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
 
 			const bool IsAllVariablesUsed(void) const noexcept;
@@ -194,6 +200,7 @@ namespace mcf
 			ASM,
 
 			INCLUDELIB,
+			TYPEDEF,
 			EXTERN,
 			LET,
 			FUNC,
@@ -214,6 +221,7 @@ namespace mcf
 			"ASM",
 
 			"INCLUDELIB",
+			"TYPEDEF",
 			"EXTERN",
 			"LET",
 			"FUNC",
@@ -944,6 +952,26 @@ namespace mcf
 
 		private:
 			std::string _libPath;
+		};
+
+		class Typedef final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Typedef>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Typedef>(std::move(args)...); }
+
+		public:
+			explicit Typedef(void) noexcept = default;
+			explicit Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept;
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::TYPEDEF; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			mcf::Object::TypeInfo _definedType;
+			mcf::Object::TypeInfo _sourceType;
 		};
 
 		class Extern final : public Interface

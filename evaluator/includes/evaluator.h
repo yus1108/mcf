@@ -33,13 +33,13 @@ namespace mcf
 			size_t _alignment = DEFAULT_ALIGNMENT;
 		};
 
+		class FunctionIRGenerator;
 		class FunctionCallIRGenerator final
 		{
 		public:
 			explicit FunctionCallIRGenerator(void) noexcept = delete;
 			explicit FunctionCallIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
 
-			void AddParameter(_Notnull_ const mcf::IR::Expression::String* stringExpression) noexcept;
 			void AddVariadicMemory(_Notnull_ const mcf::IR::Expression::Interface* expression) noexcept;
 			void FinishAddingVariadicMemory(void) noexcept;
 
@@ -105,6 +105,7 @@ namespace mcf
 			mcf::IR::Pointer EvalProgram(_Notnull_ const mcf::AST::Program* program, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
 			mcf::IR::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalTypedefStatement(_Notnull_ const mcf::AST::Statement::Typedef* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalUnusedStatement(_Notnull_ const mcf::AST::Statement::Unused* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;

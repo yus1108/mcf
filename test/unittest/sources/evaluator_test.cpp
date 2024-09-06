@@ -431,6 +431,78 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			return true;
 		}
 	);
+	_names.emplace_back(u8"typedef 평가 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::vector<std::string> Literals;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"typedef int32: dword;",
+					{},
+					"int32 typedef dword",
+				},
+				{
+					"typedef uint32: unsigned dword;",
+					{},
+					"uint32 typedef unsigned dword",
+				},
+				{
+					"typedef address: unsigned qword;",
+					{},
+					"address typedef unsigned qword",
+				},
+				{
+					"typedef bool: byte -> bind { false = 0, true = 1, };",
+					{},
+					"bool typedef byte",
+				},
+			};
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
+			for (size_t i = 0; i < testCaseCount; i++)
+			{ 
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				mcf::Object::TypeInfo byteType = mcf::Object::TypeInfo::MakePrimitive(false, "byte", 1);
+				mcf::Object::TypeInfo wordType = mcf::Object::TypeInfo::MakePrimitive(false, "word", 2);
+				mcf::Object::TypeInfo dwordType = mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4);
+				mcf::Object::TypeInfo qwordType = mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8);
+
+				mcf::Object::ScopeTree scopeTree;
+				scopeTree.Global.DefineType(byteType.Name, byteType);
+				scopeTree.Global.DefineType(wordType.Name, wordType);
+				scopeTree.Global.DefineType(dwordType.Name, dwordType);
+				scopeTree.Global.DefineType(qwordType.Name, qwordType);
+
+				mcf::Evaluator::Object evaluator;
+				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
+
+				const size_t constantCount = scopeTree.LiteralIndexMap.size();
+				FATAL_ASSERT(constantCount == testCases[i].Literals.size(), u8"상수의 갯수가 예상되는 갯수와 다릅니다. 실제값[%zu] 예상값[%zu]", constantCount, testCases[i].Literals.size());
+				for (size_t j = 0; j < constantCount; ++j)
+				{
+					auto literalPairIter = scopeTree.LiteralIndexMap.find(testCases[i].Literals[j]);
+					FATAL_ASSERT(literalPairIter != scopeTree.LiteralIndexMap.end(), u8"예상되는 값을 실제 리터럴맵에서 찾을 수 없습니다. 인덱스[%zu] 예상값[%s]", j, testCases[i].Literals[j].c_str());
+					FATAL_ASSERT(literalPairIter->second == j, u8"실제값의 인덱스가 예상값의 인덱스와 다릅니다. 실제 인덱스[%zu] 예상 인덱스[%zu]", literalPairIter->second, j);
+				}
+
+				const std::string actual = object->Inspect();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+
+			}
+			return true;
+		}
+	);
 }
 
 bool UnitTest::EvaluatorTest::CheckParserErrors(mcf::Parser::Object& parser) noexcept
