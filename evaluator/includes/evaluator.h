@@ -97,7 +97,7 @@ namespace mcf
 		public:
 			explicit Object(void) noexcept = default;
 
-			static const bool ValidateVariableTypeAndValue(_Notnull_ const mcf::Object::Variable& variable, _Notnull_ const mcf::IR::Expression::Interface* value) noexcept;
+			static const bool ValidateVariableTypeAndValue(const mcf::Object::Variable& variable, _Notnull_ const mcf::IR::Expression::Interface* value) noexcept;
 
 			mcf::IR::Pointer Eval(_Notnull_ const mcf::AST::Node::Interface* node, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
@@ -132,6 +132,7 @@ namespace mcf
 			mcf::Object::FunctionInfo BuildFunctionInfo(const std::string& name, _Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, const mcf::AST::Intermediate::TypeSignature* returnType, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
 			mcf::Object::TypeInfo MakeArrayTypeInfo(_In_ mcf::Object::TypeInfo info, _Notnull_ const mcf::IR::Expression::Interface* index) const noexcept;
+			void DetermineUnknownArrayIndex(_Inout_ mcf::Object::Variable& variable, _Notnull_ const mcf::IR::Expression::Interface* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 		};
 	}
 }

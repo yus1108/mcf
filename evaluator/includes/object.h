@@ -33,7 +33,8 @@ namespace mcf
 
 			inline const bool IsArrayType(void) const noexcept { return ArraySizeList.empty() == false; }
 			inline const bool IsArraySizeUnknown(const size_t arrayIndex) const noexcept { return IsArrayType() && ArraySizeList[arrayIndex] == 0; }
-			inline const bool IsStringCompatibleType(void) const noexcept { return IsArrayType() && IntrinsicSize == 1; }
+			inline const bool IsLastArrayDimensionSizeUnknown() const noexcept { return IsArrayType() && ArraySizeList[ArraySizeList.size() - 1] == 0; }
+			inline const bool IsStringCompatibleType(void) const noexcept { return ArraySizeList.size() == 1 && IntrinsicSize == 1; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
 
 			inline const bool HasBindedValue(void) const noexcept { return BindedValueMap.empty() == false; }
@@ -170,7 +171,7 @@ namespace mcf
 		{
 			Scope Global = Scope(this);
 			std::vector<std::unique_ptr<Scope>> Locals;
-			std::unordered_map<std::string, size_t> LiteralIndexMap;
+			std::unordered_map<std::string, std::pair<size_t, Data>> LiteralIndexMap;
 			mcf::Object::FunctionInfo InternalFunctionInfosByTypes[mcf::ENUM_COUNT<InternalFunctionType>()] =
 			{
 				mcf::Object::FunctionInfo(),
@@ -337,6 +338,7 @@ namespace mcf
 				LEA,
 				ADD,
 				SUB,
+				XOR,
 				CALL,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -356,6 +358,7 @@ namespace mcf
 				"LEA",
 				"ADD",
 				"SUB",
+				"XOR",
 				"CALL",
 			};
 			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
@@ -539,6 +542,7 @@ namespace mcf
 
 				inline const bool IsNaturalInteger(void) const noexcept { return _isUnsigned ? true : (_signedValue >= 0); }
 				const bool IsCompatible(const mcf::Object::TypeInfo& dataType) const noexcept;
+				const bool IsZero(void) const noexcept { return _unsignedValue == 0; }
 
 				inline const bool IsInt64(void) const noexcept { return _isUnsigned == false; }
 				const __int64 GetInt64(void) const noexcept;
@@ -912,6 +916,26 @@ namespace mcf
 			protected:
 				std::string _minuend;
 				std::string _subtrahend;
+			};
+
+			class Xor : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Xor>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Xor>(std::move(args)...); }
+
+			public:
+				explicit Xor(void) noexcept = default;
+				explicit Xor(const Register& lhs, const Register rhs) noexcept;
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::XOR; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _lhs;
+				std::string _rhs;
 			};
 
 			class Call : public Interface

@@ -1,129 +1,49 @@
-﻿option casemap :none ; make the file case sensitive and define predefined function
-.code
-?CopyMemory proc
-    push rsi
-    push rdi
-    push rcx
+﻿includelib "kernel32.lib"
 
-    mov rsi, rcx
-    mov rdi, rdx
-    mov rcx, r8
-?CopyMemory?L1:
-    mov al, byte ptr [rsi]
-    mov byte ptr [rdi], al
-    inc rsi
-    inc rdi
-    loop ?CopyMemory?L1
+int32 typedef dword
+uint32 typedef dword
+address typedef qword
 
-    pop rcx
-    pop rdi
-    pop rsi
-    ret
-?CopyMemory endp
+bool typedef byte
+bool?false byte 0
+bool?true byte 1
 
-.data
-?0	byte "Hello, Worlld! Value=%d", 10, 0   ; "Hello, World! Value=%d\n";
-
-includelib "kernel32.lib"
-
-int32 typedef dword		; typedef int32: dword
-uint32 typedef dword	; typedef uint32: unsigned dword
-address typedef qword	; typedef addreess: qword
-
-bool typedef byte		; typedef bool: byte -> bind { false = 0, true = 1 }
-?bind?bool?false    dword   0
-?bind?bool?true    dword   1
-
-includelib "libcmt.lib"
-printf PROTO : qword, VARARG	; extern asm func printf(format: unsigned qword, ...args) -> int32;
-
-.data
-foo		byte	0				; byte		; let foo: byte = 0;
-
-.code
-boo proc								; func boo(void) -> byte { return 0; }
-	sub rsp, 08h;
-	xor al, al
-	add rsp, 08h;
-	ret
-boo endp
-
-.data
-arr		byte	0, 1, 2			; byte[3]			; let arr: byte[] = { 0, 1, 2 };
-arr2	byte	0, 0, 0, 0, 0	; byte[5]			; let arr2: byte[5] = { 0 };
-intval	dword	10				; int32 -> dword	; let intVal: int32 = 10;
-
-.code
-main proc,						; main(void) -> void {
-	sub		rsp, 08h			; 16 byte alignement after call main with 8 byte
-								; unused(foo, boo, arr, arr2);
-	sub		rsp, 20h			; 16 byte alignment with 1 local stack variable of 25 bytes of let message: byte[] = "Hello, World! Value=%d\n"
-	
-	; message = "Hello, World! Value=%d\n";
-    sub     rsp, 20h
-    mov     r8,  sizeof ?0
-    lea     rdx, [rsp + 20h]
-    lea     rcx, [?0]
-    call    ?CopyMemory
-    add     rsp, 20h
-	
-	; printf(&message, intVal);
-    sub     rsp, 20h
-    mov     edx, 25
-    lea     rcx, [rsp + 20h]
-    call    printf
-    add     rsp, 20h
-
-    add     rsp, 20h
-	add		rsp, 08h
-	ret
-main endp					; }
-
-
-/*
-includelib "kernel32.lib"
 includelib "libcmt.lib"
 printf PROTO : qword, VARARG
 
-.data
-foo		byte	0
+foo byte 0
 
-.code
-boo proc								
-	sub rsp, 08h;
+boo proc
+	push rbp
+
 	xor al, al
-	add rsp, 08h;
+
+	pop rbp
 	ret
 boo endp
 
-.data
-arr		byte	0, 1, 2			
-arr2	byte	0, 0, 0, 0, 0	
-intval	dword	10			
+arr byte 0, 1, 2
+arr2 byte 0, 0, 0, 0, 0
+intval dword 10
 
-.code
-main proc,					
-	sub		rsp, 08h		
-							
-	sub		rsp, 20h		
-	
-	; message = "Hello, World! Value=%d\n";
-    sub     rsp, 20h
-    mov     r8,  sizeof ?0
-    lea     rdx, [rsp + 20h]
-    lea     rcx, [?0]
-    call    ?CopyMemory
-    add     rsp, 20h
-	
-	; printf(&message, intVal);
-    sub     rsp, 20h
-    mov     edx, 25
-    lea     rcx, [rsp + 20h]
-    call    printf
-    add     rsp, 20h
+?0	byte "Hello, Worlld! Value=%d", 10, 0
+main proc
+	push rbp
+	sub rsp, 16
 
-    add     rsp, 20h
-	add		rsp, 08h
+	sub rsp, 32
+	mov r8, sizeof ?0
+	lea rdx, [rsp + 32]
+	lea rcx, [?0]
+	call ?CopyMemory
+	add rsp, 32
+
+	sub rsp, 32
+	lea rcx, [rsp + 32]
+	call printf
+	add rsp, 32
+
+	add rsp, 16
+	pop rbp
 	ret
-main endp					; }
-*/
+main endp

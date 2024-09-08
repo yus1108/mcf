@@ -10,115 +10,7 @@ namespace mcf
 		{
 			namespace Internal
 			{
-				static const bool IsRegister64Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 64바이트 레지스터인지 검증
-					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-					switch (reg)
-					{
-					case Register::RAX: __COUNTER__; [[fallthrough]];
-					case Register::RBX: __COUNTER__; [[fallthrough]];
-					case Register::RCX: __COUNTER__; [[fallthrough]];
-					case Register::RDX: __COUNTER__; [[fallthrough]];
-					case Register::R8: __COUNTER__; [[fallthrough]];
-					case Register::R9: __COUNTER__; [[fallthrough]];
-					case Register::RSP: __COUNTER__; [[fallthrough]];
-					case Register::RBP: __COUNTER__;
-						return true;
-
-					case Register::EAX: __COUNTER__; [[fallthrough]];
-					case Register::AX: __COUNTER__; [[fallthrough]];
-					case Register::AL: __COUNTER__; [[fallthrough]];
-					default:
-						break;
-					}
-					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return false;
-				}
-
-				static const bool IsRegister32Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 32바이트 레지스터인지 검증
-					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-					switch (reg)
-					{
-					case Register::EAX: __COUNTER__;
-						return true;
-
-					case Register::RAX: __COUNTER__; [[fallthrough]];
-					case Register::AX: __COUNTER__; [[fallthrough]];
-					case Register::AL: __COUNTER__; [[fallthrough]];
-					case Register::RBX: __COUNTER__; [[fallthrough]];
-					case Register::RCX: __COUNTER__; [[fallthrough]];
-					case Register::RDX: __COUNTER__; [[fallthrough]];
-					case Register::R8: __COUNTER__; [[fallthrough]];
-					case Register::R9: __COUNTER__; [[fallthrough]];
-					case Register::RSP: __COUNTER__; [[fallthrough]];
-					case Register::RBP: __COUNTER__; [[fallthrough]];
-					default:
-						break;
-					}
-					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return false;
-				}
-
-				static const bool IsRegister16Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 16바이트 레지스터인지 검증
-					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-					switch (reg)
-					{
-					case Register::AX: __COUNTER__;
-						return true;
-
-					case Register::RAX: __COUNTER__; [[fallthrough]];
-					case Register::EAX: __COUNTER__; [[fallthrough]];
-					case Register::AL: __COUNTER__; [[fallthrough]];
-					case Register::RBX: __COUNTER__; [[fallthrough]];
-					case Register::RCX: __COUNTER__; [[fallthrough]];
-					case Register::RDX: __COUNTER__; [[fallthrough]];
-					case Register::R8: __COUNTER__; [[fallthrough]];
-					case Register::R9: __COUNTER__; [[fallthrough]];
-					case Register::RSP: __COUNTER__; [[fallthrough]];
-					case Register::RBP: __COUNTER__; [[fallthrough]];
-					default:
-						break;
-					}
-					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return false;
-				}
-
-				static const bool IsRegister8Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 8바이트 레지스터인지 검증
-					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-					switch (reg)
-					{
-					case Register::AL: __COUNTER__;
-						return true;
-
-					case Register::RAX: __COUNTER__; [[fallthrough]];
-					case Register::EAX: __COUNTER__; [[fallthrough]];
-					case Register::AX: __COUNTER__; [[fallthrough]];
-					case Register::RBX: __COUNTER__; [[fallthrough]];
-					case Register::RCX: __COUNTER__; [[fallthrough]];
-					case Register::RDX: __COUNTER__; [[fallthrough]];
-					case Register::R8: __COUNTER__; [[fallthrough]];
-					case Register::R9: __COUNTER__; [[fallthrough]];
-					case Register::RSP: __COUNTER__; [[fallthrough]];
-					case Register::RBP: __COUNTER__; [[fallthrough]];
-					default:
-						break;
-					}
-					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return false;
-				}
-
-				static const bool IsSizeMatching(const mcf::IR::ASM::Register reg, const size_t size)
+				static const size_t GetRegisterSize(const mcf::IR::ASM::Register reg)
 				{
 					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
 					switch (reg)
@@ -131,16 +23,16 @@ namespace mcf
 					case Register::R9: __COUNTER__; [[fallthrough]];
 					case Register::RSP: __COUNTER__; [[fallthrough]];
 					case Register::RBP: __COUNTER__;
-						return size == sizeof(__int64);
+						return sizeof(__int64);
 
 					case Register::EAX: __COUNTER__;
-						return size == sizeof(__int32);
+						return sizeof(__int32);
 
 					case Register::AX: __COUNTER__;
-						return size == sizeof(__int16);
+						return sizeof(__int16);
 
 					case Register::AL: __COUNTER__;
-						return size == sizeof(__int8);
+						return sizeof(__int8);
 
 					default:
 						MCF_DEBUG_BREAK(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. Register=%s(%zu)", mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(reg), mcf::ENUM_INDEX(reg));
@@ -148,7 +40,41 @@ namespace mcf
 					}
 					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
 					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return false;
+					return 0;
+				}
+
+				static const bool IsRegister64Bit(const mcf::IR::ASM::Register reg)
+				{
+					// 64바이트 레지스터인지 검증
+					return GetRegisterSize(reg) == sizeof(__int64);
+				}
+
+				static const bool IsRegister32Bit(const mcf::IR::ASM::Register reg)
+				{
+					// 32바이트 레지스터인지 검증
+					return GetRegisterSize(reg) == sizeof(__int32);
+				}
+
+				static const bool IsRegister16Bit(const mcf::IR::ASM::Register reg)
+				{
+					// 16바이트 레지스터인지 검증
+					return GetRegisterSize(reg) == sizeof(__int16);
+				}
+
+				static const bool IsRegister8Bit(const mcf::IR::ASM::Register reg)
+				{
+					// 8바이트 레지스터인지 검증
+					return GetRegisterSize(reg) == sizeof(__int8);
+				}
+
+				static const bool IsSizeMatching(const mcf::IR::ASM::Register lhs, const mcf::IR::ASM::Register rhs)
+				{
+					return GetRegisterSize(lhs) == GetRegisterSize(rhs);
+				}
+
+				static const bool IsSizeMatching(const mcf::IR::ASM::Register reg, const size_t size)
+				{
+					return GetRegisterSize(reg) == size;
 				}
 
 				const std::string GetAddressOf(const std::string& identifier) noexcept
@@ -966,6 +892,18 @@ mcf::IR::ASM::Sub::Sub(const Register minuend, const unsigned __int64 subtrahend
 const std::string mcf::IR::ASM::Sub::Inspect(void) const noexcept
 {
 	return "\tsub " + _minuend + ", " + _subtrahend + "\n";
+}
+
+mcf::IR::ASM::Xor::Xor(const Register& lhs, const Register rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(CONVERT_REGISTER_TO_STRING(rhs))
+{
+	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(lhs, rhs), u8"64비트 레지스터가 아닙니다.");
+}
+
+const std::string mcf::IR::ASM::Xor::Inspect(void) const noexcept
+{
+	return "\txor " + _lhs + ", " + _rhs + "\n";
 }
 
 mcf::IR::ASM::Call::Call(const std::string& procName) noexcept
