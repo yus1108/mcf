@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include <string>
 
 #if defined(UNUSED)
 #undef MCF_UNUSED
@@ -14,28 +15,28 @@ namespace mcf
 {
 	// ENUM
 	template<typename T>
-	constexpr const size_t ENUM_COUNT(void)
+	constexpr const size_t ENUM_COUNT(void) noexcept
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum type is required for this function");
 		return static_cast<size_t>(T::COUNT);
 	}
 
 	template<typename T>
-	constexpr const size_t ENUM_COUNT(const T value)
+	constexpr const size_t ENUM_COUNT(const T value) noexcept
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
 		return static_cast<size_t>(T::COUNT);
 	}
 
 	template<typename T>
-	constexpr const size_t ENUM_INDEX(const T value)
+	constexpr const size_t ENUM_INDEX(const T value) noexcept
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
 		return value < T::COUNT ? static_cast<size_t>(value) : static_cast<size_t>(T::INVALID);
 	}
 
 	template<typename T>
-	constexpr const T ENUM_AT(const size_t index)
+	constexpr const T ENUM_AT(const size_t index) noexcept
 	{
 		static_assert(std::is_enum_v<T> == true, u8"only enum value is required for this function");
 		return index < mcf::ENUM_COUNT<T>() ? static_cast<T>(index) : T::INVALID;
@@ -43,7 +44,7 @@ namespace mcf
 
 	// ARRAY
 	template<typename T>
-	constexpr const size_t ARRAY_TYPE_SIZE(T array[])
+	constexpr const size_t ARRAY_TYPE_SIZE(T array[]) noexcept
 	{
 		array;
 		return sizeof(T);

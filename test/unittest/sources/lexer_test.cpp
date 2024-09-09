@@ -438,8 +438,6 @@ namespace UnitTest
 				TokenLParen,
 				TokenIdentifier("foo"),
 				TokenComma,
-				TokenIdentifier("boo"),
-				TokenComma,
 				TokenIdentifier("arr"),
 				TokenComma,
 				TokenIdentifier("arr2"),

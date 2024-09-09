@@ -7,14 +7,41 @@ namespace mcf
 	{
 		namespace Internal
 		{
-			constexpr const mcf::IR::ASM::Register FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[] =
+			constexpr const size_t FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT = 4;
+			constexpr const mcf::IR::ASM::Register FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_COUNT<mcf::IR::ASM::RegisterSize>()][FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT] =
 			{
-				mcf::IR::ASM::Register::RCX,
-				mcf::IR::ASM::Register::RDX,
-				mcf::IR::ASM::Register::R8,
-				mcf::IR::ASM::Register::R9,
+				{
+					mcf::IR::ASM::Register::INVALID,
+					mcf::IR::ASM::Register::INVALID,
+					mcf::IR::ASM::Register::INVALID,
+					mcf::IR::ASM::Register::INVALID,
+				},
+								{
+					mcf::IR::ASM::Register::CL,
+					mcf::IR::ASM::Register::DL,
+					mcf::IR::ASM::Register::R8B,
+					mcf::IR::ASM::Register::R9B,
+				},
+				{
+					mcf::IR::ASM::Register::CX,
+					mcf::IR::ASM::Register::DX,
+					mcf::IR::ASM::Register::R8W,
+					mcf::IR::ASM::Register::R9W,
+				},
+				{
+					mcf::IR::ASM::Register::ECX,
+					mcf::IR::ASM::Register::EDX,
+					mcf::IR::ASM::Register::R8D,
+					mcf::IR::ASM::Register::R9D,
+				},
+				{
+					mcf::IR::ASM::Register::RCX,
+					mcf::IR::ASM::Register::RDX,
+					mcf::IR::ASM::Register::R8,
+					mcf::IR::ASM::Register::R9,
+				},
 			};
-			constexpr const size_t MINIMUM_FUNCTION_PARAM_STACK_SIZE = MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS) * sizeof(size_t);
+			constexpr const size_t MINIMUM_FUNCTION_PARAM_STACK_SIZE = FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT * sizeof(size_t);
 
 			static const bool IsStringConvertibleToInt64(const std::string& stringValue) noexcept
 			{
@@ -220,7 +247,7 @@ void mcf::Evaluator::FunctionCallIRGenerator::AddVariadicMemory(_Notnull_ const 
 		break;
 
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+		_localMemory.AddSize(mcf::IR::Expression::Interface::GetDatTypeFromExpression(expression).GetSize());
 		break;
 
 	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
@@ -275,7 +302,8 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const
 	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
 	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
 
-	if (mcf::Evaluator::Object::ValidateVariableTypeAndValue(_info.Params.Variables[_currParamIndex], expression) == false)
+	const bool isVariadicParam = _info.Params.HasVariadic() && _info.Params.GetVariadicIndex() <= _currParamIndex;
+	if (isVariadicParam == false && mcf::Evaluator::Object::ValidateVariableTypeAndValue(_info.Params.Variables[_currParamIndex], expression) == false)
 	{
 		MCF_DEBUG_TODO(u8"함수 정의의 인자 타입과 호출시의 인자 타입이 다릅니다.");
 		return false;
@@ -289,16 +317,43 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const
 		break;
 
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
+	{
+		const mcf::IR::Expression::GlobalVariableIdentifier* globalExpression = static_cast<const mcf::IR::Expression::GlobalVariableIdentifier*>(expression);
+		const mcf::Object::Variable& variable = globalExpression->GetVariable();
+		if (variable.DataType.IsArrayType() || variable.DataType.IsStruct)
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+
+		if (_currParamIndex < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT)
+		{
+			const mcf::IR::ASM::RegisterSize registerSize = mcf::IR::ASM::GET_REGISTER_SIZE_BY_VALUE(variable.GetTypeSize());
+			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(registerSize)][_currParamIndex++], globalExpression));
+		}
+		else
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+		return true;
+	}
 
 	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
 	{
 		const mcf::Object::Variable& variable = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(expression)->GetVariable();
 		const mcf::IR::ASM::Address address(variable.DataType, mcf::IR::ASM::Register::RSP, GetReservedMemory() + functionGenerator->GetLocalVariableOffset(variable.Name));
-		if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+
+		if (variable.DataType.IsArrayType() || variable.DataType.IsStruct)
 		{
-			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], address));
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+
+		if (_currParamIndex < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT)
+		{
+			const mcf::IR::ASM::RegisterSize registerSize = mcf::IR::ASM::GET_REGISTER_SIZE_BY_VALUE(variable.GetTypeSize());
+			_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(registerSize)][_currParamIndex++], address));
 		}
 		else
 		{
@@ -361,9 +416,9 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(const mcf::IR::
 {
 	MCF_DEBUG_ASSERT(_isNeedToAddVariadicMemory == false, u8"variadic 변수 메모리 할당이 완료되지 않았습니다.");
 	MCF_DEBUG_ASSERT(_info.Params.IsVoid() == false, u8"함수 정의에 인자가 없습니다.");
-	if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+	if (_currParamIndex < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT)
 	{
-		_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], source));
+		_localCodes.emplace_back(mcf::IR::ASM::Mov::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(mcf::IR::ASM::RegisterSize::QWORD)][_currParamIndex++], source));
 	}
 	else
 	{
@@ -416,9 +471,9 @@ const size_t mcf::Evaluator::FunctionCallIRGenerator::GetReservedMemory(void) co
 
 void mcf::Evaluator::FunctionCallIRGenerator::AddPointerParameterInternal(const mcf::IR::ASM::UnsafePointerAddress& source) noexcept
 {
-	if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+	if (_currParamIndex < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT)
 	{
-		_localCodes.emplace_back(mcf::IR::ASM::Lea::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], source));
+		_localCodes.emplace_back(mcf::IR::ASM::Lea::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(mcf::IR::ASM::RegisterSize::QWORD)][_currParamIndex++], source));
 	}
 	else
 	{
@@ -446,9 +501,9 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddUnsafePointerParameterInt
 	{
 		const mcf::Object::Variable& variable = static_cast<const mcf::IR::Expression::LocalVariableIdentifier*>(expression)->GetVariable();
 		const mcf::IR::ASM::UnsafePointerAddress address(mcf::IR::ASM::Register::RSP, GetReservedMemory() + functionGenerator->GetLocalVariableOffset(variable.Name));
-		if (_currParamIndex < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS))
+		if (_currParamIndex < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT)
 		{
-			_localCodes.emplace_back(mcf::IR::ASM::Lea::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[_currParamIndex++], address));
+			_localCodes.emplace_back(mcf::IR::ASM::Lea::Make(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(mcf::IR::ASM::RegisterSize::QWORD)][_currParamIndex++], address));
 		}
 		else
 		{
@@ -539,12 +594,12 @@ mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::Func
 	const size_t paramCount = info.Params.Variables.size();
 	const mcf::Object::TypeInfo paramType = mcf::Object::TypeInfo::MakePrimitive(true, "qword", sizeof(unsigned __int64));
 	MCF_DEBUG_ASSERT(paramType.IsValid(), u8"");
-	for (size_t i = 0; i < paramCount && i < MCF_ARRAY_SIZE(Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS); ++i)
+		for (size_t i = 0; i < paramCount && i < Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTER_COUNT; ++i)
 	{
 		const size_t offset = PARAM_OFFSET + i * 0x8;
 		mcf::IR::ASM::Address target(paramType, mcf::IR::ASM::Register::RSP, offset);
 		_paramOffsetMap[info.Params.Variables[i].Name] = offset;
-		_beginCodes.emplace_back(mcf::IR::ASM::Mov::Make(target, Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[i]));
+		_beginCodes.emplace_back(mcf::IR::ASM::Mov::Make(target, Internal::FIRST_FOUR_FUNCTION_PARAM_TARGET_REGISTERS[mcf::ENUM_INDEX(mcf::IR::ASM::RegisterSize::QWORD)][i]));
 	}
 }
 

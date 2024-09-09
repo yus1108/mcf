@@ -194,7 +194,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tpush rbp\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"foo endp\n",
+					"foo endp",
 				},
 				{
 					"func boo(param1: dword) -> void { unused(param1); }",
@@ -205,7 +205,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(void) -> void { let var1: dword = 15; unused(var1); }",
@@ -218,7 +218,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(void) -> byte { return 0; }",
@@ -229,7 +229,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\txor al, al\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(void) -> byte { return 100; }",
@@ -240,7 +240,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tmov al, 100\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(param1: dword) -> dword { return param1; }",
@@ -252,7 +252,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tmov eax, dword ptr [rsp + 16]\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(void) -> dword { let var1: dword = 15; return var1; }",
@@ -266,7 +266,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(param1: dword) -> dword { let var1: dword = 15; unused(param1); return var1; }",
@@ -281,7 +281,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 				{
 					"func boo(param1: dword) -> dword { let var1: dword = param1; return var1; }",
@@ -297,7 +297,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp\n",
+					"boo endp",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -361,7 +361,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tpush rbp\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp\n",
+					"main endp",
 				},
 				{
 					"main(void) -> void { let var1: dword = 15; unused(var1); }",
@@ -374,7 +374,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp\n",
+					"main endp",
 				},
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
@@ -395,7 +395,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 32\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp\n",
+					"main endp",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
@@ -424,7 +424,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp\n",
+					"main endp",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
@@ -455,7 +455,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp\n",
+					"main endp",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -569,6 +569,49 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 
 				const std::string actual = object->Inspect();
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"파일 평가 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			std::string expectedResultFileName = "./test/unittest/texts/test_file_read_eval.txt";
+			std::string exepctedResult = mcf::Lexer::ReadFile(expectedResultFileName);
+
+			std::string fileToEvaluate = "./test/unittest/texts/test_file_read.txt";
+			mcf::Parser::Object parser(fileToEvaluate, true);
+			mcf::AST::Program program;
+			parser.ParseProgram(program);
+			FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+			mcf::Object::TypeInfo byteType = mcf::Object::TypeInfo::MakePrimitive(false, "byte", 1);
+			mcf::Object::TypeInfo wordType = mcf::Object::TypeInfo::MakePrimitive(false, "word", 2);
+			mcf::Object::TypeInfo dwordType = mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4);
+			mcf::Object::TypeInfo qwordType = mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8);
+
+			mcf::Object::ScopeTree scopeTree;
+			scopeTree.Global.DefineType(byteType.Name, byteType);
+			scopeTree.Global.DefineType(wordType.Name, wordType);
+			scopeTree.Global.DefineType(dwordType.Name, dwordType);
+			scopeTree.Global.DefineType(qwordType.Name, qwordType);
+
+			mcf::Evaluator::Object evaluator;
+			mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+			FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
+
+			std::string evaluated = object->Inspect();
+			const size_t evaluatedCount = evaluated.length();
+			const size_t exepctedResultCount = exepctedResult.length();
+			const size_t maxCount = evaluatedCount > exepctedResultCount ? evaluatedCount : exepctedResultCount;
+			for (size_t i = 0; i < maxCount; i++)
+			{
+				FATAL_ASSERT(i < evaluatedCount, "(index: %zu)\nexpected:%c, no actual character\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], fileToEvaluate.c_str(), exepctedResult.c_str(), evaluated.c_str());
+				FATAL_ASSERT(i < exepctedResultCount, "(index: %zu)\nno expected character, actual=%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, evaluated[i], fileToEvaluate.c_str(), exepctedResult.c_str(), evaluated.c_str());
+				FATAL_ASSERT(evaluated[i] == exepctedResult[i], "(index: %zu)\nexpected:%c, actual:%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], evaluated[i], fileToEvaluate.c_str(), exepctedResult.c_str(), evaluated.c_str());
 
 			}
 			return true;

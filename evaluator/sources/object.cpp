@@ -10,71 +10,38 @@ namespace mcf
 		{
 			namespace Internal
 			{
-				static const size_t GetRegisterSize(const mcf::IR::ASM::Register reg)
-				{
-					constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
-					switch (reg)
-					{
-					case Register::RAX: __COUNTER__; [[fallthrough]];
-					case Register::RBX: __COUNTER__; [[fallthrough]];
-					case Register::RCX: __COUNTER__; [[fallthrough]];
-					case Register::RDX: __COUNTER__; [[fallthrough]];
-					case Register::R8: __COUNTER__; [[fallthrough]];
-					case Register::R9: __COUNTER__; [[fallthrough]];
-					case Register::RSP: __COUNTER__; [[fallthrough]];
-					case Register::RBP: __COUNTER__;
-						return sizeof(__int64);
-
-					case Register::EAX: __COUNTER__;
-						return sizeof(__int32);
-
-					case Register::AX: __COUNTER__;
-						return sizeof(__int16);
-
-					case Register::AL: __COUNTER__;
-						return sizeof(__int8);
-
-					default:
-						MCF_DEBUG_BREAK(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. Register=%s(%zu)", mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(reg), mcf::ENUM_INDEX(reg));
-						break;
-					}
-					constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
-					static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
-					return 0;
-				}
-
 				static const bool IsRegister64Bit(const mcf::IR::ASM::Register reg)
 				{
 					// 64바이트 레지스터인지 검증
-					return GetRegisterSize(reg) == sizeof(__int64);
+					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int64);
 				}
 
 				static const bool IsRegister32Bit(const mcf::IR::ASM::Register reg)
 				{
 					// 32바이트 레지스터인지 검증
-					return GetRegisterSize(reg) == sizeof(__int32);
+					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int32);
 				}
 
 				static const bool IsRegister16Bit(const mcf::IR::ASM::Register reg)
 				{
 					// 16바이트 레지스터인지 검증
-					return GetRegisterSize(reg) == sizeof(__int16);
+					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int16);
 				}
 
 				static const bool IsRegister8Bit(const mcf::IR::ASM::Register reg)
 				{
 					// 8바이트 레지스터인지 검증
-					return GetRegisterSize(reg) == sizeof(__int8);
+					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int8);
 				}
 
 				static const bool IsSizeMatching(const mcf::IR::ASM::Register lhs, const mcf::IR::ASM::Register rhs)
 				{
-					return GetRegisterSize(lhs) == GetRegisterSize(rhs);
+					return GET_REGISTER_SIZE_VALUE(lhs) == GET_REGISTER_SIZE_VALUE(rhs);
 				}
 
 				static const bool IsSizeMatching(const mcf::IR::ASM::Register reg, const size_t size)
 				{
-					return GetRegisterSize(reg) == size;
+					return GET_REGISTER_SIZE_VALUE(reg) == size;
 				}
 
 				const std::string GetAddressOf(const std::string& identifier) noexcept
@@ -281,10 +248,10 @@ const bool mcf::Object::Scope::UseVariableInfo(const std::string& name) noexcept
 	Scope* currentScope = this;
 	while (currentScope != nullptr)
 	{
-		auto infoFound = _variables.find( name );
-		if (infoFound == _variables.end())
+		auto infoFound = currentScope->_variables.find(name);
+		if (infoFound == currentScope->_variables.end())
 		{
-			if (_allIdentifierSet.find(name) != _allIdentifierSet.end())
+			if (currentScope->_allIdentifierSet.find(name) != currentScope->_allIdentifierSet.end())
 			{
 				MCF_DEBUG_MESSAGE(u8"해당 식별자는 변수가 아닙니다. 함수[UseVariableInfo] 식별자[%s]", name.c_str());
 				return false;
@@ -700,7 +667,7 @@ mcf::IR::ASM::ProcEnd::ProcEnd(const std::string& name) noexcept
 
 const std::string mcf::IR::ASM::ProcEnd::Inspect(void) const noexcept
 {
-	return _name + " endp\n";
+	return _name + " endp";
 }
 
 mcf::IR::ASM::Push::Push(const Register address) noexcept
@@ -792,6 +759,13 @@ mcf::IR::ASM::Mov::Mov(const Address& target, const unsigned __int8 source) noex
 {
 	MCF_DEBUG_ASSERT(target.GetTypeInfo().GetSize() >= sizeof(unsigned __int8), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
 	MCF_DEBUG_ASSERT(target.GetTypeInfo().IsUnsigned == true, u8"source와 target의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Mov::Mov(const Register target, _In_ const mcf::IR::Expression::GlobalVariableIdentifier* globalExpression) noexcept
+	: _target(CONVERT_REGISTER_TO_STRING(target))
+	, _source(globalExpression->GetVariable().Name)
+{
+	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(target, globalExpression->GetVariable().GetTypeSize()), u8"레지스터가 source의 데이터 크기와 맞지 않는 레지스터 입니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const Address& source) noexcept

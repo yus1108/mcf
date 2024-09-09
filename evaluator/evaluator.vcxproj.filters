@@ -62,5 +62,8 @@
     <ClCompile Include="sources\object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="sources\common.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

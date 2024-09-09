@@ -9,73 +9,6 @@ namespace mcf
 		{
 			return ('a' <= byte && byte <= 'z') || ('A' <= byte && byte <= 'Z');
 		}
-
-		inline static const std::string ReadFile(const std::string& path)
-		{
-			std::string input;
-			{
-				std::ifstream file(path.c_str());
-				if (file.is_open() == false || file.fail() == true)
-				{
-					return std::string();
-				}
-
-				std::string line;
-				std::getline(file, line);
-				if (file.fail() == true)
-				{
-					return std::string();
-				}
-
-				constexpr const unsigned char ENCODING_ARRAY[][5] =
-				{
-					{0xef, 0xbb, 0xbf, 0},
-				};
-				constexpr size_t encodingArraySize = MCF_ARRAY_SIZE(ENCODING_ARRAY);
-				constexpr size_t MAX_ENCODING_BYTE = 4;
-
-				for (size_t i = 0; i < encodingArraySize; ++i)
-				{
-					bool foundHeader = true;
-					size_t offset = 0;
-
-					const size_t encodingSize = strlen(reinterpret_cast<const char*>(ENCODING_ARRAY[i]));
-					for (size_t j = 0; j <= MAX_ENCODING_BYTE - encodingSize; j++)
-					{
-						foundHeader = true;
-						offset = j;
-						for (; ENCODING_ARRAY[i][offset] != 0; ++offset)
-						{
-							// encodingArray 를 초기화 할 때 unsigned char 로만 초기화 가능한데 char 과 unsigned 를 비교하려면
-							// 타입을 맞춰줘야함.
-							if (line[offset] != static_cast<char>(ENCODING_ARRAY[i][offset]))
-							{
-								foundHeader = false;
-								break;
-							}
-						}
-					}
-
-					if (foundHeader == true)
-					{
-						line.erase(0, encodingSize);
-						break;
-					}
-				}
-
-				input += line;
-				while (std::getline(file, line))
-				{
-					if (file.fail() == true)
-					{
-						return std::string();
-					}
-					// 이전에 읽은 라인이 없다면 새로운 라인을 만들지 않는다. 
-					input += "\n" + line;
-				}
-			}
-			return input;
-		}
 	}
 }
 
@@ -112,8 +45,75 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 	return Data{ Type::INVALID, "INVALID", 0, 0 };
 }
 
+const std::string mcf::Lexer::ReadFile(const std::string& path) noexcept
+{
+	std::string input;
+	{
+		std::ifstream file(path.c_str());
+		if (file.is_open() == false || file.fail() == true)
+		{
+			return std::string();
+		}
+
+		std::string line;
+		std::getline(file, line);
+		if (file.fail() == true)
+		{
+			return std::string();
+		}
+
+		constexpr const unsigned char ENCODING_ARRAY[][5] =
+		{
+			{0xef, 0xbb, 0xbf, 0},
+		};
+		constexpr size_t encodingArraySize = MCF_ARRAY_SIZE(ENCODING_ARRAY);
+		constexpr size_t MAX_ENCODING_BYTE = 4;
+
+		for (size_t i = 0; i < encodingArraySize; ++i)
+		{
+			bool foundHeader = true;
+			size_t offset = 0;
+
+			const size_t encodingSize = strlen(reinterpret_cast<const char*>(ENCODING_ARRAY[i]));
+			for (size_t j = 0; j <= MAX_ENCODING_BYTE - encodingSize; j++)
+			{
+				foundHeader = true;
+				offset = j;
+				for (; ENCODING_ARRAY[i][offset] != 0; ++offset)
+				{
+					// encodingArray 를 초기화 할 때 unsigned char 로만 초기화 가능한데 char 과 unsigned 를 비교하려면
+					// 타입을 맞춰줘야함.
+					if (line[offset] != static_cast<char>(ENCODING_ARRAY[i][offset]))
+					{
+						foundHeader = false;
+						break;
+					}
+				}
+			}
+
+			if (foundHeader == true)
+			{
+				line.erase(0, encodingSize);
+				break;
+			}
+		}
+
+		input += line;
+		while (std::getline(file, line))
+		{
+			if (file.fail() == true)
+			{
+				return std::string();
+			}
+			// 이전에 읽은 라인이 없다면 새로운 라인을 만들지 않는다. 
+			input += "\n" + line;
+		}
+	}
+	return input;
+}
+
 mcf::Lexer::Object::Object(const std::string& input, const bool isFIle) noexcept
-	: _input(isFIle ? internal::ReadFile(input) : input)
+	: _input(isFIle ? mcf::Lexer::ReadFile(input) : input)
 	, _name(input)
 {
 	if ( _input.length() == 0 )

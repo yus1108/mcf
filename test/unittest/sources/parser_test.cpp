@@ -473,7 +473,7 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				"[Let: <VariableSignature: <Identifier: intVal> COLON <TypeSignature: <Identifier: int32>>> ASSIGN <Integer: 10> SEMICOLON]\n"
 				"[Main: <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING KEYWORD_VOID "
 				"[Block: LBRACE "
-					"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: boo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON] "
+					"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON] "
 					"[Let: <VariableSignature: <Identifier: message> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN <String: \"Hello, World! Value=%d\\n\"> SEMICOLON] "
 					"[Expression: <Call: <Identifier: printf> LPAREN <As: <Identifier: message> KEYWORD_AS <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
 				"RBRACE]]"

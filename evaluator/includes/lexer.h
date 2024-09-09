@@ -160,6 +160,8 @@ namespace mcf
 
 	namespace Lexer
 	{
+		const std::string ReadFile(const std::string& path) noexcept;
+
 		enum class Error : unsigned char
 		{
 			INVALID = 0,

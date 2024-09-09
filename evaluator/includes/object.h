@@ -16,7 +16,6 @@ namespace mcf
 		// if any item in ArraySizeList has the value as 0, it means it's unknown
 		struct TypeInfo final
 		{
-			std::unordered_map<std::string, Data> BindedValueMap;
 			std::vector<size_t> ArraySizeList;
 			std::string Name;
 			size_t IntrinsicSize = 0;
@@ -25,7 +24,18 @@ namespace mcf
 			bool IsVariadic = false;
 
 			static const mcf::Object::TypeInfo GetVoidTypeInfo(void) { return mcf::Object::TypeInfo(); }
-			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) { return { std::unordered_map<std::string, Data>(), std::vector<size_t>(), name, size, false, isUnsigned, false }; }
+			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) 
+			{ 
+				return 
+				{ 
+					std::vector<size_t>(),	// ArraySizeList
+					name,					// Name
+					size, 					// IntrinsicSize
+					false, 					// IsStruct
+					isUnsigned, 			// IsUnsigned
+					false 					// IsVariadic
+				};
+			}
 
 			inline const bool IsValid(void) const noexcept { return (Name.empty() == false && (IsUnsigned == false || IsStruct == false)) || IsVariadic; }
 			inline const bool IsIntegerType(void) const noexcept { return IsArrayType() == false && IsStruct == false && IsVariadic == false; }
@@ -36,8 +46,6 @@ namespace mcf
 			inline const bool IsLastArrayDimensionSizeUnknown() const noexcept { return IsArrayType() && ArraySizeList[ArraySizeList.size() - 1] == 0; }
 			inline const bool IsStringCompatibleType(void) const noexcept { return ArraySizeList.size() == 1 && IntrinsicSize == 1; }
 			const bool HasUnknownArrayIndex(void) const noexcept;
-
-			inline const bool HasBindedValue(void) const noexcept { return BindedValueMap.empty() == false; }
 
 			const bool IsStaticCastable(const TypeInfo& typeToCast) const noexcept;
 
@@ -380,12 +388,32 @@ namespace mcf
 				AL,
 
 				RBX,
+
 				RCX,
+				ECX,
+				CX,
+				CL,
+
 				RDX,
+				EDX,
+				DX,
+				DL,
+
 				R8,
+				R8D,
+				R8W,
+				R8B,
+
 				R9,
+				R9D,
+				R9W,
+				R9B,
 
 				RSP,
+				ESP,
+				SP,
+				SPL,
+
 				RBP,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -402,12 +430,32 @@ namespace mcf
 				"al",
 
 				"rbx",
+
 				"rcx",
+				"ecx",
+				"cx",
+				"cl",
+
 				"rdx",
+				"edx",
+				"dx",
+				"dl",
+
 				"r8",
+				"r8d",
+				"r8w",
+				"r8b",
+
 				"r9",
+				"r9d",
+				"r9w",
+				"r9b",
 
 				"rsp",
+				"esp",
+				"sp",
+				"spl",
+
 				"rbp",
 			};
 			constexpr const size_t REGISTER_TYPE_SIZE = MCF_ARRAY_SIZE(REGISTER_STRING_ARRAY);
@@ -415,6 +463,92 @@ namespace mcf
 			constexpr const char* CONVERT_REGISTER_TO_STRING(const Register value) noexcept
 			{
 				return REGISTER_STRING_ARRAY[mcf::ENUM_INDEX(value)];
+			}
+
+			enum class RegisterSize : unsigned char
+			{
+				INVALID = 0,
+
+				BYTE,
+				WORD,
+				DWORD,
+				QWORD,
+
+				// 이 밑으로는 수정하면 안됩니다.
+				COUNT,
+			};
+
+			constexpr const mcf::IR::ASM::RegisterSize GET_REGISTER_SIZE(Register reg) noexcept
+			{
+				constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
+				switch (reg)
+				{
+				case Register::RAX: __COUNTER__; [[fallthrough]];
+				case Register::RBX: __COUNTER__; [[fallthrough]];
+				case Register::RCX: __COUNTER__; [[fallthrough]];
+				case Register::RDX: __COUNTER__; [[fallthrough]];
+				case Register::R8: __COUNTER__; [[fallthrough]];
+				case Register::R9: __COUNTER__; [[fallthrough]];
+				case Register::RSP: __COUNTER__; [[fallthrough]];
+				case Register::RBP: __COUNTER__;
+					return mcf::IR::ASM::RegisterSize::QWORD;
+
+				case Register::EAX: __COUNTER__; [[fallthrough]];
+				case Register::ECX: __COUNTER__; [[fallthrough]];
+				case Register::EDX: __COUNTER__; [[fallthrough]];
+				case Register::R8D: __COUNTER__; [[fallthrough]];
+				case Register::R9D: __COUNTER__; [[fallthrough]];
+				case Register::ESP: __COUNTER__;
+					return mcf::IR::ASM::RegisterSize::DWORD;
+
+				case Register::AX: __COUNTER__; [[fallthrough]];
+				case Register::CX: __COUNTER__; [[fallthrough]];
+				case Register::DX: __COUNTER__; [[fallthrough]];
+				case Register::R8W: __COUNTER__; [[fallthrough]];
+				case Register::R9W: __COUNTER__; [[fallthrough]];
+				case Register::SP: __COUNTER__;
+					return mcf::IR::ASM::RegisterSize::WORD;
+
+				case Register::AL: __COUNTER__; [[fallthrough]];
+				case Register::CL: __COUNTER__; [[fallthrough]];
+				case Register::DL: __COUNTER__; [[fallthrough]];
+				case Register::R8B: __COUNTER__; [[fallthrough]];
+				case Register::R9B: __COUNTER__; [[fallthrough]];
+				case Register::SPL: __COUNTER__;
+					return mcf::IR::ASM::RegisterSize::BYTE;
+
+				default:
+					break;
+				}
+				constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN;
+				static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
+				return mcf::IR::ASM::RegisterSize::INVALID;
+			}
+
+			constexpr const size_t REGISTER_SIZE_VALUE_ARRAY[mcf::ENUM_COUNT<RegisterSize>()] =
+			{
+				0,
+				sizeof(__int8),
+				sizeof(__int16),
+				sizeof(__int32),
+				sizeof(__int64),
+			};
+			constexpr const size_t GET_REGISTER_SIZE_VALUE(const mcf::IR::ASM::Register reg) { return REGISTER_SIZE_VALUE_ARRAY[mcf::ENUM_INDEX(GET_REGISTER_SIZE(reg))]; }
+			constexpr const mcf::IR::ASM::RegisterSize GET_REGISTER_SIZE_BY_VALUE(const size_t value)
+			{ 
+				switch (value)
+				{
+				case sizeof(__int8) :
+					return mcf::IR::ASM::RegisterSize::BYTE;
+				case sizeof(__int16) :
+					return mcf::IR::ASM::RegisterSize::WORD;
+				case sizeof(__int32) :
+					return mcf::IR::ASM::RegisterSize::DWORD;
+				case sizeof(__int64) :
+					return mcf::IR::ASM::RegisterSize::QWORD;
+				default:
+					return mcf::IR::ASM::RegisterSize::INVALID;
+				}
 			}
 
 			class Interface : public mcf::IR::Interface
@@ -864,6 +998,7 @@ namespace mcf
 				explicit Mov(const Address& target, const unsigned __int32 source) noexcept;
 				explicit Mov(const Address& target, const unsigned __int16 source) noexcept;
 				explicit Mov(const Address& target, const unsigned __int8 source) noexcept;
+				explicit Mov(const Register target, _In_ const mcf::IR::Expression::GlobalVariableIdentifier* globalExpression) noexcept;
 				explicit Mov(const Register target, const Address& source) noexcept;
 				explicit Mov(const Register target, const SizeOf& source) noexcept;
 				explicit Mov(const Register target, const __int64 source) noexcept;

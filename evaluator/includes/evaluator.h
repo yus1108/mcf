@@ -114,7 +114,6 @@ namespace mcf
 			mcf::IR::Pointer EvalMainStatement(_Notnull_ const mcf::AST::Statement::Main* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
 			mcf::IR::ASM::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
-			std::unordered_map<std::string, mcf::Object::Data> EvalTypedefMapInitializerExpression(_Notnull_ const mcf::AST::Expression::MapInitializer * expression, _Notnull_ mcf::Object::Scope * scope) const noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			const bool EvalFunctionParamsIntermediate(_Out_ mcf::Object::FunctionParams& outParams, _Notnull_ const mcf::AST::Intermediate::FunctionParams* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept;
