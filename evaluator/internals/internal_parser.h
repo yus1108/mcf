@@ -1,6 +1,6 @@
 ﻿#pragma once
-#include "parser/internals/framework.h"
-#include "parser/includes/parser.h"
+#include "framework.h"
+#include "parser.h"
 
 inline void mcf::Parser::Object::ReadNextToken(void) noexcept
 {
@@ -75,6 +75,9 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::LBRACKET: __COUNTER__;
 		return Precedence::INDEX;
 
+	case Token::Type::KEYWORD_AS: __COUNTER__;
+		return Precedence::AS;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
@@ -97,7 +100,6 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
-	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
@@ -113,8 +115,9 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::COMMENT: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
 	default:
-		DebugBreak(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
+		MCF_DEBUG_BREAK(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
 			mcf::Token::CONVERT_TYPE_TO_STRING(token.Type), mcf::ENUM_INDEX(token.Type), token.Literal.c_str());
+		break;
 	}
 	constexpr const size_t PRECEDENCE_COUNT = __COUNTER__ - PRECEDENCE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == PRECEDENCE_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
@@ -144,21 +147,21 @@ inline const bool mcf::Parser::Object::CheckErrorOnInit(void) noexcept
 
 	case mcf::Lexer::Error::INVALID_INPUT_LENGTH: __COUNTER__;
 	{
-		const std::string message = ErrorMessage(u8"input의 길이가 0입니다.");
+		const std::string message = mcf::Internal::ErrorMessage(u8"input의 길이가 0입니다.");
 		_errors.push(ErrorInfo{ ErrorID::INVALID_INPUT_LENGTH, _lexer.GetName(), message, 0, 0 });
 		break;
 	}
 
 	case mcf::Lexer::Error::FAIL_READ_FILE: __COUNTER__;
 	{
-		const std::string message = ErrorMessage(u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.GetName().c_str());
+		const std::string message = mcf::Internal::ErrorMessage(u8"파일 읽기에 실패 하였습니다. file path=%s", _lexer.GetName().c_str());
 		_errors.push(ErrorInfo{ ErrorID::FAIL_READ_FILE, _lexer.GetName(), message, 0, 0 });
 		break;
 	}
 
 	default:
 	{
-		const std::string message = ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ErrorID=INVALID_LEXER_ERROR_TOKEN");
+		const std::string message = mcf::Internal::ErrorMessage(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ErrorID=INVALID_LEXER_ERROR_TOKEN");
 		_errors.push(ErrorInfo{ ErrorID::INVALID_LEXER_ERROR_TOKEN, _lexer.GetName(), message, 0, 0 });
 		break;
 	}

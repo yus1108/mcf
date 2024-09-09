@@ -106,10 +106,9 @@ namespace UnitTest
 					},
 				},
 				{ // 7. extern 함수 관련 토큰
-					"extern asm func printf(format: byte[4], ...args) -> byte[4];",
+					"extern func printf(format: byte[4], ...args) -> byte[4];",
 					{
 						TokenExtern,
-						TokenASM,
 						TokenFunc,
 						TokenIdentifier("printf"),
 						TokenLParen,
@@ -241,7 +240,7 @@ namespace UnitTest
 				//	},
 				//},
 			};
-			constexpr const size_t testCaseCount = ARRAY_SIZE(testCases);
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 
 			for (size_t i = 0; i < testCaseCount; i++)
 			{
@@ -291,36 +290,45 @@ namespace UnitTest
 				TokenDword,
 				TokenSemicolon,
 
-				// typedef address: qword;
+				// typedef uint32: unsigned dword;
+				TokenTypedef,
+				TokenIdentifier("uint32"),
+				TokenColon,
+				TokenUnsigned,
+				TokenDword,
+				TokenSemicolon,
+
+				// typedef address: unsigned qword;
 				TokenTypedef,
 				TokenIdentifier("address"),
 				TokenColon,
+				TokenUnsigned,
 				TokenQword,
 				TokenSemicolon,
 
 				/*
-				* typedef bool: byte -> bind
-				* {
-				*	false = 0,
-				*	true = 1,
-				* };
+				* typedef bool: byte;
+				* let false: bool = 0;
+				* let true: bool = 1;
 				*/
 				TokenTypedef,
 				TokenIdentifier("bool"),
 				TokenColon,
 				TokenByte,
-				TokenPointing,
-				TokenBind,
-				TokenLBrace,
+				TokenSemicolon,
+				TokenLet,
 				TokenIdentifier("false"),
+				TokenColon,
+				TokenIdentifier("bool"),
 				TokenAssign,
 				TokenInteger("0"),
-				TokenComma,
+				TokenSemicolon,
+				TokenLet,
 				TokenIdentifier("true"),
+				TokenColon,
+				TokenIdentifier("bool"),
 				TokenAssign,
 				TokenInteger("1"),
-				TokenComma,
-				TokenRBrace,
 				TokenSemicolon,
 
 				// #include <asm, "libcmt.lib">
@@ -331,9 +339,8 @@ namespace UnitTest
 				TokenString("\"libcmt.lib\""),
 				TokenGT,
 
-				// extern asm func printf(format: unsigned qword, ...args) -> int32;
+				// extern func printf(format: unsigned qword, ...args) -> int32;
 				TokenExtern,
-				TokenASM,
 				TokenFunc,
 				TokenIdentifier("printf"),
 				TokenLParen,
@@ -417,7 +424,7 @@ namespace UnitTest
 				* {
 				*	unused(foo, boo, arr, arr2);
 				*	let message: byte[] = "Hello, World! Value=%d\n";
-				*	printf(&message, intVal);
+				*	printf(message as unsigned qword, intVal);
 				* }
 				*/
 				TokenMain,
@@ -430,8 +437,6 @@ namespace UnitTest
 				TokenUnused,
 				TokenLParen,
 				TokenIdentifier("foo"),
-				TokenComma,
-				TokenIdentifier("boo"),
 				TokenComma,
 				TokenIdentifier("arr"),
 				TokenComma,
@@ -449,8 +454,10 @@ namespace UnitTest
 				TokenSemicolon,
 				TokenIdentifier("printf"),
 				TokenLParen,
-				TokenAmpersand,
 				TokenIdentifier("message"),
+				TokenAs,
+				TokenUnsigned,
+				TokenQword,
 				TokenComma,
 				TokenIdentifier("intVal"),
 				TokenRParen,

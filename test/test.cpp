@@ -21,7 +21,7 @@ const int main(const size_t argc, const char* const argv[])
 #endif
 
         std::cout << "options: ";
-		for (int i = 1; i < argc; ++i)
+		for (size_t i = 1; i < argc; ++i)
 		{
 			std::cout << argv[i] << " ";
 #ifdef _WIN32
@@ -47,6 +47,9 @@ const int main(const size_t argc, const char* const argv[])
 
 	// parser test
 	MAIN_UNIT_TEST(Parser);
+
+	// evaluator test
+	MAIN_UNIT_TEST(Evaluator);
 
     std::cout << "All Tests Passed" << std::endl;
 	return 0;

@@ -3,12 +3,16 @@
 #include <string>
 #include <functional>
 
-#include <parser/includes/lexer.h>
-#include <parser/includes/parser.h>
+#include <common.h>
+#include <lexer.h>
+#include <parser.h>
+#include <object.h>
+#include <evaluator.h>
 
 #if defined(_DEBUG)
 #define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
 #define FATAL_ERROR(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
+#define ERROR_MESSAGE(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); } ((void)0)
 #else
 #define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
 #define FATAL_ERROR(FORMAT, ...) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); return false; } ((void)0)
@@ -45,7 +49,6 @@ namespace UnitTest
 	const mcf::Token::Data TokenASM = { mcf::Token::Type::KEYWORD_ASM, "asm" };
 	const mcf::Token::Data TokenExtern = { mcf::Token::Type::KEYWORD_EXTERN, "extern" };
 	const mcf::Token::Data TokenTypedef = { mcf::Token::Type::KEYWORD_TYPEDEF, "typedef" };
-	const mcf::Token::Data TokenBind = { mcf::Token::Type::KEYWORD_BIND, "bind" };
 	const mcf::Token::Data TokenLet = { mcf::Token::Type::KEYWORD_LET, "let" };
 	const mcf::Token::Data TokenFunc = { mcf::Token::Type::KEYWORD_FUNC, "func" };
 	const mcf::Token::Data TokenMain = { mcf::Token::Type::KEYWORD_MAIN, "main" };
@@ -53,6 +56,7 @@ namespace UnitTest
 	const mcf::Token::Data TokenUnsigned = { mcf::Token::Type::KEYWORD_UNSIGNED, "unsigned" };
 	const mcf::Token::Data TokenReturn = { mcf::Token::Type::KEYWORD_RETURN, "return" };
 	const mcf::Token::Data TokenUnused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
+	const mcf::Token::Data TokenAs = { mcf::Token::Type::KEYWORD_AS, "as" };
 	const mcf::Token::Data TokenVariadic = { mcf::Token::Type::VARIADIC, "..." };
 	const mcf::Token::Data TokenInclude = { mcf::Token::Type::MACRO_INCLUDE, "#include" };
 	inline const mcf::Token::Data TokenComment(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT, value }; }
@@ -79,6 +83,15 @@ namespace UnitTest
 	{
 	public:
 		explicit ParserTest(void) noexcept;
+
+	private:
+		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;
+	};
+
+	class EvaluatorTest final : public BaseTest
+	{
+	public:
+		explicit EvaluatorTest(void) noexcept;
 
 	private:
 		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;

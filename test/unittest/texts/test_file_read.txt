@@ -1,16 +1,15 @@
 ﻿#include <asm, "kernel32.lib">
 
 typedef int32: dword;
-typedef address: qword;
+typedef uint32: unsigned dword;
+typedef address: unsigned qword;
 
-typedef bool: byte -> bind
-{
-	false = 0,
-	true = 1,
-};
+typedef bool: byte;
+let false: bool = 0;
+let true: bool = 1;
 
 #include <asm, "libcmt.lib">
-extern asm func printf(format: unsigned qword, ...args) -> int32;
+extern func printf(format: unsigned qword, ...args) -> int32;
 
 let foo: byte = 0;
 func boo(void) -> byte { return 0; }
@@ -22,7 +21,7 @@ let intVal: int32 = 10;
 
 main(void) -> void
 {
-	unused(foo, boo, arr, arr2);
+	unused(foo, arr, arr2);
 	let message: byte[] = "Hello, World! Value=%d\n";
-	printf(&message, intVal);
+	printf(message as unsigned qword, intVal);
 }

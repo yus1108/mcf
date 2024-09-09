@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include <stack>
 #include <string>
-#include <parser/includes/lexer.h>
-#include <parser/includes/ast.h>
+#include <lexer.h>
+#include <ast.h>
 
 namespace mcf
 {
@@ -20,6 +20,7 @@ namespace mcf
 			PREFIX,			// -foo | !boo
 			CALL,			// func(x)
 			INDEX,			// foo[0]
+			AS,				// "Hello, World!" as unsigned qword
 
 			// 이 밑으로는 수정하면 안됩니다.
 			COUNT
@@ -38,6 +39,7 @@ namespace mcf
 			FAIL_STATEMENT_PARSING,
 			UNEXPECTED_NEXT_TOKEN,
 			NOT_REGISTERED_EXPRESSION_TOKEN,
+			NOT_REGISTERED_STATEMENT_TOKEN,
 
 			// 이 밑으로는 수정하면 안됩니다.
 			COUNT,
@@ -58,7 +60,7 @@ namespace mcf
 			explicit Object(void) noexcept = delete;
 			explicit Object(const std::string& input, const bool isFile) noexcept;
 
-			inline const size_t GetErrorCount(void) noexcept { return _errors.size(); }
+			inline const size_t GetErrorCount(void) const noexcept { return _errors.size(); }
 			const ErrorInfo PopLastError(void) noexcept;
 
 			void ParseProgram(mcf::AST::Program& outProgram) noexcept;
@@ -74,6 +76,7 @@ namespace mcf
 			mcf::AST::Statement::Pointer ParseFuncStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseMainStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseExpressionStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseUnusedStatement(void) noexcept;
 
 			mcf::AST::Intermediate::Variadic::Pointer ParseVariadicIntermediate(void) noexcept;
 			mcf::AST::Intermediate::TypeSignature::Pointer ParseTypeSignatureIntermediate(void) noexcept;
@@ -87,6 +90,7 @@ namespace mcf
 			mcf::AST::Expression::Infix::Pointer ParseInfixExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Call::Pointer ParseCallExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Index::Pointer ParseIndexExpression(mcf::AST::Expression::Pointer&& left) noexcept;
+			mcf::AST::Expression::As::Pointer ParseAsExpression(mcf::AST::Expression::Pointer&& left) noexcept;
 			mcf::AST::Expression::Initializer::Pointer ParseInitializerExpression(void) noexcept;
 			mcf::AST::Expression::MapInitializer::Pointer ParseMapInitializerExpression(mcf::AST::Expression::PointerVector&& keyList) noexcept;
 

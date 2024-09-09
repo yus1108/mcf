@@ -55,6 +55,13 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<Group>`
+
+#### PARSER :
+`LPAREN` `<Expression>` `RPAREN`
+
+---
+
 ### `<Infix>`
 
 #### PARSER :
@@ -83,17 +90,17 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `<As>`
+
+#### PARSER :
+`<Expression>` `KEYWORD_AS` `<TypeSignature>`
+
+---
+
 ### `<Initializer>`
 
 #### PARSER :
 `LBRACE` `<Expression>` {`COMMA` `<Expression>`}* {`COMMA`} `RBRACE`
-
----
-
-### `<MapInitializer>` : `<Initializer>`
-
-#### PARSER :
-`LBRACE` `<Expression>` `ASSIGN` `<Expression>` {`COMMA` `<Expression>` `ASSIGN` `<Expression>`}* {`COMMA`} `RBRACE`
 
 ---
 
@@ -116,7 +123,7 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 `<Identifier>`: identifier must be registered as type unless used for `[Typedef]`
 
-`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be either the integer or opted out.
+`<Index>`: for this index expression, the leftmost expression must be TYPE identifier, and the index value must be integer.
 
 ---
 
@@ -160,22 +167,19 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Typedef]`
 
 #### PARSER :
-`KEYWORD_TYPEDEF` `<VariableSignature>` {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} `SEMICOLON`
+`KEYWORD_TYPEDEF` `<VariableSignature>` SEMICOLON`
 
 #### EVALUATOR:
 * `<VariableSignature>` : represent a new type equivalent to source type with the size specified if any and/or the values specified if any.
-* {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} : represent values specified if any. If not, it will inherit values from the source type.
-* `<MapInitializer>` : for this expression, a key for each item must be identifier.
 
 ---
 
 ### `[Extern]`
 
 #### PARSER :
-`KEYWORD_EXTERN` `KEYWORD_ASM` `<FunctionSignature>` `SEMICOLON`
+`KEYWORD_EXTERN` `<FunctionSignature>` `SEMICOLON`
 
 #### EVALUATOR:
-* `KEYWORD_ASM`: when calling this function, it will pass calling without function description.
 * `<FunctionSignature>` : the function signature will be written as extern in the taget assembly.
 
 ---
@@ -243,3 +247,12 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
+### `[Unused]` :
+
+#### PARSER :
+`KEYWORD_UNUSED` `LPAREN` {`<Identifier>` {`COMMA` `<Identifier>`}* {`COMMA`}} `RPAREN`
+
+#### EVALUATOR:
+{`<Identifier>` {`COMMA` `<Identifier>`}* {`COMMA`}}: variables passed will be checked as used.
+
+---
