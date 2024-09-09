@@ -294,9 +294,8 @@ const std::string mcf::AST::Statement::IncludeLibrary::ConvertToString(void) con
 	return buffer;
 }
 
-mcf::AST::Statement::Typedef::Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept
+mcf::AST::Statement::Typedef::Typedef(SignaturePointer&& signature) noexcept
 	: _signature(std::move(signature))
-	, _bindMap(std::move(bindMap))
 {
 	MCF_DEBUG_ASSERT(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
 }
@@ -304,14 +303,7 @@ mcf::AST::Statement::Typedef::Typedef(SignaturePointer&& signature, BindMapPoint
 const std::string mcf::AST::Statement::Typedef::ConvertToString(void) const noexcept
 {
 	MCF_DEBUG_ASSERT(_signature.get() != nullptr, u8"인자로 받은 _signature은 nullptr 여선 안됩니다.");
-
-	std::string buffer = "[Typedef: " + _signature->ConvertToString();
-	if (_bindMap.get() != nullptr)
-	{
-		buffer += " POINTING KEYWORD_BIND " + _bindMap->ConvertToString();;
-	}
-	buffer += " SEMICOLON]";
-	return buffer;
+	return "[Typedef: " + _signature->ConvertToString() + " SEMICOLON]";
 }
 
 mcf::AST::Statement::Extern::Extern(mcf::AST::Intermediate::FunctionSignature::Pointer&& signature) noexcept

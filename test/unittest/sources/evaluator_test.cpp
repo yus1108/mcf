@@ -110,9 +110,9 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"let message: byte[] = \"Hello, World!\\n\";",
-					{"Hello, World!\\n"},
+					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"message byte[0] ?0",
+					"message byte[15] ?0",
 				},
 				{
 					"let arr2: byte[5] = { 0 };",
@@ -378,7 +378,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				},
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
-					{"Hello, World!Value = %d\\n"},
+					{"\"Hello, World!Value = %d\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}},
 					"main proc\n"
 						"\tpush rbp\n"
@@ -400,7 +400,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
-					{"Hello, World!\\n"},
+					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
 					"printf PROTO : unsigned qword, VARARG\n"
 					"main proc\n"
@@ -430,11 +430,10 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
 					"let intVal: dword = 10;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
-					{"Hello, World!\\n"},
+					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
 					"printf PROTO : unsigned qword, VARARG\n"
 					"intVal dword 10\n"
-					"?0	byte \"Hello, Worlld!Value = %d\", 10, 0\n"
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -527,11 +526,13 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"address typedef unsigned qword",
 				},
 				{
-					"typedef bool: byte -> bind { false = 0, true = 1, };",
+					"typedef bool: byte;"
+					"let false: bool = 0;"
+					"let true: bool = 1;",
 					{},
 					"bool typedef byte\n"
-					"bool?false byte 0\n"
-					"bool?true byte 0",
+					"false bool 0\n"
+					"true bool 1",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);

@@ -87,7 +87,6 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 		"asm",
 		"extern",
 		"typedef",
-		"bind",
 		"let",
 		"func",
 		"main",
@@ -299,7 +298,6 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for KEYWORD_ASM
 			__COUNTER__; // count for KEYWORD_EXTERN
 			__COUNTER__; // count for KEYWORD_TYPEDEF
-			__COUNTER__; // count for KEYWORD_BIND
 			__COUNTER__; // count for KEYWORD_LET
 			__COUNTER__; // count for KEYWORD_FUNC
 			__COUNTER__; // count for KEYWORD_MAIN

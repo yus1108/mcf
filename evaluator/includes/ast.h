@@ -385,12 +385,12 @@ namespace mcf
 				explicit Initializer(void) noexcept = default;
 				explicit Initializer(PointerVector&& keyList) noexcept;
 
-				inline const size_t GetKeyExpressionCount(void) const noexcept { return _keyList.size(); }
-				inline mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept
+				inline virtual const size_t GetKeyExpressionCount(void) const noexcept final { return _keyList.size(); }
+				inline virtual mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept final
 				{
 					return _keyList[index].get();
 				}
-				inline const mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept
+				inline virtual const mcf::AST::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept final
 				{
 					return _keyList[index].get();
 				}
@@ -413,6 +413,16 @@ namespace mcf
 			public:
 				explicit MapInitializer(void) noexcept = default;
 				explicit MapInitializer(PointerVector&& keyist, PointerVector&& valueList) noexcept;
+
+				inline const size_t GetValueExpressionCount(void) const noexcept { return _valueList.size(); }
+				inline mcf::AST::Expression::Interface* GetUnsafeValueExpressionPointerAt(const size_t index) noexcept
+				{
+					return _valueList[index].get();
+				}
+				inline const mcf::AST::Expression::Interface* GetUnsafeValueExpressionPointerAt(const size_t index) const noexcept
+				{
+					return _valueList[index].get();
+				}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
@@ -616,24 +626,21 @@ namespace mcf
 			public:
 				using Pointer = std::unique_ptr<Typedef>;
 				using SignaturePointer = mcf::AST::Intermediate::VariableSignature::Pointer;
-				using BindMapPointer = mcf::AST::Expression::MapInitializer::Pointer;
 
 				template <class... Variadic>
 				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Typedef>(std::move(args)...); }
 
 			public:
 				explicit Typedef(void) noexcept = default;
-				explicit Typedef(SignaturePointer&& signature, BindMapPointer&& bindMap) noexcept;
+				explicit Typedef(SignaturePointer&& signature) noexcept;
 
 				inline const mcf::AST::Intermediate::VariableSignature* GetUnsafeSignaturePointer(void) const noexcept { return _signature.get(); }
-				inline const mcf::AST::Expression::MapInitializer* GetUnsafeBindMapPointer(void) const noexcept { return _bindMap.get(); }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::TYPEDEF; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
 				SignaturePointer _signature;
-				BindMapPointer _bindMap;
 			};
 
 			class Extern : public Interface

@@ -307,28 +307,28 @@ namespace UnitTest
 				TokenSemicolon,
 
 				/*
-				* typedef bool: byte -> bind
-				* {
-				*	false = 0,
-				*	true = 1,
-				* };
+				* typedef bool: byte;
+				* let false: bool = 0;
+				* let true: bool = 1;
 				*/
 				TokenTypedef,
 				TokenIdentifier("bool"),
 				TokenColon,
 				TokenByte,
-				TokenPointing,
-				TokenBind,
-				TokenLBrace,
+				TokenSemicolon,
+				TokenLet,
 				TokenIdentifier("false"),
+				TokenColon,
+				TokenIdentifier("bool"),
 				TokenAssign,
 				TokenInteger("0"),
-				TokenComma,
+				TokenSemicolon,
+				TokenLet,
 				TokenIdentifier("true"),
+				TokenColon,
+				TokenIdentifier("bool"),
 				TokenAssign,
 				TokenInteger("1"),
-				TokenComma,
-				TokenRBrace,
 				TokenSemicolon,
 
 				// #include <asm, "libcmt.lib">

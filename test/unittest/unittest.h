@@ -47,7 +47,6 @@ namespace UnitTest
 	const mcf::Token::Data TokenASM = { mcf::Token::Type::KEYWORD_ASM, "asm" };
 	const mcf::Token::Data TokenExtern = { mcf::Token::Type::KEYWORD_EXTERN, "extern" };
 	const mcf::Token::Data TokenTypedef = { mcf::Token::Type::KEYWORD_TYPEDEF, "typedef" };
-	const mcf::Token::Data TokenBind = { mcf::Token::Type::KEYWORD_BIND, "bind" };
 	const mcf::Token::Data TokenLet = { mcf::Token::Type::KEYWORD_LET, "let" };
 	const mcf::Token::Data TokenFunc = { mcf::Token::Type::KEYWORD_FUNC, "func" };
 	const mcf::Token::Data TokenMain = { mcf::Token::Type::KEYWORD_MAIN, "main" };

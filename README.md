@@ -104,13 +104,6 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 
 ---
 
-### `<MapInitializer>` : `<Initializer>`
-
-#### PARSER :
-`LBRACE` `<Expression>` `ASSIGN` `<Expression>` {`COMMA` `<Expression>` `ASSIGN` `<Expression>`}* {`COMMA`} `RBRACE`
-
----
-
 ## `<INTERMEDIATE>` :
 
 ### `<Variadic>`
@@ -174,12 +167,10 @@ This is a toy compiler project named as mcf (making compiler is fun) aiming to m
 ### `[Typedef]`
 
 #### PARSER :
-`KEYWORD_TYPEDEF` `<VariableSignature>` {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} `SEMICOLON`
+`KEYWORD_TYPEDEF` `<VariableSignature>` SEMICOLON`
 
 #### EVALUATOR:
 * `<VariableSignature>` : represent a new type equivalent to source type with the size specified if any and/or the values specified if any.
-* {`POINTING` `KEYWORD_BIND` `<MapInitializer>`} : represent values specified if any. If not, it will inherit values from the source type.
-* `<MapInitializer>` : for this expression, a key for each item must be identifier.
 
 ---
 

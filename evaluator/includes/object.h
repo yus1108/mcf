@@ -146,7 +146,7 @@ namespace mcf
 			const mcf::Object::VariableInfo DefineVariable(const std::string& name, const mcf::Object::Variable& variable) noexcept;
 			const mcf::Object::VariableInfo FindVariableInfo(const std::string& name) const noexcept;
 			const bool UseVariableInfo(const std::string& name) noexcept;
-			void DetermineUnknownVariableTypeSize(const std::string& name, const size_t arrayDimension, const size_t size) noexcept;
+			void DetermineUnknownVariableTypeSize(const std::string& name, std::vector<size_t> arraySizeList) noexcept;
 
 			const bool MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept;
 			const bool DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept;
@@ -271,6 +271,7 @@ namespace mcf
 				INTEGER,
 				STRING,
 				INITIALIZER,
+				MAP_INITIALIZER,
 				CALL,
 				STATIC_CAST,
 
@@ -289,6 +290,7 @@ namespace mcf
 				"INTEGER",
 				"STRING",
 				"INITIALIZER",
+				"MAP_INITIALIZER",
 				"CALL",
 				"STATIC_CAST",
 			};
@@ -609,21 +611,50 @@ namespace mcf
 				explicit Initializer(void) noexcept = default;
 				explicit Initializer(PointerVector&& keyList) noexcept;
 
-				inline const size_t GetKeyExpressionCount(void) const noexcept { return _keyList.size(); }
-				inline mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept
+				inline virtual const size_t GetKeyExpressionCount(void) const noexcept final { return _keyList.size(); }
+				inline virtual mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) noexcept final
 				{
 					return _keyList[index].get();
 				}
-				inline const mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept
+				inline virtual const mcf::IR::Expression::Interface* GetUnsafeKeyExpressionPointerAt(const size_t index) const noexcept final
 				{
 					return _keyList[index].get();
 				}
 
 				inline virtual const Type GetExpressionType(void) const noexcept override { return Type::INITIALIZER; }
+				virtual const std::string Inspect(void) const noexcept override;
+
+			private:
+				PointerVector _keyList;
+			};
+
+			class MapInitializer : public Initializer
+			{
+			public:
+				using Pointer = std::unique_ptr<MapInitializer>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<MapInitializer>(std::move(args)...); }
+
+			public:
+				explicit MapInitializer(void) noexcept = default;
+				explicit MapInitializer(PointerVector&& keyList, PointerVector&& valueList) noexcept;
+
+				inline const size_t GetValueExpressionCount(void) const noexcept { return _valueList.size(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeValueExpressionPointerAt(const size_t index) noexcept
+				{
+					return _valueList[index].get();
+				}
+				inline const mcf::IR::Expression::Interface* GetUnsafeValueExpressionPointerAt(const size_t index) const noexcept
+				{
+					return _valueList[index].get();
+				}
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::MAP_INITIALIZER; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
-			protected:
-				PointerVector _keyList;
+			private:
+				PointerVector _valueList;
 			};
 
 			class Call final : public Interface

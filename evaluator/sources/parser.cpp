@@ -117,7 +117,6 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 	case Token::Type::POINTING: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_START: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
-	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
@@ -203,29 +202,6 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseTypedefStatement(void) no
 		return mcf::AST::Statement::Invalid::Make();
 	}
 
-	mcf::AST::Statement::Typedef::BindMapPointer bindMap;
-	if (ReadNextTokenIf(mcf::Token::Type::POINTING) == true)
-	{
-		if (ReadNextTokenIf(mcf::Token::Type::KEYWORD_BIND) == false)
-		{
-			const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `KEYWORD_BIND`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
-				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
-			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
-			return mcf::AST::Statement::Invalid::Make();
-		}
-
-		ReadNextToken();
-		mcf::AST::Expression::Initializer::Pointer initializer = ParseInitializerExpression();
-		if (initializer.get() == nullptr || initializer->GetExpressionType() != mcf::AST::Expression::Type::MAP_INITIALIZER)
-		{
-			const std::string message = mcf::Internal::ErrorMessage(u8"Typedef 명령문 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
-				mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
-			_errors.push(ErrorInfo{ ErrorID::FAIL_STATEMENT_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
-			return mcf::AST::Statement::Invalid::Make();
-		}
-		bindMap.reset(static_cast<mcf::AST::Expression::MapInitializer*>(initializer.release()));
-	}
-
 	if (ReadNextTokenIf(mcf::Token::Type::SEMICOLON) == false)
 	{
 		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `SEMICOLON`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -234,7 +210,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseTypedefStatement(void) no
 		return mcf::AST::Statement::Invalid::Make();
 	}
 
-	return mcf::AST::Statement::Typedef::Make(std::move(signature), std::move(bindMap));
+	return mcf::AST::Statement::Typedef::Make(std::move(signature));
 }
 
 mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExternStatement(void) noexcept
@@ -836,7 +812,6 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
-	case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
@@ -914,7 +889,6 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
-		case Token::Type::KEYWORD_BIND: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];

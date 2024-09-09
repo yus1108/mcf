@@ -4,11 +4,9 @@ typedef int32: dword;
 typedef uint32: unsigned dword;
 typedef address: unsigned qword;
 
-typedef bool: byte -> bind
-{
-	false = 0,
-	true = 1,
-};
+typedef bool: byte;
+let false: bool = 0;
+let true: bool = 1;
 
 #include <asm, "libcmt.lib">
 extern func printf(format: unsigned qword, ...args) -> int32;

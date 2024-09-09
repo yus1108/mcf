@@ -62,13 +62,12 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> SEMICOLON]",
 				},
 				{
-					"typedef bool: byte -> bind { false = 0, true = 1, };",
-					"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND "
-						"<MapInitializer: LBRACE "
-							"<Identifier: false> ASSIGN <Integer: 0> COMMA "
-							"<Identifier: true> ASSIGN <Integer: 1> COMMA "
-						"RBRACE> "
-					"SEMICOLON]",
+					"typedef bool: byte;"
+					"let false: bool = 0;"
+					"let true: bool = 1;",
+					"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> SEMICOLON]\n"
+					"[Let: <VariableSignature: <Identifier: false> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Integer: 0> SEMICOLON]\n"
+					"[Let: <VariableSignature: <Identifier: true> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Integer: 1> SEMICOLON]",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -452,11 +451,9 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				"[Typedef: <VariableSignature: <Identifier: int32> COLON <TypeSignature: <Identifier: dword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: uint32> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: dword>>> SEMICOLON]\n"
 				"[Typedef: <VariableSignature: <Identifier: address> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> SEMICOLON]\n"
-				"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> POINTING KEYWORD_BIND "
-				"<MapInitializer: LBRACE "
-					"<Identifier: false> ASSIGN <Integer: 0> COMMA "
-					"<Identifier: true> ASSIGN <Integer: 1> COMMA "
-				"RBRACE> SEMICOLON]\n"
+				"[Typedef: <VariableSignature: <Identifier: bool> COLON <TypeSignature: <Identifier: byte>>> SEMICOLON]\n"
+				"[Let: <VariableSignature: <Identifier: false> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Integer: 0> SEMICOLON]\n"
+				"[Let: <VariableSignature: <Identifier: true> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Integer: 1> SEMICOLON]\n"
 				"[IncludeLibrary: LT KEYWORD_ASM COMMA \"libcmt.lib\" GT]\n"
 				"[Extern <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
 					"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "

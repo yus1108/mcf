@@ -49,7 +49,6 @@ namespace mcf
 			KEYWORD_ASM,				// asm
 			KEYWORD_EXTERN,				// extern
 			KEYWORD_TYPEDEF,			// typedef
-			KEYWORD_BIND,				// bind
 			KEYWORD_LET,				// let
 			KEYWORD_FUNC,				// func
 			KEYWORD_MAIN,				// main
@@ -119,7 +118,6 @@ namespace mcf
 			"KEYWORD_ASM",
 			"KEYWORD_EXTERN",
 			"KEYWORD_TYPEDEF",
-			"KEYWORD_BIND",
 			"KEYWORD_LET",
 			"KEYWORD_FUNC",
 			"KEYWORD_MAIN",

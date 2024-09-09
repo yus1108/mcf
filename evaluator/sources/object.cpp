@@ -301,7 +301,7 @@ const bool mcf::Object::Scope::UseVariableInfo(const std::string& name) noexcept
 	return false;
 }
 
-void mcf::Object::Scope::DetermineUnknownVariableTypeSize(const std::string& name, const size_t arrayDimension, const size_t size) noexcept
+void mcf::Object::Scope::DetermineUnknownVariableTypeSize(const std::string& name, std::vector<size_t> arraySizeList) noexcept
 {
 	MCF_DEBUG_ASSERT(name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
 
@@ -311,9 +311,9 @@ void mcf::Object::Scope::DetermineUnknownVariableTypeSize(const std::string& nam
 		MCF_DEBUG_ASSERT(_parent != nullptr, u8"현재 스코프에서 해당 이름의 변수를 찾을 수 없습니다.");
 		return;
 	}
-	MCF_DEBUG_ASSERT(arrayDimension < infoFound->second.DataType.ArraySizeList.size(), u8"해당 변수에 주어진 변수 차원이 존재하지 않습니다.");
-	MCF_DEBUG_ASSERT(infoFound->second.DataType.ArraySizeList[arrayDimension] == 0, u8"해당 배열의 차수의 크기가 unknown이 아닙니다.");
-	infoFound->second.DataType.ArraySizeList[arrayDimension] = size;
+	MCF_DEBUG_ASSERT(arraySizeList.size() == infoFound->second.DataType.ArraySizeList.size(), u8"주어진 배열 차원 수가 기존 배열 차원수와 다릅니다.");
+	infoFound->second.DataType.ArraySizeList = arraySizeList;
+	MCF_DEBUG_ASSERT(infoFound->second.DataType.HasUnknownArrayIndex() == false, u8"주어진 배열 크기 값에 unknown이 있으면 안됩니다.");
 }
 
 const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept
@@ -405,6 +405,10 @@ const mcf::Object::TypeInfo mcf::IR::Expression::Interface::GetDatTypeFromExpres
 		break;
 
 	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::MAP_INITIALIZER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -569,6 +573,27 @@ const std::string mcf::IR::Expression::Initializer::Inspect(void) const noexcept
 		buffer += _keyList[i]->Inspect() + ", ";
 	}
 	return buffer + "}";
+}
+
+mcf::IR::Expression::MapInitializer::MapInitializer(PointerVector&& keyList, PointerVector&& valueList) noexcept
+	: Initializer(std::move(keyList))
+	, _valueList(std::move(valueList))
+{
+#if defined(_DEBUG)
+	const size_t size = _valueList.size();
+	MCF_DEBUG_ASSERT(size != 0, u8"_valueList에 값이 최소 한개 이상 있어야 합니다.");
+	MCF_DEBUG_ASSERT(GetKeyExpressionCount() == size, u8"key와 value의 갯수가 같아야 합니다.");
+	for (size_t i = 0; i < size; i++)
+	{
+		MCF_DEBUG_ASSERT(_valueList[i].get() != nullptr, u8"_valueList[%zu]는 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::IR::Expression::MapInitializer::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
 }
 
 mcf::IR::Expression::Call::Call(const mcf::Object::FunctionInfo& info, mcf::IR::Expression::PointerVector&& paramObjects) noexcept
