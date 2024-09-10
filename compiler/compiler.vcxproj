@@ -56,9 +56,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a7d6822c-a1dd-4a71-bf69-d155a1cb6343}</ProjectGuid>
-    <RootNamespace>evaluator</RootNamespace>
+    <ProjectGuid>{8ff83aeb-9ed4-49af-870e-7052b232d1c5}</ProjectGuid>
+    <RootNamespace>compiler</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>compiler</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
