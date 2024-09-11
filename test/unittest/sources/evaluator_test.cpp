@@ -53,11 +53,11 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			{
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;",
-					"printf PROTO : unsigned qword, VARARG",
+					"printf PROTO, format:unsigned qword, args:VARARG",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword[5];",
-					"printf PROTO : unsigned qword, VARARG",
+					"printf PROTO, format:unsigned qword, args:VARARG",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
@@ -402,7 +402,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO : unsigned qword, VARARG\n"
+					"printf PROTO, format:unsigned qword, args:VARARG\n"
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -432,7 +432,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO : unsigned qword, VARARG\n"
+					"printf PROTO, format:unsigned qword, args:VARARG\n"
 					"intVal dword 10\n"
 					"main proc\n"
 						"\tpush rbp\n"

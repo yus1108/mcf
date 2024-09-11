@@ -1174,15 +1174,14 @@ namespace mcf
 
 		public:
 			explicit Extern(void) noexcept = default;
-			explicit Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept;
+			explicit Extern(const std::string& name, const std::vector<mcf::Object::Variable>& params) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::EXTERN; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
 			std::string _name;
-			std::vector<mcf::Object::TypeInfo> _params;
-			bool _hasVariadic;
+			std::vector<mcf::Object::Variable> _params;
 		};
 
 		class Let final : public Interface

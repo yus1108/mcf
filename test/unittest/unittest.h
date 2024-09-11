@@ -8,6 +8,7 @@
 #include <parser.h>
 #include <object.h>
 #include <evaluator.h>
+#include <compiler.h>
 
 #if defined(_DEBUG)
 #define FATAL_ASSERT(PREDICATE, FORMAT, ...) if ((PREDICATE) == false) { printf("[Fatal Error]: %s(Line: %d)\n[Description]: ", ##__FILE__, ##__LINE__); printf(FORMAT, __VA_ARGS__); printf("\n"); __debugbreak(); return false; } ((void)0)
@@ -92,6 +93,15 @@ namespace UnitTest
 	{
 	public:
 		explicit EvaluatorTest(void) noexcept;
+
+	private:
+		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;
+	};
+
+	class CompilerTest final : public BaseTest
+	{
+	public:
+		explicit CompilerTest(void) noexcept;
 
 	private:
 		static bool CheckParserErrors(mcf::Parser::Object& parser) noexcept;

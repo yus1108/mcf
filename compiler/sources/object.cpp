@@ -125,6 +125,11 @@ const size_t mcf::Object::TypeInfo::GetSize(void) const noexcept
 const std::string mcf::Object::TypeInfo::Inspect(void) const noexcept
 {
 	MCF_DEBUG_ASSERT(IsValid(), u8"TypeInfo가 유효하지 않습니다.");
+	if (IsVariadic)
+	{
+		return "VARARG";
+	}
+
 	std::string buffer = std::string(IsUnsigned ? "unsigned " : "") + Name;
 	const size_t arraySize = ArraySizeList.size();
 	for (size_t i = 0; i < arraySize; ++i)
@@ -938,21 +943,17 @@ const std::string mcf::IR::Typedef::Inspect(void) const noexcept
 	return _definedType.Name + " typedef " + _sourceType.Inspect();
 }
 
-mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept
+mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::Variable>& params) noexcept
 	: _name(name)
 	, _params(params)
-	, _hasVariadic(hasVariadic)
 {
 #if defined(_DEBUG)
 	const size_t size = _params.size();
 	for (size_t i = 0; i < size; i++)
 	{
 		MCF_DEBUG_ASSERT(_params[i].IsValid(), u8"_params[%zu]가 유효하지 않습니다.", i);
-		const size_t arraySize = _params[i].ArraySizeList.size();
-		for (size_t j = 0; j < arraySize; ++j)
-		{
-			MCF_DEBUG_ASSERT(_params[i].ArraySizeList[j] > 0, u8"_params[%zu].ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, j, _params[i].ArraySizeList[j]);
-		}
+		MCF_DEBUG_ASSERT(_params[i].DataType.IsValid(), u8"_params[%zu].DataType가 유효하지 않습니다.", i);
+		MCF_DEBUG_ASSERT(_params[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. _params[%zu].DataType", i);
 	}
 #endif
 }
@@ -960,18 +961,15 @@ mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::
 const std::string mcf::IR::Extern::Inspect(void) const noexcept
 {
 	std::string buffer = _name + " PROTO";
-	if (_params.empty())
-	{
-		return _hasVariadic ? (buffer + " : VARARG") : buffer;
-	}
-
 	const size_t size = _params.size();
 	for (size_t i = 0; i < size; i++)
 	{
 		MCF_DEBUG_ASSERT(_params[i].IsValid(), u8"_params[%zu]가 valid 하지 않습니다.", i);
-		buffer += std::string(i == 0 ? " : " : ", ") + _params[i].Inspect();
+		MCF_DEBUG_ASSERT(_params[i].DataType.IsValid(), u8"_params[%zu].DataType가 유효하지 않습니다.", i);
+		MCF_DEBUG_ASSERT(_params[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. _params[%zu].DataType", i);
+		buffer += ", " + _params[i].Name + ":" + _params[i].DataType.Inspect();
 	}
-	return _hasVariadic ? (buffer + ", VARARG") : buffer;
+	return buffer;
 }
 
 mcf::IR::Let::Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::Pointer&& assignedExpression) noexcept

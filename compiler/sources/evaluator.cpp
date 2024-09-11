@@ -1290,21 +1290,16 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf
 		return mcf::IR::Invalid::Make();
 	}
 
+#if defined(_DEBUG)
 	const size_t paramCount = functionInfo.Params.Variables.size();
-	std::vector<mcf::Object::TypeInfo> params;
 	for (size_t i = 0; i < paramCount; ++i)
 	{
-		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].IsValid(), u8"");
-		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsValid(), u8"");
-
-		if (functionInfo.Params.Variables[i].DataType.IsVariadic)
-		{
-			continue;
-		}
-
-		MCF_DEBUG_ASSERT(scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"");
-		params.emplace_back(functionInfo.Params.Variables[i].DataType);
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].IsValid(), u8"functionInfo.Params.Variables[%zu]가 유효하지 않습니다.", i );
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsValid(), u8"functionInfo.Params.Variables[%zu].DataType가 유효하지 않습니다.", i );
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. functionInfo.Params.Variables[%zu].DataType", i);
+		MCF_DEBUG_ASSERT(functionInfo.Params.Variables[i].DataType.IsVariadic || scope->FindTypeInfo(functionInfo.Params.Variables[i].DataType.Name).IsValid(), u8"변수 타입은 variadic 이거나 scope에 등록되어 있어야 합니다. functionInfo.Params.Variables[%zu].DataType", i);
 	}
+#endif
 
 	MCF_DEBUG_ASSERT(functionInfo.Name.empty() == false, u8"");
 	if (scope->DefineFunction(functionInfo.Name, functionInfo) == false)
@@ -1312,7 +1307,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalExternStatement(_Notnull_ const mcf
 		MCF_DEBUG_TODO(u8"구현 필요");
 		return mcf::IR::Invalid::Make();
 	}
-	return mcf::IR::Extern::Make(functionInfo.Name, params, functionInfo.Params.HasVariadic());
+	return mcf::IR::Extern::Make(functionInfo.Name, functionInfo.Params.Variables);
 }
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
