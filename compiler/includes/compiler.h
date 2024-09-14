@@ -54,7 +54,8 @@ namespace mcf
 			{
 				INVALID = 0,
 
-				DATA,
+				SECTION_DATA,
+				TYPEDEF,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -64,7 +65,8 @@ namespace mcf
 			{
 				"INVALID",
 
-				"DATA",
+				"SECTION_DATA",
+				"TYPEDEF",
 			};
 			constexpr const size_t MASM64_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == MASM64_TYPE_SIZE, "MASM64 type count not matching!");
@@ -92,6 +94,34 @@ namespace mcf
 				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "Invalid Code"; }
 			};
+
+			class SectionData : public Interface
+			{
+			public:
+				inline static Pointer Make(void) noexcept { return std::make_unique<SectionData>(); }
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::SECTION_DATA; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return ".data"; }
+			};
+
+			class Typedef final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Typedef>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Typedef>(std::move(args)...); }
+
+			public:
+				explicit Typedef(void) noexcept = default;
+				explicit Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::TYPEDEF; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Object::TypeInfo _definedType;
+				mcf::Object::TypeInfo _sourceType;
+			};
 		}
 	}
 
@@ -113,7 +143,10 @@ namespace mcf
 		public:
 			explicit Object(void) noexcept = default;
 
-			mcf::ASM::PointerVector GenerateCodes(const mcf::IR::Interface* irCodes, const mcf::Object::ScopeTree* scopeTree) noexcept;
+			mcf::ASM::PointerVector GenerateCodes(_In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+
+		private:
+			const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 
 		private:
 			Section _currentSection = Section::INVALID;

@@ -31,7 +31,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("word", mcf::Object::TypeInfo::MakePrimitive(false, "word", 2));
 				scopeTree.Global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4));
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8));
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -73,7 +73,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("word", mcf::Object::TypeInfo::MakePrimitive(false, "word", 2));
 				scopeTree.Global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4));
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8));
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -153,7 +153,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -320,7 +320,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -478,7 +478,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -555,7 +555,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -600,7 +600,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 			mcf::Evaluator::Object evaluator;
-			mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+			mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 			FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 			std::string evaluated = object->Inspect();

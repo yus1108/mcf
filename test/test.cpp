@@ -51,6 +51,9 @@ const int main(const size_t argc, const char* const argv[])
 	// evaluator test
 	MAIN_UNIT_TEST(Evaluator);
 
-    std::cout << "All Tests Passed" << std::endl;
+	// compiler test
+	MAIN_UNIT_TEST(Compiler);
+
+	std::cout << "All Tests Passed" << std::endl;
 	return 0;
 }

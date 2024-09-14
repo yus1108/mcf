@@ -59,12 +59,12 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer irCodes = evaluator.Eval(&program, &scopeTree.Global);
-				FATAL_ASSERT(irCodes.get() != nullptr, u8"irCodes이 nullptr이면 안됩니다.");
-				FATAL_ASSERT(irCodes->GetType() == mcf::IR::Type::PROGRAM, u8"irCodes이 IR::Type::PROGRAM이 아닙니다.");
+				mcf::IR::Program::Pointer irProgram = evaluator.EvalProgram(&program, &scopeTree.Global);
+				FATAL_ASSERT(irProgram.get() != nullptr, u8"irProgram이 nullptr이면 안됩니다.");
+				FATAL_ASSERT(irProgram->GetType() == mcf::IR::Type::PROGRAM, u8"irProgram이 IR::Type::PROGRAM이 아닙니다.");
 
 				mcf::Compiler::Object compiler;
-				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irCodes.get(), &scopeTree);
+				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(mcf::ASM::Type::MASM64, irProgram.get(), &scopeTree);
 				std::string actual;
 				const size_t codeCount = generatedCodes.size();
 				for (size_t j = 0; j < codeCount; j++)

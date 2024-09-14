@@ -1152,41 +1152,9 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(const mcf::Objec
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
 	return true;
 }
-
-mcf::IR::Pointer mcf::Evaluator::Object::Eval(_Notnull_ const mcf::AST::Node::Interface* node, _Notnull_ mcf::Object::Scope* scope) noexcept
-{
-	MCF_DEBUG_ASSERT(node != nullptr, u8"node가 nullptr이면 안됩니다.");
-
-	mcf::IR::Pointer object;
-	switch (node->GetNodeType())
-	{
-	case mcf::AST::Node::Type::EXPRESSION:
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
-	case mcf::AST::Node::Type::INTERMEDIATE:
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
-	case mcf::AST::Node::Type::STATEMENT:
-		object = EvalStatement(static_cast<const mcf::AST::Statement::Interface*>(node), scope);
-		break;
-
-	case mcf::AST::Node::Type::PROGRAM:
-		object = EvalProgram(static_cast<const mcf::AST::Program*>(node), scope);
-		break;
-
-	default:
-		MCF_DEBUG_TODO("");
-		break;
-	}
-	return std::move(object);
-}
 		
-mcf::IR::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program, _Notnull_ mcf::Object::Scope* scope) noexcept
+mcf::IR::Program::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::Program* program, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
-	MCF_DEBUG_ASSERT(program != nullptr, u8"program가 nullptr이면 안됩니다.");
-
 	mcf::IR::PointerVector objects;
 	const size_t statementCount = program->GetStatementCount();
 	for (size_t i = 0; i < statementCount; i++)
@@ -1198,8 +1166,6 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mcf::AST::P
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
-	MCF_DEBUG_ASSERT(statement != nullptr, u8"statement가 nullptr이면 안됩니다.");
-
 	mcf::IR::Pointer object = mcf::IR::Invalid::Make();
 	constexpr const size_t STATEMENT_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (statement->GetStatementType())
