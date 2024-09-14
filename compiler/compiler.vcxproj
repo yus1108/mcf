@@ -41,6 +41,7 @@
   <ItemGroup>
     <ClCompile Include="sources\ast.cpp" />
     <ClCompile Include="sources\common.cpp" />
+    <ClCompile Include="sources\compiler.cpp" />
     <ClCompile Include="sources\evaluator.cpp" />
     <ClCompile Include="sources\lexer.cpp" />
     <ClCompile Include="sources\object.cpp" />

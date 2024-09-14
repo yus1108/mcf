@@ -41,7 +41,7 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 			for (size_t i = 0; i < testCaseCount; i++)
-			{ 
+			{
 				mcf::Parser::Object parser(testCases[i].Input, false);
 				mcf::AST::Program program;
 				parser.ParseProgram(program);
@@ -60,12 +60,17 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 
 				mcf::Evaluator::Object evaluator;
 				mcf::IR::Pointer irCodes = evaluator.Eval(&program, &scopeTree.Global);
-				FATAL_ASSERT( irCodes.get() != nullptr, u8"irCodes이 nullptr이면 안됩니다.");
-				FATAL_ASSERT( irCodes->GetType() == mcf::IR::Type::PROGRAM, u8"irCodes이 IR::Type::PROGRAM이 아닙니다.");
+				FATAL_ASSERT(irCodes.get() != nullptr, u8"irCodes이 nullptr이면 안됩니다.");
+				FATAL_ASSERT(irCodes->GetType() == mcf::IR::Type::PROGRAM, u8"irCodes이 IR::Type::PROGRAM이 아닙니다.");
 
 				mcf::Compiler::Object compiler;
-				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irCodes, &scopeTree);
-				const std::string actual = object->Inspect();
+				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irCodes.get(), &scopeTree);
+				std::string actual;
+				const size_t codeCount = generatedCodes.size();
+				for (size_t j = 0; j < codeCount; j++)
+				{
+					actual += generatedCodes[j]->ConvertToString();
+				}
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
