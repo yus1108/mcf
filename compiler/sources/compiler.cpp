@@ -1,6 +1,24 @@
 ﻿#include "pch.h"
 #include "compiler.h"
 
+namespace mcf
+{
+	namespace Internal
+	{
+		static const std::string ConvertTypeInfoToString(const mcf::Object::TypeInfo& typeInfo) noexcept
+		{
+			MCF_DEBUG_ASSERT(typeInfo.IsValid(), u8"TypeInfo가 유효하지 않습니다.");
+			if (typeInfo.IsVariadic)
+			{
+				return "VARARG";
+			}
+
+			std::string buffer = typeInfo.Name;
+			return buffer;
+		}
+	}
+}
+
 mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept
 	: _definedType(definedType)
 	, _sourceType(sourceType)
@@ -11,11 +29,10 @@ mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, con
 
 const std::string mcf::ASM::MASM64::Typedef::ConvertToString(void) const noexcept
 {
-	MCF_DEBUG_TODO(u8"구현 필요");
-	return _definedType.Name + " typedef " + _sourceType.Inspect();
+	return _definedType.Name + " typedef " + Internal::ConvertTypeInfoToString(_sourceType);
 }
 
-mcf::ASM::PointerVector mcf::Compiler::Object::GenerateCodes(_In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
 	mcf::ASM::PointerVector codes;
 
@@ -41,11 +58,10 @@ mcf::ASM::PointerVector mcf::Compiler::Object::GenerateCodes(_In_ const mcf::ASM
 			break;
 
 		case IR::Type::TYPEDEF: __COUNTER__;
-			if (CompileTypedef(codes, compileType, static_cast<const mcf::IR::Typedef*>(irObject), scopeTree) == false)
+			if (CompileTypedef(codes, static_cast<const mcf::IR::Typedef*>(irObject), scopeTree) == false)
 			{
 				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
 			}
-			MCF_DEBUG_TODO(u8"구현 필요");
 			break;
 
 		case IR::Type::EXTERN: __COUNTER__;
@@ -81,33 +97,18 @@ mcf::ASM::PointerVector mcf::Compiler::Object::GenerateCodes(_In_ const mcf::ASM
 		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
 	}
 
-	MCF_DEBUG_TODO(u8"구현 필요");
 	return std::move(codes);
 }
 
-const bool mcf::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+const bool mcf::ASM::MASM64::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
-	constexpr const size_t COMPILE_TYPE_COUNT_BEGIN = __COUNTER__;
-	switch (compileType)
+	if (_currentSection != mcf::ASM::MASM64::Compiler::Section::DATA)
 	{
-	case ASM::Type::MASM64: __COUNTER__;
-		if (_currentSection != mcf::Compiler::Section::DATA)
-		{
-			outCodes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
-			_currentSection = mcf::Compiler::Section::DATA;
-		}
-		outCodes.emplace_back(mcf::ASM::MASM64::Typedef::Make(irCode->GetDefinedType(), irCode->GetSourceType()));
-		break;
-
-	default:
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
+		outCodes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
+		_currentSection = mcf::ASM::MASM64::Compiler::Section::DATA;
 	}
-	constexpr const size_t COMPILE_TYPE_COUNT = __COUNTER__ - COMPILE_TYPE_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::ASM::Type::COUNT) == COMPILE_TYPE_COUNT, "compile type count is changed. this SWITCH need to be changed as well.");
-
+	outCodes.emplace_back(mcf::ASM::MASM64::Typedef::Make(irCode->GetDefinedType(), irCode->GetSourceType()));
 	
-	MCF_UNUSED(outCodes, scopeTree);
-	MCF_DEBUG_TODO(u8"구현 필요");
-	return false;
+	MCF_UNUSED(scopeTree);
+	return true;
 }

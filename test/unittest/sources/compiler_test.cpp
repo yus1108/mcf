@@ -63,13 +63,13 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 				FATAL_ASSERT(irProgram.get() != nullptr, u8"irProgram이 nullptr이면 안됩니다.");
 				FATAL_ASSERT(irProgram->GetType() == mcf::IR::Type::PROGRAM, u8"irProgram이 IR::Type::PROGRAM이 아닙니다.");
 
-				mcf::Compiler::Object compiler;
-				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(mcf::ASM::Type::MASM64, irProgram.get(), &scopeTree);
+				mcf::ASM::MASM64::Compiler::Object compiler;
+				mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irProgram.get(), &scopeTree);
 				std::string actual;
 				const size_t codeCount = generatedCodes.size();
 				for (size_t j = 0; j < codeCount; j++)
 				{
-					actual += generatedCodes[j]->ConvertToString();
+					actual += (j == 0 ? "" : "\n") + generatedCodes[j]->ConvertToString();
 				}
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}

@@ -122,34 +122,34 @@ namespace mcf
 				mcf::Object::TypeInfo _definedType;
 				mcf::Object::TypeInfo _sourceType;
 			};
+
+			namespace Compiler
+			{
+				enum class Section : unsigned char
+				{
+					INVALID = 0,
+
+					DATA,
+					CODE,
+
+					// 이 밑으로는 수정하면 안됩니다.
+					COUNT
+				};
+
+				class Object final
+				{
+				public:
+					explicit Object(void) noexcept = default;
+
+					mcf::ASM::PointerVector GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+
+				private:
+					const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+
+				private:
+					Section _currentSection = Section::INVALID;
+				};
+			}
 		}
-	}
-
-	namespace Compiler
-	{
-		enum class Section : unsigned char
-		{
-			INVALID = 0,
-
-			DATA,
-			CODE,
-
-			// 이 밑으로는 수정하면 안됩니다.
-			COUNT
-		};
-
-		class Object final
-		{
-		public:
-			explicit Object(void) noexcept = default;
-
-			mcf::ASM::PointerVector GenerateCodes(_In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
-
-		private:
-			const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::ASM::Type compileType, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
-
-		private:
-			Section _currentSection = Section::INVALID;
-		};
 	}
 }
