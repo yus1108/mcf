@@ -53,11 +53,11 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			{
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;",
-					"printf PROTO, format:unsigned qword, args:VARARG",
+					"printf PROTO, format:qword, args:VARARG",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword[5];",
-					"printf PROTO, format:unsigned qword, args:VARARG",
+					"printf PROTO, format:qword, args:VARARG",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
@@ -124,7 +124,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let intVal: unsigned dword = 10;",
 					{},
 					{},
-					"intVal unsigned dword 10",
+					"intVal dword 10",
 				},
 				{
 					"let unInit: qword;",
@@ -202,7 +202,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tpop rbp\n"
 						"\tret\n"
 					"boo endp",
@@ -248,7 +248,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tmov eax, dword ptr [rsp + 16]\n"
 						"\tpop rbp\n"
 						"\tret\n"
@@ -274,7 +274,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tsub rsp, 16\n"
 						"\tmov dword ptr [rsp + 0], 15\n"	// var1 = 15;
 						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
@@ -289,7 +289,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tsub rsp, 16\n"
 						"\tmov eax, dword ptr [rsp + 32]\n"	// eax = param1;
 						"\tmov dword ptr [rsp + 0], eax\n"	// var1 = eax;
@@ -402,7 +402,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO, format:unsigned qword, args:VARARG\n"
+					"printf PROTO, format:qword, args:VARARG\n"
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -432,7 +432,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
 					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO, format:unsigned qword, args:VARARG\n"
+					"printf PROTO, format:qword, args:VARARG\n"
 					"intVal dword 10\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -518,12 +518,12 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"typedef uint32: unsigned dword;",
 					{},
-					"uint32 typedef unsigned dword",
+					"uint32 typedef dword",
 				},
 				{
 					"typedef address: unsigned qword;",
 					{},
-					"address typedef unsigned qword",
+					"address typedef qword",
 				},
 				{
 					"typedef bool: byte;"

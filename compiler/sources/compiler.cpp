@@ -1,22 +1,6 @@
 ﻿#include "pch.h"
 #include "compiler.h"
 
-namespace mcf
-{
-	namespace Internal
-	{
-		static const std::string ConvertTypeInfoToString(const mcf::Object::TypeInfo& typeInfo) noexcept
-		{
-			MCF_DEBUG_ASSERT(typeInfo.IsValid(), u8"TypeInfo가 유효하지 않습니다.");
-			if (typeInfo.IsVariadic)
-			{
-				return "VARARG";
-			}
-			return typeInfo.Name;
-		}
-	}
-}
-
 mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept
 	: _definedType(definedType)
 	, _sourceType(sourceType)
@@ -27,7 +11,19 @@ mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, con
 
 const std::string mcf::ASM::MASM64::Typedef::ConvertToString(void) const noexcept
 {
-	return _definedType.Name + " typedef " + Internal::ConvertTypeInfoToString(_sourceType);
+	return _definedType.Name + " typedef " + _sourceType.Inspect();
+}
+
+mcf::ASM::MASM64::Proto::Proto(const std::string& externFunction) noexcept
+	: _externFunction(externFunction)
+{
+	MCF_DEBUG_ASSERT(_externFunction.empty() == false, u8"_externFunction가 비어있으면 안됩니다.");
+}
+
+const std::string mcf::ASM::MASM64::Proto::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_externFunction.empty() == false, u8"_externFunction가 비어있으면 안됩니다.");
+	return _externFunction;
 }
 
 mcf::ASM::MASM64::GlobalVariable::GlobalVariable(const mcf::Object::Variable& variable, const mcf::Object::Data& value) noexcept
@@ -42,7 +38,7 @@ const std::string mcf::ASM::MASM64::GlobalVariable::ConvertToString(void) const 
 	MCF_DEBUG_ASSERT(_variable.IsValid(), u8"유효하지 않은 _info입니다.");
 
 	std::string buffer;
-	buffer = _variable.Name + " " + Internal::ConvertTypeInfoToString(_variable.DataType);
+	buffer = _variable.Name + " " + _variable.DataType.Inspect();
 	if (_value.empty())
 	{
 		buffer += " ?";
@@ -56,6 +52,18 @@ const std::string mcf::ASM::MASM64::GlobalVariable::ConvertToString(void) const 
 		}
 	}
 	return buffer;
+}
+
+mcf::ASM::MASM64::Proc::Proc(const std::string& functionDefinition) noexcept
+	: _functionDefinition(functionDefinition)
+{
+	MCF_DEBUG_ASSERT(_functionDefinition.empty() == false, u8"_functionDefinition가 비어있으면 안됩니다.");
+}
+
+const std::string mcf::ASM::MASM64::Proc::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_functionDefinition.empty() == false, u8"_functionDefinition가 비어있으면 안됩니다.");
+	return _functionDefinition;
 }
 
 mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
@@ -91,7 +99,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 
 		case IR::Type::EXTERN: __COUNTER__;
-			MCF_DEBUG_TODO(u8"구현 필요");
+			if (CompileExtern(codes, static_cast<const mcf::IR::Extern*>(irObject), scopeTree) == false)
+			{
+				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+			}
 			break;
 
 		case IR::Type::LET: __COUNTER__;
@@ -102,7 +113,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 
 		case IR::Type::FUNC: __COUNTER__;
-			MCF_DEBUG_TODO(u8"구현 필요");
+			if (CompileFunc(codes, static_cast<const mcf::IR::Func*>(irObject), scopeTree) == false)
+			{
+				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+			}
 			break;
 
 		case IR::Type::UNUSEDIR: __COUNTER__;
@@ -132,14 +146,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 const bool mcf::ASM::MASM64::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
 	MCF_UNUSED(scopeTree);
-
-	if (_currentSection != mcf::ASM::MASM64::Compiler::Section::DATA)
-	{
-		outCodes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
-		_currentSection = mcf::ASM::MASM64::Compiler::Section::DATA;
-	}
 	outCodes.emplace_back(mcf::ASM::MASM64::Typedef::Make(irCode->GetDefinedType(), irCode->GetSourceType()));
-	
 	return true;
 }
 
@@ -158,6 +165,27 @@ const bool mcf::ASM::MASM64::Compiler::Object::CompileLet(_Out_ mcf::ASM::Pointe
 	const mcf::IR::Expression::Interface* assignExpression = irCode->GetUnsafeAssignExpressionPointer();
 	mcf::Object::Data value = EvaluateExpressionInCompileTime(assignExpression, scopeTree);
 	outCodes.emplace_back(mcf::ASM::MASM64::GlobalVariable::Make(irCode->GetInfo().Variable, value));
+	return true;
+}
+
+const bool mcf::ASM::MASM64::Compiler::Object::CompileFunc(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Func* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+{
+	MCF_UNUSED(irCode, scopeTree);
+
+	if (_currentSection != mcf::ASM::MASM64::Compiler::Section::CODE)
+	{
+		outCodes.emplace_back(mcf::ASM::MASM64::SectionCode::Make());
+		_currentSection = mcf::ASM::MASM64::Compiler::Section::CODE;
+	}
+
+	outCodes.emplace_back(mcf::ASM::MASM64::Proc::Make(irCode->Inspect()));
+	return true;
+}
+
+const bool mcf::ASM::MASM64::Compiler::Object::CompileExtern(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Extern* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+{
+	MCF_UNUSED(irCode, scopeTree);
+	outCodes.emplace_back(mcf::ASM::MASM64::Proto::Make(irCode->Inspect()));
 	return true;
 }
 

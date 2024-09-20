@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="unittest\texts\test_file_read.txt" />
+    <Text Include="unittest\texts\test_file_read_compile.txt" />
+    <Text Include="unittest\texts\test_file_read_eval.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="unittest\texts\enum_header.hmcf" />

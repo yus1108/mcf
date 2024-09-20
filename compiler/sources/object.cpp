@@ -129,7 +129,7 @@ const std::string mcf::Object::TypeInfo::Inspect(void) const noexcept
 		return "VARARG";
 	}
 
-	std::string buffer = std::string(IsUnsigned ? "unsigned " : "") + Name;
+	std::string buffer = Name;
 	const size_t arraySize = ArraySizeList.size();
 	for (size_t i = 0; i < arraySize; ++i)
 	{

@@ -54,9 +54,14 @@ namespace mcf
 			{
 				INVALID = 0,
 
-				SECTION_DATA,
 				TYPEDEF,
+				PROTO,
+
+				SECTION_DATA,
 				GLOBAL_VARIABLE,
+
+				SECTION_CODE,
+				PROC,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -66,9 +71,14 @@ namespace mcf
 			{
 				"INVALID",
 
-				"SECTION_DATA",
 				"TYPEDEF",
+				"PROTO",
+
+				"SECTION_DATA",
 				"GLOBAL_VARIABLE",
+
+				"SECTION_CODE",
+				"PROC",
 			};
 			constexpr const size_t MASM64_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == MASM64_TYPE_SIZE, "MASM64 type count not matching!");
@@ -97,14 +107,6 @@ namespace mcf
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "Invalid Code"; }
 			};
 
-			class SectionData : public Interface
-			{
-			public:
-				inline static Pointer Make(void) noexcept { return std::make_unique<SectionData>(); }
-				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::SECTION_DATA; }
-				inline virtual const std::string ConvertToString(void) const noexcept override final { return ".data"; }
-			};
-
 			class Typedef final : public Interface
 			{
 			public:
@@ -125,6 +127,33 @@ namespace mcf
 				mcf::Object::TypeInfo _sourceType;
 			};
 
+			class Proto final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Proto>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Proto>(std::move(args)...); }
+
+			public:
+				explicit Proto(void) noexcept = default;
+				explicit Proto(const std::string& externFunction) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::PROTO; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				std::string _externFunction;
+			};
+
+			class SectionData : public Interface
+			{
+			public:
+				inline static Pointer Make(void) noexcept { return std::make_unique<SectionData>(); }
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::SECTION_DATA; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return ".data"; }
+			};
+
 			class GlobalVariable final : public Interface
 			{
 			public:
@@ -143,6 +172,33 @@ namespace mcf
 			private:
 				mcf::Object::Variable _variable;
 				mcf::Object::Data _value;
+			};
+
+			class SectionCode : public Interface
+			{
+			public:
+				inline static Pointer Make(void) noexcept { return std::make_unique<SectionCode>(); }
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::SECTION_CODE; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return ".code"; }
+			};
+
+			class Proc final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Proc>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Proc>(std::move(args)...); }
+
+			public:
+				explicit Proc(void) noexcept = default;
+				explicit Proc(const std::string& functionDefinition) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::PROC; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				std::string _functionDefinition;
 			};
 
 			namespace Compiler
@@ -168,6 +224,8 @@ namespace mcf
 				private:
 					const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 					const bool CompileLet(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Let* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+					const bool CompileFunc(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Func* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+					const bool CompileExtern(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Extern* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 
 					const mcf::Object::Data EvaluateExpressionInCompileTime(_In_ const mcf::IR::Expression::Interface* expressionIR, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 

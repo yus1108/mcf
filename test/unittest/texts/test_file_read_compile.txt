@@ -42,9 +42,9 @@ foo		byte	0				; byte		; let foo: byte = 0;
 
 .code
 boo proc								; func boo(void) -> byte { return 0; }
-	sub rsp, 08h;
+	push rbp
 	xor al, al
-	add rsp, 08h;
+	pop rbp
 	ret
 boo endp
 
