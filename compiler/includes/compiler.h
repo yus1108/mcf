@@ -56,6 +56,7 @@ namespace mcf
 
 				SECTION_DATA,
 				TYPEDEF,
+				GLOBAL_VARIABLE,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -67,6 +68,7 @@ namespace mcf
 
 				"SECTION_DATA",
 				"TYPEDEF",
+				"GLOBAL_VARIABLE",
 			};
 			constexpr const size_t MASM64_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == MASM64_TYPE_SIZE, "MASM64 type count not matching!");
@@ -123,6 +125,26 @@ namespace mcf
 				mcf::Object::TypeInfo _sourceType;
 			};
 
+			class GlobalVariable final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<GlobalVariable>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<GlobalVariable>(std::move(args)...); }
+
+			public:
+				explicit GlobalVariable(void) noexcept = default;
+				explicit GlobalVariable(const mcf::Object::Variable& variable, const mcf::Object::Data& value) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::GLOBAL_VARIABLE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::Object::Variable _variable;
+				mcf::Object::Data _value;
+			};
+
 			namespace Compiler
 			{
 				enum class Section : unsigned char
@@ -145,6 +167,9 @@ namespace mcf
 
 				private:
 					const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+					const bool CompileLet(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Let* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
+
+					const mcf::Object::Data EvaluateExpressionInCompileTime(_In_ const mcf::IR::Expression::Interface* expressionIR, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 
 				private:
 					Section _currentSection = Section::INVALID;

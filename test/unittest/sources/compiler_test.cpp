@@ -35,8 +35,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 					"let true: bool = 1;",
 					".data\n"
 					"bool typedef byte\n"
-					"false bool 0\n"
-					"true bool 1",
+					"false bool 0,\n"
+					"true bool 1,",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -71,7 +71,7 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 				{
 					actual += (j == 0 ? "" : "\n") + generatedCodes[j]->ConvertToString();
 				}
-				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\n\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
 			}
 			return true;
 		}

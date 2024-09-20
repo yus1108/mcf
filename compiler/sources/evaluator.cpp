@@ -1616,7 +1616,6 @@ mcf::Object::TypeInfo mcf::Evaluator::Object::EvalTypeSignatureIntermediate(_Not
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ const mcf::AST::Expression::Interface* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
 {
-	MCF_DEBUG_ASSERT(expression != nullptr, u8"expression가 nullptr이면 안됩니다.");
 	mcf::IR::Expression::Pointer object = mcf::IR::Expression::Invalid::Make();
 	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (expression->GetExpressionType())
@@ -1786,7 +1785,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull
 	case mcf::IR::Expression::Type::MAP_INITIALIZER: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
-			mcf::AST::Expression::CONVERT_TYPE_TO_STRING(leftExpression->GetExpressionType()), mcf::ENUM_INDEX(leftExpression->GetExpressionType()), leftExpression->ConvertToString().c_str());
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(leftObject->GetExpressionType()), mcf::ENUM_INDEX(leftObject->GetExpressionType()), leftObject->Inspect().c_str());
 		break;
 	}
 	constexpr const size_t LEFT_EXPRESSION_TYPE_COUNT = __COUNTER__ - LEFT_EXPRESSION_TYPE_COUNT_BEGIN;

@@ -12,9 +12,7 @@ namespace mcf
 			{
 				return "VARARG";
 			}
-
-			std::string buffer = typeInfo.Name;
-			return buffer;
+			return typeInfo.Name;
 		}
 	}
 }
@@ -30,6 +28,34 @@ mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, con
 const std::string mcf::ASM::MASM64::Typedef::ConvertToString(void) const noexcept
 {
 	return _definedType.Name + " typedef " + Internal::ConvertTypeInfoToString(_sourceType);
+}
+
+mcf::ASM::MASM64::GlobalVariable::GlobalVariable(const mcf::Object::Variable& variable, const mcf::Object::Data& value) noexcept
+	: _variable(variable)
+	, _value(value)
+{
+	MCF_DEBUG_ASSERT(_variable.IsValid(), u8"유효하지 않은 _info입니다.");
+}
+
+const std::string mcf::ASM::MASM64::GlobalVariable::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_variable.IsValid(), u8"유효하지 않은 _info입니다.");
+
+	std::string buffer;
+	buffer = _variable.Name + " " + Internal::ConvertTypeInfoToString(_variable.DataType);
+	if (_value.empty())
+	{
+		buffer += " ?";
+	}
+	else
+	{
+		const size_t valueCount = _value.size();
+		for (size_t i = 0; i < valueCount; i++)
+		{
+			buffer += " " + std::to_string(static_cast<unsigned int>(_value[i])) + ",";
+		}
+	}
+	return buffer;
 }
 
 mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
@@ -69,7 +95,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 
 		case IR::Type::LET: __COUNTER__;
-			MCF_DEBUG_TODO(u8"구현 필요");
+			if (CompileLet(codes, static_cast<const mcf::IR::Let*>(irObject), scopeTree) == false)
+			{
+				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+			}
 			break;
 
 		case IR::Type::FUNC: __COUNTER__;
@@ -102,6 +131,8 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 
 const bool mcf::ASM::MASM64::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
+	MCF_UNUSED(scopeTree);
+
 	if (_currentSection != mcf::ASM::MASM64::Compiler::Section::DATA)
 	{
 		outCodes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
@@ -109,6 +140,87 @@ const bool mcf::ASM::MASM64::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::Po
 	}
 	outCodes.emplace_back(mcf::ASM::MASM64::Typedef::Make(irCode->GetDefinedType(), irCode->GetSourceType()));
 	
-	MCF_UNUSED(scopeTree);
 	return true;
+}
+
+const bool mcf::ASM::MASM64::Compiler::Object::CompileLet(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Let* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+{
+	MCF_UNUSED(scopeTree);
+	MCF_DEBUG_ASSERT(irCode->GetInfo().IsValid(), u8"Let 명령문의 데이터가 유효하지 않습니다!");
+	MCF_DEBUG_ASSERT(irCode->GetInfo().IsGlobal, u8"Let 명령문은 global variable 이어야만 합니다!");
+
+	if (_currentSection != mcf::ASM::MASM64::Compiler::Section::DATA)
+	{
+		outCodes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
+		_currentSection = mcf::ASM::MASM64::Compiler::Section::DATA;
+	}
+
+	const mcf::IR::Expression::Interface* assignExpression = irCode->GetUnsafeAssignExpressionPointer();
+	mcf::Object::Data value = EvaluateExpressionInCompileTime(assignExpression, scopeTree);
+	outCodes.emplace_back(mcf::ASM::MASM64::GlobalVariable::Make(irCode->GetInfo().Variable, value));
+	return true;
+}
+
+const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionInCompileTime(_In_ const mcf::IR::Expression::Interface* expressionIR, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+{
+	MCF_UNUSED(scopeTree);
+
+	if (expressionIR == nullptr)
+	{
+		return mcf::Object::Data();
+	}
+
+	mcf::Object::Data data;
+	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (expressionIR->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CALL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
+		data.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt64());
+		break;
+
+	case mcf::IR::Expression::Type::STRING: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::MAP_INITIALIZER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expressionIR->GetExpressionType()), mcf::ENUM_INDEX(expressionIR->GetExpressionType()), expressionIR->Inspect().c_str());
+		break;
+	}
+	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+
+	return data;
 }

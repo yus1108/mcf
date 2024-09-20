@@ -980,17 +980,11 @@ mcf::IR::Let::Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::P
 
 const std::string mcf::IR::Let::Inspect(void) const noexcept
 {
+	MCF_DEBUG_ASSERT(_info.IsGlobal, u8"지역 변수는 중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+
 	std::string buffer;
-	if (_info.IsGlobal)
-	{
-		buffer = _info.Variable.Inspect() + " ";
-		return buffer + (_assignExpression.get() == nullptr ? "?" : _assignExpression->Inspect());
-	}
-	else
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-	}
-	return std::string();
+	buffer = _info.Variable.Inspect() + " ";
+	return buffer + (_assignExpression.get() == nullptr ? "?" : _assignExpression->Inspect());
 }
 
 mcf::IR::Func::Func(mcf::IR::ASM::PointerVector&& defines) noexcept
