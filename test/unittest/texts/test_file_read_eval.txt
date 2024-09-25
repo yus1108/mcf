@@ -14,8 +14,8 @@ boo proc
 	pop rbp
 	ret
 boo endp
-arr byte[3] { 0, 1, 2, }
-arr2 byte[5] { 0, }
+arr byte { 0, 1, 2, }
+arr2 byte { 0, }
 intVal int32 10
 main proc
 	push rbp

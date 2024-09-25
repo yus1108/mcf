@@ -26,29 +26,69 @@ const std::string mcf::ASM::MASM64::Proto::ConvertToString(void) const noexcept
 	return _externFunction;
 }
 
+mcf::ASM::MASM64::Literal::Literal(const size_t index, const mcf::Object::Data& value) noexcept 
+	: _index(index)
+	, _value(value) 
+{
+	MCF_DEBUG_ASSERT(_value.second.empty() == false, u8"_value가 비어있으면 안됩니다.");
+}
+
+const std::string mcf::ASM::MASM64::Literal::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_value.second.empty() == false, u8"_value가 비어있으면 안됩니다.");
+	std::string buffer = "?" + std::to_string(_index);
+	switch (_value.first)
+	{
+	case 1:
+		buffer += " byte";
+		break;
+	case 2:
+		buffer += " word";
+		break;
+	case 4:
+		buffer += " dword";
+		break;
+	case 8:
+		buffer += " qword";
+		break;
+	default:
+		MCF_DEBUG_BREAK(u8"사이즈가 올바르지 않습니다.");
+		break;
+	}
+	
+	const size_t valueCount = _value.second.size();
+	for ( size_t i = 0; i < valueCount; i++ )
+	{
+		buffer += " " + std::to_string(_value.second[i]) + ",";
+	}
+	return buffer;
+}
+
 mcf::ASM::MASM64::GlobalVariable::GlobalVariable(const mcf::Object::Variable& variable, const mcf::Object::Data& value) noexcept
 	: _variable(variable)
 	, _value(value)
 {
 	MCF_DEBUG_ASSERT(_variable.IsValid(), u8"유효하지 않은 _info입니다.");
+	MCF_DEBUG_ASSERT(_value.first <= _variable.DataType.IntrinsicSize, u8"값의 데이터 크기가 변수의 타입이 허용하는 데이터의 크기보다 큽니다.");
 }
 
 const std::string mcf::ASM::MASM64::GlobalVariable::ConvertToString(void) const noexcept
 {
 	MCF_DEBUG_ASSERT(_variable.IsValid(), u8"유효하지 않은 _info입니다.");
+	MCF_DEBUG_ASSERT(_value.first <= _variable.DataType.IntrinsicSize, u8"값의 데이터 크기가 변수의 타입이 허용하는 데이터의 크기보다 큽니다.");
 
 	std::string buffer;
 	buffer = _variable.Name + " " + _variable.DataType.Inspect();
-	if (_value.empty())
+	if (_value.second.empty())
 	{
 		buffer += " ?";
 	}
 	else
 	{
-		const size_t valueCount = _value.size();
+		const size_t valueCount = _value.second.size();
 		for (size_t i = 0; i < valueCount; i++)
 		{
-			buffer += " " + std::to_string(static_cast<unsigned int>(_value[i])) + ",";
+			buffer += " " + std::to_string(_value.second[i]) + ",";
 		}
 	}
 	return buffer;
@@ -69,6 +109,17 @@ const std::string mcf::ASM::MASM64::Proc::ConvertToString(void) const noexcept
 mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
 	mcf::ASM::PointerVector codes;
+
+	if (scopeTree->LiteralIndexMap.empty() == false)
+	{
+		codes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
+		_currentSection = mcf::ASM::MASM64::Compiler::Section::DATA;
+
+		for(auto pairIter : scopeTree->LiteralIndexMap)
+		{
+			codes.emplace_back(mcf::ASM::MASM64::Literal::Make(pairIter.second.first, pairIter.second.second));
+		}
+	}
 
 	const size_t programCount = program->GetObjectCount();
 	for (size_t i = 0; i < programCount; i++)
@@ -227,16 +278,74 @@ const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionIn
 		break;
 
 	case mcf::IR::Expression::Type::INTEGER: __COUNTER__;
-		data.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt64());
+	{
+		const mcf::IR::Expression::Integer* integer = static_cast<const mcf::IR::Expression::Integer*>(expressionIR);
+		if (integer->IsNaturalInteger())
+		{
+			if (integer->IsUInt8())
+			{
+				data.first = data.first >= 1 ? data.first : 1;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt8());
+			}
+			else if ( integer->IsUInt16() )
+			{
+				data.first = data.first >= 1 ? data.first : 2;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt16());
+			}
+			else if ( integer->IsUInt32() )
+			{
+				data.first = data.first >= 1 ? data.first : 4;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt32());
+			}
+			else if ( integer->IsUInt64() )
+			{
+				data.first = data.first >= 1 ? data.first : 8;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt64());
+			}
+		}
+		else
+		{
+			if ( integer->IsInt8() )
+			{
+				data.first = data.first >= 1 ? data.first : 1;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt8());
+			}
+			else if ( integer->IsInt16() )
+			{
+				data.first = data.first >= 1 ? data.first : 2;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt16());
+			}
+			else if ( integer->IsInt32() )
+			{
+				data.first = data.first >= 1 ? data.first : 4;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt32());
+			}
+			else if ( integer->IsInt64() )
+			{
+				data.first = data.first >= 1 ? data.first : 8;
+				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt64());
+			}
+		}
 		break;
+	}
 
 	case mcf::IR::Expression::Type::STRING: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
 	case mcf::IR::Expression::Type::INITIALIZER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+	{
+		const mcf::IR::Expression::Initializer* initializer = static_cast<const mcf::IR::Expression::Initializer*>(expressionIR);
+		const size_t keyCount = initializer->GetKeyExpressionCount();
+		for (size_t i = 0; i < keyCount; ++i)
+		{
+			const mcf::Object::Data KeyData = EvaluateExpressionInCompileTime(initializer->GetUnsafeKeyExpressionPointerAt(i), scopeTree);
+			MCF_DEBUG_ASSERT(data.first != KeyData.first, u8"사이즈가 일치 하지 않습니다!");
+			data.first = data.first >= KeyData.first ? data.first : KeyData.first;
+			data.second.insert(data.second.end(), KeyData.second.begin(), KeyData.second.end());
+		}
 		break;
+	}
 
 	case mcf::IR::Expression::Type::MAP_INITIALIZER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");

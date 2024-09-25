@@ -106,19 +106,19 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let arr: byte[] = { 0, 1, 2 };",
 					{},
 					{},
-					"arr byte[3] { 0, 1, 2, }",
+					"arr byte { 0, 1, 2, }",
 				},
 				{
 					"let message: byte[] = \"Hello, World!\\n\";",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"message byte[15] ?0",
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
+					"message byte ?0",
 				},
 				{
 					"let arr2: byte[5] = { 0 };",
 					{},
 					{},
-					"arr2 byte[5] { 0, }",
+					"arr2 byte { 0, }",
 				},
 				{
 					"let intVal: unsigned dword = 10;",
@@ -379,7 +379,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
 					{"\"Hello, World!Value = %d\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}},
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}}},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 32\n"
@@ -401,7 +401,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
 					"printf PROTO, format:qword, args:VARARG\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -431,7 +431,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let intVal: dword = 10;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
 					"printf PROTO, format:qword, args:VARARG\n"
 					"intVal dword 10\n"
 					"main proc\n"

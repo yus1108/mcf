@@ -58,6 +58,7 @@ namespace mcf
 				PROTO,
 
 				SECTION_DATA,
+				LITERAL,
 				GLOBAL_VARIABLE,
 
 				SECTION_CODE,
@@ -75,6 +76,7 @@ namespace mcf
 				"PROTO",
 
 				"SECTION_DATA",
+				"LITERAL",
 				"GLOBAL_VARIABLE",
 
 				"SECTION_CODE",
@@ -152,6 +154,26 @@ namespace mcf
 				inline static Pointer Make(void) noexcept { return std::make_unique<SectionData>(); }
 				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::SECTION_DATA; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return ".data"; }
+			};
+
+			class Literal final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Literal>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Literal>(std::move(args)...); }
+
+			public:
+				explicit Literal(void) noexcept = default;
+				explicit Literal(const size_t index, const mcf::Object::Data& value) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::LITERAL; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				const size_t _index;
+				mcf::Object::Data _value;
 			};
 
 			class GlobalVariable final : public Interface

@@ -124,19 +124,7 @@ const size_t mcf::Object::TypeInfo::GetSize(void) const noexcept
 const std::string mcf::Object::TypeInfo::Inspect(void) const noexcept
 {
 	MCF_DEBUG_ASSERT(IsValid(), u8"TypeInfo가 유효하지 않습니다.");
-	if (IsVariadic)
-	{
-		return "VARARG";
-	}
-
-	std::string buffer = Name;
-	const size_t arraySize = ArraySizeList.size();
-	for (size_t i = 0; i < arraySize; ++i)
-	{
-		MCF_DEBUG_ASSERT(ArraySizeList[i] >= 0, u8"ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, ArraySizeList[i]);
-		buffer += "[" + std::to_string(ArraySizeList[i]) + "]";
-	}
-	return buffer;
+	return IsVariadic ? "VARARG" : Name;
 }
 
 const std::string mcf::Object::Variable::Inspect(void) const noexcept

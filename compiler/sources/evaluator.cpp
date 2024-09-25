@@ -153,6 +153,7 @@ namespace mcf
 			static mcf::Object::Data ConvertStringToData(const std::string& stringLiteral) noexcept
 			{
 				mcf::Object::Data data;
+				data.first = 1;
 
 				const size_t literalLength = stringLiteral.length();
 				bool isEscapeChar = false;
@@ -169,40 +170,40 @@ namespace mcf
 						switch (stringLiteral[i])
 						{
 						case '0':
-							data.emplace_back(static_cast<unsigned __int8>(0));
+							data.second.emplace_back(static_cast<unsigned __int8>(0));
 							break;
 						case 'n':
-							data.emplace_back(static_cast<unsigned __int8>('\n'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\n'));
 							break;
 						case 't':
-							data.emplace_back(static_cast<unsigned __int8>('\t'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\t'));
 							break;
 						case 'v':
-							data.emplace_back(static_cast<unsigned __int8>('\v'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\v'));
 							break;
 						case 'b':
-							data.emplace_back(static_cast<unsigned __int8>('\b'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\b'));
 							break;
 						case 'r':
-							data.emplace_back(static_cast<unsigned __int8>('\r'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\r'));
 							break;
 						case 'f':
-							data.emplace_back(static_cast<unsigned __int8>('\f'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\f'));
 							break;
 						case 'a':
-							data.emplace_back(static_cast<unsigned __int8>('\a'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\a'));
 							break;
 						case '\'':
-							data.emplace_back(static_cast<unsigned __int8>('\''));
+							data.second.emplace_back(static_cast<unsigned __int8>('\''));
 							break;
 						case '"':
-							data.emplace_back(static_cast<unsigned __int8>('\"'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\"'));
 							break;
 						case '\\':
-							data.emplace_back(static_cast<unsigned __int8>('\\'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\\'));
 							break;
 						case '?':
-							data.emplace_back(static_cast<unsigned __int8>('\?'));
+							data.second.emplace_back(static_cast<unsigned __int8>('\?'));
 							break;
 						default:
 							break;
@@ -210,10 +211,10 @@ namespace mcf
 						isEscapeChar = false;
 						continue;
 					}
-					data.emplace_back(static_cast<unsigned __int8>(stringLiteral[i]));
+					data.second.emplace_back(static_cast<unsigned __int8>(stringLiteral[i]));
 				}
 
-				data.emplace_back(static_cast<unsigned __int8>(0));
+				data.second.emplace_back(static_cast<unsigned __int8>(0));
 				return data;
 			}
 		}
@@ -1745,7 +1746,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalStringExpression(_Notnu
 	mcf::Object::Data literalData = Internal::ConvertStringToData(stringLiteral);
 	mcf::Object::ScopeTree* const scopeTree = scope->GetUnsafeScopeTreePointer();
 	const auto emplacePairIter = scopeTree->LiteralIndexMap.try_emplace(expression->GetTokenLiteral(), std::make_pair(scopeTree->LiteralIndexMap.size(), literalData));
-	return mcf::IR::Expression::String::Make(emplacePairIter.first->second.first, literalData.size());
+	return mcf::IR::Expression::String::Make(emplacePairIter.first->second.first, literalData.second.size());
 }
 
 mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull_ const mcf::AST::Expression::Call* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept

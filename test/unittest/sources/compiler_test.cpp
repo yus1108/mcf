@@ -89,6 +89,11 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 					"false bool 0,\n"
 					"true bool 1,",
 				},
+				{
+					"let arr2: byte[5] = { 0 };",
+					".data\n"
+					"arr2 byte 0,",
+				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
 			for (size_t i = 0; i < testCaseCount; i++)
@@ -170,6 +175,87 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 					"boo endp\n"
 					"main proc\n"
 						"\tpush rbp\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"main endp",
+				},
+				{
+					"func boo(param1: dword) -> dword { let var1: dword = param1; return var1; }",
+					".code\n"
+					"boo proc\n"
+						"\tpush rbp\n"
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tsub rsp, 16\n"
+						"\tmov eax, dword ptr [rsp + 32]\n"	// eax = param1;
+						"\tmov dword ptr [rsp + 0], eax\n"	// var1 = eax;
+						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"boo endp",
+				},
+				{
+					"main(void) -> void { let var1: dword = 15; unused(var1); }",
+					".code\n"
+					"main proc\n"
+						"\tpush rbp\n"
+						"\tsub rsp, 16\n"
+						"\tmov dword ptr [rsp + 0], 15\n" // var1 = 15;
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"main endp",
+				},
+				{
+					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
+					".data\n"
+					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 86, 97, 108, 117, 101, 32, 61, 32, 37, 100, 10, 0,\n"
+					".code\n"
+					"main proc\n"
+						"\tpush rbp\n"
+						"\tsub rsp, 32\n"
+
+						/* CopyMemory("Hello, World!Value = %d\\n\", message, sizeof(message)); */
+						"\tsub rsp, 32\n"
+						"\tmov r8, sizeof ?0\n"
+						"\tlea rdx, [rsp + 32]\n"
+						"\tlea rcx, [?0]\n"
+						"\tcall ?CopyMemory\n"
+						"\tadd rsp, 32\n"
+
+						"\tadd rsp, 32\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"main endp",
+				},
+				{
+					"extern func printf(format: unsigned qword, ...args) -> dword;"
+					"let intVal: dword = 10;"
+					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
+					".data\n"
+					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 10, 0,\n"
+					"printf PROTO, format:qword, args:VARARG\n"
+					"intVal dword 10,\n"
+					".code\n"
+					"main proc\n"
+						"\tpush rbp\n"
+						"\tsub rsp, 16\n"
+						
+						/* CopyMemory(&0, message, sizeof(message)); */
+						"\tsub rsp, 32\n"
+						"\tmov r8, sizeof ?0\n"
+						"\tlea rdx, [rsp + 32]\n"
+						"\tlea rcx, [?0]\n"
+						"\tcall ?CopyMemory\n"
+						"\tadd rsp, 32\n"
+
+						/* printf(message as unsigned qword); */
+						"\tsub rsp, 32\n"
+						"\tlea rcx, [rsp + 32]\n"
+						"\tcall printf\n"
+						"\tadd rsp, 32\n"
+
+						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
 					"main endp",

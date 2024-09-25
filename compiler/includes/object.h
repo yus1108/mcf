@@ -11,7 +11,7 @@ namespace mcf
 {
 	namespace Object
 	{
-		using Data = std::vector<unsigned __int64>;
+		using Data = std::pair<unsigned __int8, std::vector<unsigned __int64>>;
 
 		// if any item in ArraySizeList has the value as 0, it means it's unknown
 		struct TypeInfo final
