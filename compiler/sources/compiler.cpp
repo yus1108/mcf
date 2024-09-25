@@ -1,6 +1,18 @@
 ﻿#include "pch.h"
 #include "compiler.h"
 
+mcf::ASM::MASM64::Predefined::Predefined(const std::string& predefinedCode) noexcept
+	: _predefinedCode(predefinedCode)
+{
+	MCF_DEBUG_ASSERT(_predefinedCode.empty() == false, u8"_predefinedCode가 비어있으면 안됩니다.");
+}
+
+const std::string mcf::ASM::MASM64::Predefined::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_predefinedCode.empty() == false, u8"_predefinedCode가 비어있으면 안됩니다.");
+	return _predefinedCode;
+}
+
 mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept
 	: _definedType(definedType)
 	, _sourceType(sourceType)
@@ -109,6 +121,33 @@ const std::string mcf::ASM::MASM64::Proc::ConvertToString(void) const noexcept
 mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
 {
 	mcf::ASM::PointerVector codes;
+
+	// add predefined code
+	{
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("option casemap :none"));
+
+		codes.emplace_back(mcf::ASM::MASM64::SectionCode::Make());
+		_currentSection = mcf::ASM::MASM64::Compiler::Section::CODE;
+
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("?CopyMemory proc"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpush rsi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpush rdi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpush rcx"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tmov rsi, rcx"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tmov rdi, rdx"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tmov rcx, r8"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("?CopyMemory?L1:"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tmov al, byte ptr [rsi]"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tmov byte ptr [rdi], al"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tinc rsi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tinc rdi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tloop ?CopyMemory?L1"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpop rcx"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpop rdi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tpop rsi"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("\tret"));
+		codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("?CopyMemory endp"));
+	}
 
 	if (scopeTree->LiteralIndexMap.empty() == false)
 	{

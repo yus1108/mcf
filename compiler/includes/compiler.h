@@ -54,6 +54,7 @@ namespace mcf
 			{
 				INVALID = 0,
 
+				PREDEFINED,
 				TYPEDEF,
 				PROTO,
 
@@ -72,6 +73,7 @@ namespace mcf
 			{
 				"INVALID",
 
+				"PREDEFINED",
 				"TYPEDEF",
 				"PROTO",
 
@@ -107,6 +109,25 @@ namespace mcf
 				inline static Pointer Make(void) noexcept { return std::make_unique<Invalid>(); }
 				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::INVALID; }
 				inline virtual const std::string ConvertToString(void) const noexcept override final { return "Invalid Code"; }
+			};
+
+			class Predefined final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Predefined>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Predefined>(std::move(args)...); }
+
+			public:
+				explicit Predefined(void) noexcept = default;
+				explicit Predefined(const std::string& predefinedCode) noexcept;
+
+				inline virtual const mcf::ASM::MASM64::Type GetMASM64Type(void) const noexcept override final { return Type::PREDEFINED; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				std::string _predefinedCode;
 			};
 
 			class Typedef final : public Interface
