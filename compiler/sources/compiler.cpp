@@ -74,7 +74,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 	for (size_t i = 0; i < programCount; i++)
 	{
 		const mcf::IR::Interface* const irObject = program->GetUnsafeKeyObjectPointerAt(i);
-		MCF_DEBUG_ASSERT(irObject != nullptr, "irObject는 nullptr이 아니어야 합니다!");
+		MCF_DEBUG_ASSERT(irObject != nullptr, u8"irObject는 nullptr이 아니어야 합니다!");
 
 		constexpr const size_t IR_TYPE_COUNT_BEGIN = __COUNTER__;
 		switch (irObject->GetType())
@@ -94,28 +94,28 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 		case IR::Type::TYPEDEF: __COUNTER__;
 			if (CompileTypedef(codes, static_cast<const mcf::IR::Typedef*>(irObject), scopeTree) == false)
 			{
-				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+				MCF_DEBUG_TODO(u8"컴파일에 실패하였습니다!");
 			}
 			break;
 
 		case IR::Type::EXTERN: __COUNTER__;
 			if (CompileExtern(codes, static_cast<const mcf::IR::Extern*>(irObject), scopeTree) == false)
 			{
-				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+				MCF_DEBUG_TODO(u8"컴파일에 실패하였습니다!");
 			}
 			break;
 
 		case IR::Type::LET: __COUNTER__;
 			if (CompileLet(codes, static_cast<const mcf::IR::Let*>(irObject), scopeTree) == false)
 			{
-				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+				MCF_DEBUG_TODO(u8"컴파일에 실패하였습니다!");
 			}
 			break;
 
 		case IR::Type::FUNC: __COUNTER__;
 			if (CompileFunc(codes, static_cast<const mcf::IR::Func*>(irObject), scopeTree) == false)
 			{
-				MCF_DEBUG_TODO("컴파일에 실패하였습니다!");
+				MCF_DEBUG_TODO(u8"컴파일에 실패하였습니다!");
 			}
 			break;
 
