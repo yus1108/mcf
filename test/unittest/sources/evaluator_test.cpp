@@ -31,7 +31,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("word", mcf::Object::TypeInfo::MakePrimitive(false, "word", 2));
 				scopeTree.Global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4));
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8));
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -53,11 +53,11 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			{
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;",
-					"printf PROTO : unsigned qword, VARARG",
+					"printf PROTO format:qword, args:VARARG",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword[5];",
-					"printf PROTO : unsigned qword, VARARG",
+					"printf PROTO format:qword, args:VARARG",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE( testCases );
@@ -73,7 +73,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType("word", mcf::Object::TypeInfo::MakePrimitive(false, "word", 2));
 				scopeTree.Global.DefineType("dword", mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4));
 				scopeTree.Global.DefineType("qword", mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8));
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 				const std::string actual = object->Inspect();
@@ -106,25 +106,25 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let arr: byte[] = { 0, 1, 2 };",
 					{},
 					{},
-					"arr byte[3] { 0, 1, 2, }",
+					"arr byte { 0, 1, 2, }",
 				},
 				{
 					"let message: byte[] = \"Hello, World!\\n\";",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"message byte[15] ?0",
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
+					"message byte ?0",
 				},
 				{
 					"let arr2: byte[5] = { 0 };",
 					{},
 					{},
-					"arr2 byte[5] { 0, }",
+					"arr2 byte { 0, }",
 				},
 				{
 					"let intVal: unsigned dword = 10;",
 					{},
 					{},
-					"intVal unsigned dword 10",
+					"intVal dword 10",
 				},
 				{
 					"let unInit: qword;",
@@ -153,7 +153,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -202,7 +202,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tpop rbp\n"
 						"\tret\n"
 					"boo endp",
@@ -248,7 +248,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tmov eax, dword ptr [rsp + 16]\n"
 						"\tpop rbp\n"
 						"\tret\n"
@@ -274,7 +274,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tsub rsp, 16\n"
 						"\tmov dword ptr [rsp + 0], 15\n"	// var1 = 15;
 						"\tmov eax, dword ptr [rsp + 0]\n"	// return val1;
@@ -289,7 +289,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					{},
 					"boo proc\n"
 						"\tpush rbp\n"
-						"\tmov unsigned qword ptr [rsp + 16], rcx\n" // param1 = rcx;
+						"\tmov qword ptr [rsp + 16], rcx\n" // param1 = rcx;
 						"\tsub rsp, 16\n"
 						"\tmov eax, dword ptr [rsp + 32]\n"	// eax = param1;
 						"\tmov dword ptr [rsp + 0], eax\n"	// var1 = eax;
@@ -320,7 +320,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -379,7 +379,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
 					{"\"Hello, World!Value = %d\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}},
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}}},
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 32\n"
@@ -401,8 +401,8 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO : unsigned qword, VARARG\n"
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
+					"printf PROTO format:qword, args:VARARG\n"
 					"main proc\n"
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
@@ -431,8 +431,8 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"let intVal: dword = 10;"
 					"main(void) -> void { let message: byte[] = \"Hello, World!\\n\"; printf(message as unsigned qword); }",
 					{"\"Hello, World!\\n\""},
-					{{'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}},
-					"printf PROTO : unsigned qword, VARARG\n"
+					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', '\n', '\0'}}},
+					"printf PROTO format:qword, args:VARARG\n"
 					"intVal dword 10\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -478,7 +478,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -518,12 +518,12 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				{
 					"typedef uint32: unsigned dword;",
 					{},
-					"uint32 typedef unsigned dword",
+					"uint32 typedef dword",
 				},
 				{
 					"typedef address: unsigned qword;",
 					{},
-					"address typedef unsigned qword",
+					"address typedef qword",
 				},
 				{
 					"typedef bool: byte;"
@@ -555,7 +555,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 				scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 				mcf::Evaluator::Object evaluator;
-				mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+				mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 				FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 				const size_t constantCount = scopeTree.LiteralIndexMap.size();
@@ -600,7 +600,7 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 			scopeTree.Global.DefineType(qwordType.Name, qwordType);
 
 			mcf::Evaluator::Object evaluator;
-			mcf::IR::Pointer object = evaluator.Eval(&program, &scopeTree.Global);
+			mcf::IR::Pointer object = evaluator.EvalProgram(&program, &scopeTree.Global);
 			FATAL_ASSERT(object.get() != nullptr, u8"object가 nullptr이면 안됩니다.");
 
 			std::string evaluated = object->Inspect();

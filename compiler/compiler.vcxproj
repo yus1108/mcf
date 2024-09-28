@@ -29,6 +29,7 @@
   <ItemGroup>
     <ClInclude Include="includes\ast.h" />
     <ClInclude Include="includes\common.h" />
+    <ClInclude Include="includes\compiler.h" />
     <ClInclude Include="includes\evaluator.h" />
     <ClInclude Include="includes\lexer.h" />
     <ClInclude Include="includes\object.h" />
@@ -40,6 +41,7 @@
   <ItemGroup>
     <ClCompile Include="sources\ast.cpp" />
     <ClCompile Include="sources\common.cpp" />
+    <ClCompile Include="sources\compiler.cpp" />
     <ClCompile Include="sources\evaluator.cpp" />
     <ClCompile Include="sources\lexer.cpp" />
     <ClCompile Include="sources\object.cpp" />
@@ -56,9 +58,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{a7d6822c-a1dd-4a71-bf69-d155a1cb6343}</ProjectGuid>
-    <RootNamespace>evaluator</RootNamespace>
+    <ProjectGuid>{8ff83aeb-9ed4-49af-870e-7052b232d1c5}</ProjectGuid>
+    <RootNamespace>compiler</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>compiler</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

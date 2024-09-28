@@ -1,5 +1,4 @@
 ﻿#include "pch.h"
-#include "evaluator.h"
 #include "object.h"
 
 namespace mcf
@@ -125,14 +124,7 @@ const size_t mcf::Object::TypeInfo::GetSize(void) const noexcept
 const std::string mcf::Object::TypeInfo::Inspect(void) const noexcept
 {
 	MCF_DEBUG_ASSERT(IsValid(), u8"TypeInfo가 유효하지 않습니다.");
-	std::string buffer = std::string(IsUnsigned ? "unsigned " : "") + Name;
-	const size_t arraySize = ArraySizeList.size();
-	for (size_t i = 0; i < arraySize; ++i)
-	{
-		MCF_DEBUG_ASSERT(ArraySizeList[i] >= 0, u8"ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, ArraySizeList[i]);
-		buffer += "[" + std::to_string(ArraySizeList[i]) + "]";
-	}
-	return buffer;
+	return IsVariadic ? "VARARG" : Name;
 }
 
 const std::string mcf::Object::Variable::Inspect(void) const noexcept
@@ -922,6 +914,7 @@ mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept
 
 const std::string mcf::IR::IncludeLib::Inspect(void) const noexcept
 {
+	MCF_DEBUG_ASSERT(_libPath.empty() == false, u8"유효하지 않은 _libPath입니다.");
 	return "includelib " + _libPath;
 }
 
@@ -938,21 +931,17 @@ const std::string mcf::IR::Typedef::Inspect(void) const noexcept
 	return _definedType.Name + " typedef " + _sourceType.Inspect();
 }
 
-mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept
+mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::Variable>& params) noexcept
 	: _name(name)
 	, _params(params)
-	, _hasVariadic(hasVariadic)
 {
 #if defined(_DEBUG)
 	const size_t size = _params.size();
 	for (size_t i = 0; i < size; i++)
 	{
 		MCF_DEBUG_ASSERT(_params[i].IsValid(), u8"_params[%zu]가 유효하지 않습니다.", i);
-		const size_t arraySize = _params[i].ArraySizeList.size();
-		for (size_t j = 0; j < arraySize; ++j)
-		{
-			MCF_DEBUG_ASSERT(_params[i].ArraySizeList[j] > 0, u8"_params[%zu].ArraySizeList[%zu]는 0이상 이어야 합니다. 값=%zu", i, j, _params[i].ArraySizeList[j]);
-		}
+		MCF_DEBUG_ASSERT(_params[i].DataType.IsValid(), u8"_params[%zu].DataType가 유효하지 않습니다.", i);
+		MCF_DEBUG_ASSERT(_params[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. _params[%zu].DataType", i);
 	}
 #endif
 }
@@ -960,18 +949,15 @@ mcf::IR::Extern::Extern(const std::string& name, const std::vector<mcf::Object::
 const std::string mcf::IR::Extern::Inspect(void) const noexcept
 {
 	std::string buffer = _name + " PROTO";
-	if (_params.empty())
-	{
-		return _hasVariadic ? (buffer + " : VARARG") : buffer;
-	}
-
 	const size_t size = _params.size();
 	for (size_t i = 0; i < size; i++)
 	{
 		MCF_DEBUG_ASSERT(_params[i].IsValid(), u8"_params[%zu]가 valid 하지 않습니다.", i);
-		buffer += std::string(i == 0 ? " : " : ", ") + _params[i].Inspect();
+		MCF_DEBUG_ASSERT(_params[i].DataType.IsValid(), u8"_params[%zu].DataType가 유효하지 않습니다.", i);
+		MCF_DEBUG_ASSERT(_params[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. _params[%zu].DataType", i);
+		buffer += " " + _params[i].Name + ":" + _params[i].DataType.Inspect() + (i == size - 1 ? "" : ",");
 	}
-	return _hasVariadic ? (buffer + ", VARARG") : buffer;
+	return buffer;
 }
 
 mcf::IR::Let::Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::Pointer&& assignedExpression) noexcept
@@ -983,17 +969,11 @@ mcf::IR::Let::Let(const mcf::Object::VariableInfo&& info, mcf::IR::Expression::P
 
 const std::string mcf::IR::Let::Inspect(void) const noexcept
 {
+	MCF_DEBUG_ASSERT(_info.IsGlobal, u8"지역 변수는 중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+
 	std::string buffer;
-	if (_info.IsGlobal)
-	{
-		buffer = _info.Variable.Inspect() + " ";
-		return buffer + (_assignExpression.get() == nullptr ? "?" : _assignExpression->Inspect());
-	}
-	else
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-	}
-	return std::string();
+	buffer = _info.Variable.Inspect() + " ";
+	return buffer + (_assignExpression.get() == nullptr ? "?" : _assignExpression->Inspect());
 }
 
 mcf::IR::Func::Func(mcf::IR::ASM::PointerVector&& defines) noexcept

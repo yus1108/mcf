@@ -1,12 +1,12 @@
 ﻿includelib "kernel32.lib"
 int32 typedef dword
-uint32 typedef unsigned dword
-address typedef unsigned qword
+uint32 typedef dword
+address typedef qword
 bool typedef byte
 false bool 0
 true bool 1
 includelib "libcmt.lib"
-printf PROTO : unsigned qword, VARARG
+printf PROTO format:qword, args:VARARG
 foo byte 0
 boo proc
 	push rbp
@@ -14,8 +14,8 @@ boo proc
 	pop rbp
 	ret
 boo endp
-arr byte[3] { 0, 1, 2, }
-arr2 byte[5] { 0, }
+arr byte { 0, 1, 2, }
+arr2 byte { 0, }
 intVal int32 10
 main proc
 	push rbp

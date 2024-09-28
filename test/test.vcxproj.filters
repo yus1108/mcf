@@ -30,6 +30,9 @@
     <ClCompile Include="unittest\sources\evaluator_test.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="unittest\sources\compiler_test.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="unittest\unittest.h">
@@ -38,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="unittest\texts\test_file_read.txt" />
+    <Text Include="unittest\texts\test_file_read_compile.txt" />
+    <Text Include="unittest\texts\test_file_read_eval.txt" />
   </ItemGroup>
   <ItemGroup>
     <None Include="unittest\texts\enum_header.hmcf" />

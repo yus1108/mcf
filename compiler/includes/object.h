@@ -11,7 +11,7 @@ namespace mcf
 {
 	namespace Object
 	{
-		using Data = std::vector<unsigned __int8>;
+		using Data = std::pair<unsigned __int8, std::vector<unsigned __int64>>;
 
 		// if any item in ArraySizeList has the value as 0, it means it's unknown
 		struct TypeInfo final
@@ -1156,6 +1156,9 @@ namespace mcf
 			explicit Typedef(void) noexcept = default;
 			explicit Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept;
 
+			const mcf::Object::TypeInfo& GetDefinedType(void) const noexcept { return _definedType; }
+			const mcf::Object::TypeInfo& GetSourceType(void) const noexcept { return _sourceType; }
+
 			inline virtual const Type GetType(void) const noexcept override final { return Type::TYPEDEF; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
@@ -1174,15 +1177,14 @@ namespace mcf
 
 		public:
 			explicit Extern(void) noexcept = default;
-			explicit Extern(const std::string& name, const std::vector<mcf::Object::TypeInfo>& params, const bool hasVariadic) noexcept;
+			explicit Extern(const std::string& name, const std::vector<mcf::Object::Variable>& params) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::EXTERN; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
 			std::string _name;
-			std::vector<mcf::Object::TypeInfo> _params;
-			bool _hasVariadic;
+			std::vector<mcf::Object::Variable> _params;
 		};
 
 		class Let final : public Interface
@@ -1267,6 +1269,16 @@ namespace mcf
 		public:
 			explicit Program(void) noexcept = default;
 			explicit Program(PointerVector&& objects) noexcept;
+
+			inline virtual const size_t GetObjectCount(void) const noexcept final { return _objects.size(); }
+			inline virtual mcf::IR::Interface* GetUnsafeKeyObjectPointerAt(const size_t index) noexcept final
+			{
+				return _objects[index].get();
+			}
+			inline virtual const mcf::IR::Interface* GetUnsafeKeyObjectPointerAt(const size_t index) const noexcept final
+			{
+				return _objects[index].get();
+			}
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::PROGRAM; }
 			virtual const std::string Inspect(void) const noexcept override final;
