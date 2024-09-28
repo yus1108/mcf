@@ -914,6 +914,7 @@ mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept
 
 const std::string mcf::IR::IncludeLib::Inspect(void) const noexcept
 {
+	MCF_DEBUG_ASSERT(_libPath.empty() == false, u8"유효하지 않은 _libPath입니다.");
 	return "includelib " + _libPath;
 }
 
@@ -954,7 +955,7 @@ const std::string mcf::IR::Extern::Inspect(void) const noexcept
 		MCF_DEBUG_ASSERT(_params[i].IsValid(), u8"_params[%zu]가 valid 하지 않습니다.", i);
 		MCF_DEBUG_ASSERT(_params[i].DataType.IsValid(), u8"_params[%zu].DataType가 유효하지 않습니다.", i);
 		MCF_DEBUG_ASSERT(_params[i].DataType.HasUnknownArrayIndex() == false, u8"unknown 배열이 있으면 안됩니다. _params[%zu].DataType", i);
-		buffer += ", " + _params[i].Name + ":" + _params[i].DataType.Inspect();
+		buffer += " " + _params[i].Name + ":" + _params[i].DataType.Inspect() + (i == size - 1 ? "" : ",");
 	}
 	return buffer;
 }

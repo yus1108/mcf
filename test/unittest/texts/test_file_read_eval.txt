@@ -6,7 +6,7 @@ bool typedef byte
 false bool 0
 true bool 1
 includelib "libcmt.lib"
-printf PROTO, format:qword, args:VARARG
+printf PROTO format:qword, args:VARARG
 foo byte 0
 boo proc
 	push rbp

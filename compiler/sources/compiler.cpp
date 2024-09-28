@@ -13,6 +13,18 @@ const std::string mcf::ASM::MASM64::Predefined::ConvertToString(void) const noex
 	return _predefinedCode;
 }
 
+mcf::ASM::MASM64::IncludeLib::IncludeLib(const std::string& code) noexcept
+	: _code(code)
+{
+	MCF_DEBUG_ASSERT(_code.empty() == false, u8"유효하지 않은 _code입니다.");
+}
+
+const std::string mcf::ASM::MASM64::IncludeLib::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_code.empty() == false, u8"유효하지 않은 _code입니다.");
+	return _code;
+}
+
 mcf::ASM::MASM64::Typedef::Typedef(const mcf::Object::TypeInfo& definedType, const mcf::Object::TypeInfo& sourceType) noexcept
 	: _definedType(definedType)
 	, _sourceType(sourceType)
@@ -38,9 +50,9 @@ const std::string mcf::ASM::MASM64::Proto::ConvertToString(void) const noexcept
 	return _externFunction;
 }
 
-mcf::ASM::MASM64::Literal::Literal(const size_t index, const mcf::Object::Data& value) noexcept 
+mcf::ASM::MASM64::Literal::Literal(const size_t index, const mcf::Object::Data& value) noexcept
 	: _index(index)
-	, _value(value) 
+	, _value(value)
 {
 	MCF_DEBUG_ASSERT(_value.second.empty() == false, u8"_value가 비어있으면 안됩니다.");
 }
@@ -67,11 +79,11 @@ const std::string mcf::ASM::MASM64::Literal::ConvertToString(void) const noexcep
 		MCF_DEBUG_BREAK(u8"사이즈가 올바르지 않습니다.");
 		break;
 	}
-	
+
 	const size_t valueCount = _value.second.size();
-	for ( size_t i = 0; i < valueCount; i++ )
+	for (size_t i = 0; i < valueCount; i++)
 	{
-		buffer += " " + std::to_string(_value.second[i]) + ",";
+		buffer += " " + std::to_string(_value.second[i]) + (i == valueCount - 1 ? "" : ",");
 	}
 	return buffer;
 }
@@ -100,7 +112,7 @@ const std::string mcf::ASM::MASM64::GlobalVariable::ConvertToString(void) const 
 		const size_t valueCount = _value.second.size();
 		for (size_t i = 0; i < valueCount; i++)
 		{
-			buffer += " " + std::to_string(_value.second[i]) + ",";
+			buffer += " " + std::to_string(_value.second[i]) + (i == valueCount - 1 ? "" : ",");
 		}
 	}
 	return buffer;
@@ -154,7 +166,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 		codes.emplace_back(mcf::ASM::MASM64::SectionData::Make());
 		_currentSection = mcf::ASM::MASM64::Compiler::Section::DATA;
 
-		for(auto pairIter : scopeTree->LiteralIndexMap)
+		for (auto pairIter : scopeTree->LiteralIndexMap)
 		{
 			codes.emplace_back(mcf::ASM::MASM64::Literal::Make(pairIter.second.first, pairIter.second.second));
 		}
@@ -178,7 +190,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 
 		case IR::Type::INCLUDELIB: __COUNTER__;
-			MCF_DEBUG_TODO(u8"구현 필요");
+			if (CompileIncludeLib(codes, static_cast<const mcf::IR::IncludeLib*>(irObject), scopeTree) == false)
+			{
+				MCF_DEBUG_TODO(u8"컴파일에 실패하였습니다!");
+			}
 			break;
 
 		case IR::Type::TYPEDEF: __COUNTER__;
@@ -230,7 +245,16 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
 	}
 
+	codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("END"));
+
 	return std::move(codes);
+}
+
+const bool mcf::ASM::MASM64::Compiler::Object::CompileIncludeLib(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::IncludeLib* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
+{
+	MCF_UNUSED(scopeTree);
+	outCodes.emplace_back(mcf::ASM::MASM64::IncludeLib::Make(irCode->Inspect()));
+	return true;
 }
 
 const bool mcf::ASM::MASM64::Compiler::Object::CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept
@@ -326,17 +350,17 @@ const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionIn
 				data.first = data.first >= 1 ? data.first : 1;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt8());
 			}
-			else if ( integer->IsUInt16() )
+			else if (integer->IsUInt16())
 			{
 				data.first = data.first >= 1 ? data.first : 2;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt16());
 			}
-			else if ( integer->IsUInt32() )
+			else if (integer->IsUInt32())
 			{
 				data.first = data.first >= 1 ? data.first : 4;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt32());
 			}
-			else if ( integer->IsUInt64() )
+			else if (integer->IsUInt64())
 			{
 				data.first = data.first >= 1 ? data.first : 8;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetUInt64());
@@ -344,22 +368,22 @@ const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionIn
 		}
 		else
 		{
-			if ( integer->IsInt8() )
+			if (integer->IsInt8())
 			{
 				data.first = data.first >= 1 ? data.first : 1;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt8());
 			}
-			else if ( integer->IsInt16() )
+			else if (integer->IsInt16())
 			{
 				data.first = data.first >= 1 ? data.first : 2;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt16());
 			}
-			else if ( integer->IsInt32() )
+			else if (integer->IsInt32())
 			{
 				data.first = data.first >= 1 ? data.first : 4;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt32());
 			}
-			else if ( integer->IsInt64() )
+			else if (integer->IsInt64())
 			{
 				data.first = data.first >= 1 ? data.first : 8;
 				data.second.emplace_back(static_cast<const mcf::IR::Expression::Integer*>(expressionIR)->GetInt64());
@@ -379,7 +403,7 @@ const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionIn
 		for (size_t i = 0; i < keyCount; ++i)
 		{
 			const mcf::Object::Data KeyData = EvaluateExpressionInCompileTime(initializer->GetUnsafeKeyExpressionPointerAt(i), scopeTree);
-			MCF_DEBUG_ASSERT(data.first != KeyData.first, u8"사이즈가 일치 하지 않습니다!");
+			MCF_DEBUG_ASSERT(i == 0 || data.first == KeyData.first, u8"사이즈가 일치 하지 않습니다!");
 			data.first = data.first >= KeyData.first ? data.first : KeyData.first;
 			data.second.insert(data.second.end(), KeyData.second.begin(), KeyData.second.end());
 		}

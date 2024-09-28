@@ -15,6 +15,31 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 			} testCases[] =
 			{
 				{
+					"#include <asm, \"libcmt.lib\">",
+					"option casemap :none\n"
+					".code\n"
+					"?CopyMemory proc\n"
+						"\tpush rsi\n"
+						"\tpush rdi\n"
+						"\tpush rcx\n"
+						"\tmov rsi, rcx\n"
+						"\tmov rdi, rdx\n"
+						"\tmov rcx, r8\n"
+					"?CopyMemory?L1:\n"
+						"\tmov al, byte ptr [rsi]\n"
+						"\tmov byte ptr [rdi], al\n"
+						"\tinc rsi\n"
+						"\tinc rdi\n"
+						"\tloop ?CopyMemory?L1\n"
+						"\tpop rcx\n"
+						"\tpop rdi\n"
+						"\tpop rsi\n"
+						"\tret\n"
+					"?CopyMemory endp\n"
+					"includelib \"libcmt.lib\"\n"
+					"END",
+				},
+				{
 					"typedef int32: dword;",
 					"option casemap :none\n"
 					".code\n"
@@ -36,7 +61,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpop rsi\n"
 						"\tret\n"
 					"?CopyMemory endp\n"
-					"int32 typedef dword",
+					"int32 typedef dword\n"
+					"END",
 				},
 				{
 					"typedef uint32: unsigned dword;",
@@ -60,7 +86,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpop rsi\n"
 						"\tret\n"
 					"?CopyMemory endp\n"
-					"uint32 typedef dword",
+					"uint32 typedef dword\n"
+					"END",
 				},
 				{
 					"typedef address: unsigned qword;",
@@ -84,7 +111,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpop rsi\n"
 						"\tret\n"
 					"?CopyMemory endp\n"
-					"address typedef qword",
+					"address typedef qword\n"
+					"END",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;",
@@ -108,7 +136,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpop rsi\n"
 						"\tret\n"
 					"?CopyMemory endp\n"
-					"printf PROTO, format:qword, args:VARARG",
+					"printf PROTO format:qword, args:VARARG\n"
+					"END",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -186,8 +215,9 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 					"?CopyMemory endp\n"
 					"bool typedef byte\n"
 					".data\n"
-					"false bool 0,\n"
-					"true bool 1,",
+					"false bool 0\n"
+					"true bool 1\n"
+					"END",
 				},
 				{
 					"let arr2: byte[5] = { 0 };",
@@ -212,7 +242,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tret\n"
 					"?CopyMemory endp\n"
 					".data\n"
-					"arr2 byte 0,",
+					"arr2 byte 0\n"
+					"END",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -291,7 +322,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\txor al, al\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp",
+					"boo endp\n"
+					"END",
 				},
 				{
 					"main(void) -> void {}",
@@ -319,7 +351,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpush rbp\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp",
+					"main endp\n"
+					"END",
 				},
 				{
 					"func boo(void) -> byte { return 0; }"
@@ -354,7 +387,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tpush rbp\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp",
+					"main endp\n"
+					"END",
 				},
 				{
 					"func boo(param1: dword) -> dword { let var1: dword = param1; return var1; }",
@@ -388,7 +422,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"boo endp",
+					"boo endp\n"
+					"END",
 				},
 				{
 					"main(void) -> void { let var1: dword = 15; unused(var1); }",
@@ -419,7 +454,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp",
+					"main endp\n"
+					"END",
 				},
 				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
@@ -444,7 +480,7 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tret\n"
 					"?CopyMemory endp\n"
 					".data\n"
-					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 86, 97, 108, 117, 101, 32, 61, 32, 37, 100, 10, 0,\n"
+					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 86, 97, 108, 117, 101, 32, 61, 32, 37, 100, 10, 0\n"
 					".code\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -461,7 +497,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tadd rsp, 32\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp",
+					"main endp\n"
+					"END",
 				},
 				{
 					"extern func printf(format: unsigned qword, ...args) -> dword;"
@@ -488,9 +525,9 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tret\n"
 					"?CopyMemory endp\n"
 					".data\n"
-					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 10, 0,\n"
-					"printf PROTO, format:qword, args:VARARG\n"
-					"intVal dword 10,\n"
+					"?0 byte 72, 101, 108, 108, 111, 44, 32, 87, 111, 114, 108, 100, 33, 10, 0\n"
+					"printf PROTO format:qword, args:VARARG\n"
+					"intVal dword 10\n"
 					".code\n"
 					"main proc\n"
 						"\tpush rbp\n"
@@ -513,7 +550,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"
-					"main endp",
+					"main endp\n"
+					"END",
 				},
 			};
 			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
@@ -549,6 +587,56 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 					actual += (j == 0 ? "" : "\n") + generatedCodes[j]->ConvertToString();
 				}
 				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\n\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	); 
+	_names.emplace_back(u8"파일 평가 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			std::string expectedResultFileName = "./test/unittest/texts/test_file_read_compile.txt";
+			std::string exepctedResult = mcf::Lexer::ReadFile(expectedResultFileName);
+
+			std::string fileToEvaluate = "./test/unittest/texts/test_file_read.txt";
+			mcf::Parser::Object parser(fileToEvaluate, true);
+			mcf::AST::Program program;
+			parser.ParseProgram(program);
+			FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+			mcf::Object::TypeInfo byteType = mcf::Object::TypeInfo::MakePrimitive(false, "byte", 1);
+			mcf::Object::TypeInfo wordType = mcf::Object::TypeInfo::MakePrimitive(false, "word", 2);
+			mcf::Object::TypeInfo dwordType = mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4);
+			mcf::Object::TypeInfo qwordType = mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8);
+
+			mcf::Object::ScopeTree scopeTree;
+			scopeTree.Global.DefineType(byteType.Name, byteType);
+			scopeTree.Global.DefineType(wordType.Name, wordType);
+			scopeTree.Global.DefineType(dwordType.Name, dwordType);
+			scopeTree.Global.DefineType(qwordType.Name, qwordType);
+
+			mcf::Evaluator::Object evaluator;
+			mcf::IR::Program::Pointer irProgram = evaluator.EvalProgram(&program, &scopeTree.Global);
+			FATAL_ASSERT(irProgram.get() != nullptr, u8"irProgram이 nullptr이면 안됩니다.");
+			FATAL_ASSERT(irProgram->GetType() == mcf::IR::Type::PROGRAM, u8"irProgram이 IR::Type::PROGRAM이 아닙니다.");
+
+			mcf::ASM::MASM64::Compiler::Object compiler;
+			mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irProgram.get(), &scopeTree);
+			std::string actual;
+			const size_t codeCount = generatedCodes.size();
+			for (size_t j = 0; j < codeCount; j++)
+			{
+				actual += (j == 0 ? "" : "\n") + generatedCodes[j]->ConvertToString();
+			}
+			const size_t actualCount = actual.length();
+			const size_t exepctedResultCount = exepctedResult.length();
+			const size_t maxCount = actualCount > exepctedResultCount ? actualCount : exepctedResultCount;
+			for (size_t i = 0; i < maxCount; i++)
+			{
+				FATAL_ASSERT(i < actualCount, "(index: %zu)\nexpected:%c, no actual character\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(i < exepctedResultCount, "(index: %zu)\nno expected character, actual=%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, actual[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(actual[i] == exepctedResult[i], "(index: %zu)\nexpected:%c, actual:%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], actual[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
 			}
 			return true;
 		}

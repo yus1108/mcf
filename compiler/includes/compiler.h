@@ -55,6 +55,7 @@ namespace mcf
 				INVALID = 0,
 
 				PREDEFINED,
+				INCLUDELIB,
 				TYPEDEF,
 				PROTO,
 
@@ -74,6 +75,7 @@ namespace mcf
 				"INVALID",
 
 				"PREDEFINED",
+				"INCLUDELIB",
 				"TYPEDEF",
 				"PROTO",
 
@@ -128,6 +130,25 @@ namespace mcf
 
 			private:
 				std::string _predefinedCode;
+			};
+
+			class IncludeLib final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<IncludeLib>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<IncludeLib>(std::move(args)...); }
+
+			public:
+				explicit IncludeLib(void) noexcept = default;
+				explicit IncludeLib(const std::string& code) noexcept;
+
+				inline virtual const Type GetMASM64Type(void) const noexcept override final { return Type::INCLUDELIB; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				std::string _code;
 			};
 
 			class Typedef final : public Interface
@@ -265,6 +286,7 @@ namespace mcf
 					mcf::ASM::PointerVector GenerateCodes(_In_ const mcf::IR::Program* program, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 
 				private:
+					const bool CompileIncludeLib(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::IncludeLib* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 					const bool CompileTypedef(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Typedef* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 					const bool CompileLet(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Let* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
 					const bool CompileFunc(_Out_ mcf::ASM::PointerVector& outCodes, _In_ const mcf::IR::Func* irCode, _In_ const mcf::Object::ScopeTree* scopeTree) noexcept;
