@@ -77,6 +77,7 @@ namespace mcf
 			mcf::AST::Statement::Pointer ParseMainStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseExpressionStatement(void) noexcept;
 			mcf::AST::Statement::Pointer ParseUnusedStatement(void) noexcept;
+			mcf::AST::Statement::Pointer ParseWhileStatement(void) noexcept;
 
 			mcf::AST::Intermediate::Variadic::Pointer ParseVariadicIntermediate(void) noexcept;
 			mcf::AST::Intermediate::TypeSignature::Pointer ParseTypeSignatureIntermediate(void) noexcept;

@@ -437,6 +437,21 @@ const std::string mcf::AST::Statement::Expression::ConvertToString(void) const n
 	return "[Expression: " + _expression->ConvertToString() + " SEMICOLON]";
 }
 
+mcf::AST::Statement::AssignExpression::AssignExpression(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& right) noexcept
+	: _left(std::move(left))
+	, _right(std::move(right))
+{
+	MCF_DEBUG_ASSERT(_left.get() != nullptr, u8"인자로 받은 _left은 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_right.get() != nullptr, u8"인자로 받은 _right은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::AssignExpression::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_left.get() != nullptr, u8"인자로 받은 _left은 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_right.get() != nullptr, u8"인자로 받은 _right은 nullptr 여선 안됩니다.");
+	return "[Expression: " + _left->ConvertToString() + " ASSIGN " + _right->ConvertToString() + " SEMICOLON]";
+}
+
 mcf::AST::Statement::Unused::Unused(mcf::AST::Expression::Identifier::PointerVector&& identifiers) noexcept
 	: _identifiers(std::move(identifiers))
 {
@@ -459,6 +474,21 @@ const std::string mcf::AST::Statement::Unused::ConvertToString(void) const noexc
 		buffer += _identifiers[i]->ConvertToString() + " COMMA ";
 	}
 	return buffer + "RPAREN SEMICOLON]";
+}
+
+mcf::AST::Statement::While::While(mcf::AST::Expression::Pointer&& condition, mcf::AST::Statement::Block::Pointer&& block) noexcept
+	: _condition(std::move(condition))
+	, _block(std::move(block))
+{
+	MCF_DEBUG_ASSERT(_condition.get() != nullptr, u8"인자로 받은 _condition은 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+}
+
+const std::string mcf::AST::Statement::While::ConvertToString(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_condition.get() != nullptr, u8"인자로 받은 _condition은 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_block.get() != nullptr, u8"인자로 받은 _block은 nullptr 여선 안됩니다.");
+	return "[While: LPAREN " + _condition->ConvertToString() + " RPAREN " + _block->ConvertToString() + "]";
 }
 
 mcf::AST::Program::Program(mcf::AST::Statement::PointerVector&& statements) noexcept

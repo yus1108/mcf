@@ -102,13 +102,9 @@ namespace mcf
 			std::string Name;
 			FunctionParams Params;
 			TypeInfo ReturnType;
-			union
-			{
-				Scope* LocalScope = nullptr;
-				bool IsExternal;
-			} Definition;
+			Scope* LocalScope = nullptr;
 
-			inline const bool IsValid(void) const noexcept { return Name.empty() == false && Definition.LocalScope != nullptr; }
+			inline const bool IsValid(void) const noexcept { return Name.empty() == false && LocalScope != nullptr; }
 			inline const bool IsReturnTypeVoid(void) const noexcept { return ReturnType.IsValid() == false; }
 			
 		};
@@ -160,6 +156,8 @@ namespace mcf
 			const bool DefineFunction(const std::string& name, const mcf::Object::FunctionInfo& info) noexcept;
 			const mcf::Object::FunctionInfo FindFunction(const std::string& name) const noexcept;
 			const mcf::Object::FunctionInfo FindInternalFunction(const InternalFunctionType functionType) const noexcept;
+
+			const bool MakeLocalScope(_Outptr_ mcf::Object::Scope** outScopePtr, const bool isFunctionScope) noexcept;
 
 		private:
 			friend ScopeTree;
@@ -215,6 +213,7 @@ namespace mcf
 			FUNC,
 			UNUSEDIR,
 			RETURN,
+			WHILE,
 
 			PROGRAM,
 
@@ -236,6 +235,7 @@ namespace mcf
 			"FUNC",
 			"UNUSEDIR",
 			"RETURN",
+			"WHILE",
 
 			"PROGRAM",
 		};
@@ -282,6 +282,7 @@ namespace mcf
 				MAP_INITIALIZER,
 				CALL,
 				STATIC_CAST,
+				ASSIGN,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -301,6 +302,7 @@ namespace mcf
 				"MAP_INITIALIZER",
 				"CALL",
 				"STATIC_CAST",
+				"ASSIGN",
 			};
 			constexpr const size_t EXPRESSION_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == EXPRESSION_IR_TYPE_SIZE, "expression ir type count not matching!");
@@ -315,7 +317,7 @@ namespace mcf
 			public:
 				virtual const Type GetExpressionType(void) const noexcept = 0;
 
-				static const mcf::Object::TypeInfo GetDatTypeFromExpression(const mcf::IR::Expression::Interface* expression) noexcept;
+				static const mcf::Object::TypeInfo GetDataTypeFromExpression(const mcf::IR::Expression::Interface* expression) noexcept;
 
 				inline virtual const mcf::IR::Type GetType(void) const noexcept override final { return mcf::IR::Type::EXPRESSION; }
 				virtual const std::string Inspect(void) const noexcept override = 0;
@@ -834,7 +836,7 @@ namespace mcf
 				explicit StaticCast(void) noexcept = default;
 				explicit StaticCast(mcf::IR::Expression::Pointer&& castingValue, const mcf::Object::TypeInfo& castedType) noexcept;
 
-				inline const mcf::Object::TypeInfo GetOriginalDatType(void) const noexcept { return GetDatTypeFromExpression(_castingValue.get()); }
+				inline const mcf::Object::TypeInfo GetOriginalDatType(void) const noexcept { return GetDataTypeFromExpression(_castingValue.get()); }
 				inline const mcf::Object::TypeInfo GetCastedDatType(void) const noexcept { return _castedType; }
 				inline mcf::IR::Expression::Interface* GetUnsafeOriginalExpressionPointer(void) const noexcept { return _castingValue.get(); }
 
@@ -844,6 +846,31 @@ namespace mcf
 			private:
 				mcf::IR::Expression::Pointer _castingValue;
 				mcf::Object::TypeInfo _castedType;
+			};
+
+			class Assign final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Assign>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Assign>(std::move(args)...); }
+
+			public:
+				explicit Assign(void) noexcept = default;
+				explicit Assign(mcf::IR::Expression::Pointer&& left, mcf::IR::Expression::Pointer&& right) noexcept;
+
+				inline mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) noexcept { return _left.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) const noexcept { return _left.get(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) noexcept { return _right.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) const noexcept { return _right.get(); }
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::ASSIGN; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::IR::Expression::Pointer _left;
+				mcf::IR::Expression::Pointer _right;
 			};
 		}
 
@@ -1256,6 +1283,25 @@ namespace mcf
 
 		private:
 			mcf::IR::Expression::Pointer _returnExpression;
+		};
+
+		class While final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<While>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<While>(std::move(args)...); }
+
+		public:
+			explicit While(void) noexcept = default;
+			explicit While(mcf::IR::ASM::PointerVector&& defines) noexcept;
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::WHILE; }
+			virtual const std::string Inspect(void) const noexcept override final;
+
+		private:
+			mcf::IR::ASM::PointerVector _defines;
 		};
 
 		class Program final : public Interface

@@ -58,6 +58,7 @@ namespace UnitTest
 	const mcf::Token::Data TokenReturn = { mcf::Token::Type::KEYWORD_RETURN, "return" };
 	const mcf::Token::Data TokenUnused = { mcf::Token::Type::KEYWORD_UNUSED, "unused" };
 	const mcf::Token::Data TokenAs = { mcf::Token::Type::KEYWORD_AS, "as" };
+	const mcf::Token::Data TokenWhile = { mcf::Token::Type::KEYWORD_WHILE, "while" };
 	const mcf::Token::Data TokenVariadic = { mcf::Token::Type::VARIADIC, "..." };
 	const mcf::Token::Data TokenInclude = { mcf::Token::Type::MACRO_INCLUDE, "#include" };
 	inline const mcf::Token::Data TokenComment(const char* const value) { return mcf::Token::Data{ mcf::Token::Type::COMMENT, value }; }

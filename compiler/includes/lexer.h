@@ -57,6 +57,7 @@ namespace mcf
 			KEYWORD_RETURN,				// return
 			KEYWORD_UNUSED,				// unused
 			KEYWORD_AS,					// as
+			KEYWORD_WHILE,				// while
 			KEYWORD_IDENTIFIER_END,		// 실제 값으로 사용되어선 안됩니다!!!
 
 			// '.' 으로 시작하는 토큰
@@ -126,6 +127,7 @@ namespace mcf
 			"KEYWORD_RETURN",
 			"KEYWORD_UNUSED",
 			"KEYWORD_AS",
+			"KEYWORD_WHILE",
 			"KEYWORD_IDENTIFIER_END",
 
 			// '.' 으로 시작하는 토큰

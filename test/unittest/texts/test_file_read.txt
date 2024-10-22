@@ -23,5 +23,10 @@ main(void) -> void
 {
 	unused(foo, arr, arr2);
 	let message: byte[] = "Hello, World! Value=%d\n";
-	printf(message as unsigned qword, intVal);
+	let i: dword = 0;
+	while(i < 5)
+	{
+		printf(message as unsigned qword, intVal);
+		i = i + 1;
+	}
 }

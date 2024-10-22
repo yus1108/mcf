@@ -89,6 +89,10 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 		statement = ParseUnusedStatement();
 		break;
 
+	case Token::Type::KEYWORD_WHILE: __COUNTER__;
+		statement = ParseWhileStatement();
+		break;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::SEMICOLON: __COUNTER__;
 		break;
@@ -433,6 +437,56 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseExpressionStatement(void)
 		return nullptr;
 	}
 
+	if (ReadNextTokenIf(mcf::Token::Type::ASSIGN) == true)
+	{
+		constexpr const size_t EXPRESSION_COUNT_BEGIN = __COUNTER__;
+		switch (expression->GetExpressionType())
+		{
+		case AST::Expression::Type::IDENTIFIER: __COUNTER__;
+			break;
+
+		case AST::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
+		case AST::Expression::Type::STRING: __COUNTER__; [[fallthrough]];
+		case AST::Expression::Type::PREFIX: __COUNTER__; [[fallthrough]];
+		case AST::Expression::Type::GROUP: __COUNTER__; [[fallthrough]];	
+		case AST::Expression::Type::INFIX: __COUNTER__; [[fallthrough]];	
+		case AST::Expression::Type::CALL: __COUNTER__; [[fallthrough]];	
+		case AST::Expression::Type::AS: __COUNTER__; [[fallthrough]];
+		case AST::Expression::Type::INDEX: __COUNTER__; [[fallthrough]];
+		case AST::Expression::Type::INITIALIZER: __COUNTER__; [[fallthrough]];	
+		case AST::Expression::Type::MAP_INITIALIZER: __COUNTER__; [[fallthrough]];
+		default:
+		{
+			const std::string message = mcf::Internal::ErrorMessage(u8"AssignExpression 명령문 파싱중 예상치 못한 left expression 타입이 들어왔습니다. LeftExpressionType=%s(%zu)",
+				mcf::AST::Expression::CONVERT_TYPE_TO_STRING(expression->GetExpressionType()), mcf::ENUM_INDEX(expression->GetExpressionType()));
+			_errors.push(ErrorInfo{ ErrorID::FAIL_STATEMENT_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+			return nullptr;
+		}
+		}
+		constexpr const size_t EXPRESSION_COUNT = __COUNTER__ - EXPRESSION_COUNT_BEGIN;
+		static_assert(static_cast<size_t>(mcf::AST::Expression::Type::COUNT) == EXPRESSION_COUNT, "Expression type count is changed. this SWITCH need to be changed as well.");
+
+		ReadNextToken();
+		mcf::AST::Expression::Pointer rightExpression = ParseExpression(Precedence::LOWEST);
+		if (rightExpression.get() == nullptr || rightExpression->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+		{
+			const std::string message = mcf::Internal::ErrorMessage(u8"AssignExpression 명령문 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::FAIL_STATEMENT_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+			return nullptr;
+		}
+
+		if (ReadNextTokenIf(mcf::Token::Type::SEMICOLON) == false)
+		{
+			const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `SEMICOLON`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+				mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+			_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+			return nullptr;
+		}
+
+		return mcf::AST::Statement::AssignExpression::Make(std::move(expression), std::move(rightExpression));
+	}
+
 	if (ReadNextTokenIf(mcf::Token::Type::SEMICOLON) == false)
 	{
 		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `SEMICOLON`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
@@ -514,6 +568,56 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseUnusedStatement(void) noe
 	}
 
 	return mcf::AST::Statement::Unused::Make(std::move(identifiers));
+}
+
+mcf::AST::Statement::Pointer mcf::Parser::Object::ParseWhileStatement(void) noexcept
+{
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_WHILE, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_WHILE`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
+
+	if (ReadNextTokenIf(mcf::Token::Type::LPAREN) == false)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `LPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	ReadNextToken();
+	mcf::AST::Expression::Pointer conditionExpression = ParseExpression(mcf::Parser::Precedence::LOWEST);
+	if (conditionExpression.get() == nullptr || conditionExpression->GetExpressionType() == mcf::AST::Expression::Type::INVALID)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"While 명령문 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_STATEMENT_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return nullptr;
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::RPAREN) == false)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `RPAREN`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	if (ReadNextTokenIf(mcf::Token::Type::LBRACE) == false)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `LBRACE`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+
+	mcf::AST::Statement::Pointer statementBlock = ParseBlockStatement();
+	if (statementBlock.get() == nullptr || statementBlock->GetStatementType() != mcf::AST::Statement::Type::BLOCK)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"Func 명령문 파싱에 실패하였습니다. 파싱 실패 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::FAIL_STATEMENT_PARSING, _lexer.GetName(), message, _currentToken.Line, _currentToken.Index });
+		return mcf::AST::Statement::Invalid::Make();
+	}
+	return mcf::AST::Statement::While::Make(std::move(conditionExpression), std::move(mcf::AST::Statement::Block::Pointer(static_cast<mcf::AST::Statement::Block*>(statementBlock.release()))));
 }
 
 mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicIntermediate(void) noexcept
@@ -819,6 +923,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -896,6 +1001,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+		case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 		case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 		case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];

@@ -198,7 +198,34 @@ namespace UnitTest
 						TokenEOF,
 					},
 				},
-				//{ // 13. bool 변수 및 비교/논리 연산자
+				{ // 13. while 블록
+					"let i: dword = 0; while(i < 5) { i = i + 1; }",
+					{
+						TokenLet,
+						TokenIdentifier("i"),
+						TokenColon,
+						TokenDword,
+						TokenAssign,
+						TokenInteger("0"),
+						TokenSemicolon,
+						TokenWhile,
+						TokenLParen,
+						TokenIdentifier("i"),
+						TokenLT,
+						TokenInteger("5"),
+						TokenRParen,
+						TokenLBrace,
+						TokenIdentifier("i"),
+						TokenAssign,
+						TokenIdentifier("i"),
+						TokenPlus,
+						TokenInteger("1"),
+						TokenSemicolon,
+						TokenRBrace,
+						TokenEOF,
+					},
+				},
+				//{ // 14. bool 변수 및 비교/논리 연산자
 				//	"const bool foo = false; const bool boo = true; const bool jar = foo == boo; const bool bar = jar != boo; const bool tar = !jar;",
 				//	{
 				//		{mcf::Token::Type::IDENTIFIER, "const"},
@@ -424,7 +451,12 @@ namespace UnitTest
 				* {
 				*	unused(foo, boo, arr, arr2);
 				*	let message: byte[] = "Hello, World! Value=%d\n";
-				*	printf(message as unsigned qword, intVal);
+				*	let i: dword = 0;
+				*	while(i < 5)
+				*	{
+				*		printf(message as unsigned qword, intVal);
+				*		i = i + 1;
+				*	}
 				* }
 				*/
 				TokenMain,
@@ -452,6 +484,20 @@ namespace UnitTest
 				TokenAssign,
 				TokenString("\"Hello, World! Value=%d\\n\""),
 				TokenSemicolon,
+				TokenLet,
+				TokenIdentifier("i"),
+				TokenColon,
+				TokenDword,
+				TokenAssign,
+				TokenInteger("0"),
+				TokenSemicolon,
+				TokenWhile,
+				TokenLParen,
+				TokenIdentifier("i"),
+				TokenLT,
+				TokenInteger("5"),
+				TokenRParen,
+				TokenLBrace,
 				TokenIdentifier("printf"),
 				TokenLParen,
 				TokenIdentifier("message"),
@@ -462,6 +508,13 @@ namespace UnitTest
 				TokenIdentifier("intVal"),
 				TokenRParen,
 				TokenSemicolon,
+				TokenIdentifier("i"),
+				TokenAssign,
+				TokenIdentifier("i"),
+				TokenPlus,
+				TokenInteger("1"),
+				TokenSemicolon,
+				TokenRBrace,
 				TokenRBrace,
 
 				// EOF

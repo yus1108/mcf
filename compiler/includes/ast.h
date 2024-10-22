@@ -550,7 +550,9 @@ namespace mcf
 				FUNC,
 				MAIN,
 				EXPRESSION,
+				ASSIGN_EXPRESSION,
 				UNUSED,
+				WHILE,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -569,7 +571,9 @@ namespace mcf
 				"FUNC",
 				"MAIN",
 				"EXPRESSION",
+				"ASSIGN_EXPRESSION",
 				"UNUSED",
+				"WHILE",
 			};
 			constexpr const size_t STATEMENT_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == STATEMENT_TYPES_SIZE, "statement type count not matching!");
@@ -800,14 +804,39 @@ namespace mcf
 				explicit Expression(void) noexcept = default;
 				explicit Expression(mcf::AST::Expression::Pointer&& expression) noexcept;
 
-				mcf::AST::Expression::Interface* GetUnsafeExpression(void) noexcept { return _expression.get(); }
-				const mcf::AST::Expression::Interface* GetUnsafeExpression(void) const noexcept { return _expression.get(); }
+				inline mcf::AST::Expression::Interface* GetUnsafeExpression(void) noexcept { return _expression.get(); }
+				inline const mcf::AST::Expression::Interface* GetUnsafeExpression(void) const noexcept { return _expression.get(); }
 
 				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::EXPRESSION; }
 				virtual const std::string ConvertToString(void) const noexcept override final;
 
 			private:
 				mcf::AST::Expression::Pointer _expression;
+			};
+
+			class AssignExpression : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<AssignExpression>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<AssignExpression>(std::move(args)...); }
+
+			public:
+				explicit AssignExpression(void) noexcept = default;
+				explicit AssignExpression(mcf::AST::Expression::Pointer&& left, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				inline mcf::AST::Expression::Interface* GetUnsafeLeftExpression(void) noexcept { return _left.get(); }
+				inline const mcf::AST::Expression::Interface* GetUnsafeLeftExpression(void) const noexcept { return _left.get(); }
+				inline mcf::AST::Expression::Interface* GetUnsafeRightExpression(void) noexcept { return _right.get(); }
+				inline const mcf::AST::Expression::Interface* GetUnsafeRightExpression(void) const noexcept { return _right.get(); }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::ASSIGN_EXPRESSION; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _left;
+				mcf::AST::Expression::Pointer _right;
 			};
 
 			class Unused : public Interface
@@ -837,6 +866,29 @@ namespace mcf
 
 			private:
 				mcf::AST::Expression::Identifier::PointerVector _identifiers;
+			};
+
+			class While : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<While>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<While>(std::move(args)...); }
+
+			public:
+				explicit While(void) noexcept = default;
+				explicit While(mcf::AST::Expression::Pointer&& condition, mcf::AST::Statement::Block::Pointer&& block) noexcept;
+
+				inline const mcf::AST::Expression::Interface* GetUnsafeConditionPointer(void) const noexcept { return _condition.get(); }
+				inline const mcf::AST::Statement::Block* GetUnsafeBlockPointer(void) const noexcept { return _block.get(); }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::WHILE; }
+				virtual const std::string ConvertToString(void) const noexcept override final;
+
+			private:
+				mcf::AST::Expression::Pointer _condition;
+				mcf::AST::Statement::Block::Pointer _block;
 			};
 		}
 

@@ -278,10 +278,9 @@ void mcf::Object::Scope::DetermineUnknownVariableTypeSize(const std::string& nam
 const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object::FunctionInfo& info) noexcept
 {
 	MCF_DEBUG_ASSERT(info.Name.empty() == false, u8"이름이 비어 있으면 안됩니다.");
-	MCF_DEBUG_ASSERT(info.Definition.LocalScope == nullptr, u8"로컬 스코프가 이미 할당 되어 있습니다.");
+	MCF_DEBUG_ASSERT(info.LocalScope == nullptr, u8"로컬 스코프가 이미 할당 되어 있습니다.");
 
-	_tree->Locals.emplace_back(std::make_unique<Scope>(_tree, this, true));
-	if (_tree->Locals.back() == nullptr)
+	if (MakeLocalScope(&info.LocalScope, true) == false)
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
 		return false;
@@ -292,11 +291,9 @@ const bool mcf::Object::Scope::MakeLocalScopeToFunctionInfo(_Inout_ mcf::Object:
 		const size_t paramCount = info.Params.Variables.size();
 		for (size_t i = 0; i < paramCount; ++i)
 		{
-			_tree->Locals.back()->DefineVariable(info.Params.Variables[i].Name, info.Params.Variables[i]);
+			info.LocalScope->DefineVariable(info.Params.Variables[i].Name, info.Params.Variables[i]);
 		}
 	}
-
-	info.Definition.LocalScope = _tree->Locals.back().get();
 	return true;
 }
 
@@ -338,7 +335,21 @@ const mcf::Object::FunctionInfo mcf::Object::Scope::FindInternalFunction(const I
 	return _tree->InternalFunctionInfosByTypes[mcf::ENUM_INDEX(functionType)];
 }
 
-const mcf::Object::TypeInfo mcf::IR::Expression::Interface::GetDatTypeFromExpression(const mcf::IR::Expression::Interface* expression) noexcept
+const bool mcf::Object::Scope::MakeLocalScope(_Outptr_ mcf::Object::Scope** outScopePtr, const bool isFunctionScope) noexcept
+{
+	MCF_DEBUG_ASSERT(*outScopePtr == nullptr, u8"outScope는 null로 초기화 되어 있어야합니다.");
+	_tree->Locals.emplace_back(std::make_unique<Scope>(_tree, this, isFunctionScope));
+	if (_tree->Locals.back() == nullptr)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return false;
+	}
+
+	*outScopePtr = _tree->Locals.back().get();
+	return true;
+}
+
+const mcf::Object::TypeInfo mcf::IR::Expression::Interface::GetDataTypeFromExpression(const mcf::IR::Expression::Interface* expression) noexcept
 {
 	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (expression->GetExpressionType())
@@ -378,13 +389,14 @@ const mcf::Object::TypeInfo mcf::IR::Expression::Interface::GetDatTypeFromExpres
 	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
 		return static_cast<const mcf::IR::Expression::StaticCast*>(expression)->GetCastedDatType();
 
+	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
 			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expression->GetExpressionType()), mcf::ENUM_INDEX(expression->GetExpressionType()), expression->Inspect().c_str());
 		break;
 	}
 	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "expression type count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "get data type from expression.");
 	return mcf::Object::TypeInfo();
 }
 
@@ -584,12 +596,26 @@ mcf::IR::Expression::StaticCast::StaticCast(mcf::IR::Expression::Pointer&& casti
 	MCF_DEBUG_ASSERT(_castedType.IsValid(), u8"변수에 캐스팅 되려하는 타입이 유효하지 않습니다.");
 
 #if defined(_DEBUG)
-	const mcf::Object::TypeInfo typeToCast = GetDatTypeFromExpression(_castingValue.get());
+	const mcf::Object::TypeInfo typeToCast = GetDataTypeFromExpression(_castingValue.get());
 	MCF_DEBUG_ASSERT(typeToCast.IsStaticCastable(_castedType), u8"정적 캐스팅이 불가능합니다. 현재 타입[%s] 캐스팅 타입[%s]", typeToCast.Inspect().c_str(), _castedType.Inspect().c_str());
 #endif
 }
 
 const std::string mcf::IR::Expression::StaticCast::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
+}
+
+mcf::IR::Expression::Assign::Assign(mcf::IR::Expression::Pointer&& left, mcf::IR::Expression::Pointer&& right) noexcept
+	: _left(std::move(left))
+	, _right(std::move(right))
+{
+	MCF_DEBUG_ASSERT(_left.get() && _left->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"left 표현식이 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(_right.get() && _right->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"right 표현식이 유효하지 않습니다.");
+}
+
+const std::string mcf::IR::Expression::Assign::Inspect(void) const noexcept
 {
 	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
 	return std::string();
@@ -994,8 +1020,8 @@ const std::string mcf::IR::Func::Inspect(void) const noexcept
 	const size_t size = _defines.size();
 	for (size_t i = 0; i < size; i++)
 	{
-		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_body[%zu]가 nullptr 여선 안됩니다.", i);
-		MCF_DEBUG_ASSERT(_defines[i]->GetType() == Type::ASM, u8"_body[%zu]가 유효하지 않습니다.", i);
+		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_defines[%zu]가 nullptr 여선 안됩니다.", i);
+		MCF_DEBUG_ASSERT(_defines[i]->GetType() == Type::ASM, u8"_defines[%zu]가 유효하지 않습니다.", i);
 		buffer += _defines[i]->Inspect();
 	}
 	return buffer;
@@ -1011,6 +1037,33 @@ const std::string mcf::IR::Return::Inspect(void) const noexcept
 {
 	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
 	return std::string();
+}
+
+mcf::IR::While::While(mcf::IR::ASM::PointerVector&& defines) noexcept
+	: _defines(std::move(defines))
+{
+	MCF_DEBUG_ASSERT(_defines.empty() == false, u8"_defines가 비어 있으면 안됩니다.");
+#if defined(_DEBUG)
+	const size_t size = _defines.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_defines[%zu]가 nullptr 여선 안됩니다.", i);
+	}
+#endif
+}
+
+const std::string mcf::IR::While::Inspect(void) const noexcept
+{
+	MCF_DEBUG_ASSERT(_defines.empty() == false, u8"_defines가 비어 있으면 안됩니다.");
+	std::string buffer;
+	const size_t size = _defines.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_defines[%zu]가 nullptr 여선 안됩니다.", i);
+		MCF_DEBUG_ASSERT(_defines[i]->GetType() == Type::ASM, u8"_defines[%zu]가 유효하지 않습니다.", i);
+		buffer += _defines[i]->Inspect();
+	}
+	return buffer;
 }
 
 mcf::IR::Program::Program(PointerVector&& objects) noexcept
