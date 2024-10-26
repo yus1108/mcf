@@ -283,6 +283,14 @@ void mcf::Evaluator::FunctionCallIRGenerator::AddVariadicMemory(_Notnull_ const 
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
@@ -401,6 +409,14 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddParameter(_Notnull_ const
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 	}
+
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
 		
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
@@ -543,6 +559,14 @@ const bool mcf::Evaluator::FunctionCallIRGenerator::AddUnsafePointerParameterInt
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
@@ -588,12 +612,14 @@ void mcf::Evaluator::MemoryAllocator::Realign(const size_t alignment) noexcept
 mcf::Evaluator::FunctionIRGenerator::FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept
 	: _returnType(info.ReturnType)
 {
+	// 함수 관련 초기화 코드를 추가합니다.
 	_beginCodes.emplace_back(mcf::IR::ASM::ProcBegin::Make(info.Name));
 	_beginCodes.emplace_back(mcf::IR::ASM::Push::Make(mcf::IR::ASM::Register::RBP));
 	_endCodes.emplace_back(mcf::IR::ASM::ProcEnd::Make(info.Name));
 	_endCodes.emplace_back(mcf::IR::ASM::Ret::Make());
 	_endCodes.emplace_back(mcf::IR::ASM::Pop::Make(mcf::IR::ASM::Register::RBP));
 
+	// 함수 인자 초기화 관련 코드를 처리합니다.
 	const size_t paramCount = info.Params.Variables.size();
 	const mcf::Object::TypeInfo paramType = mcf::Object::TypeInfo::MakePrimitive(true, "qword", sizeof(unsigned __int64));
 	MCF_DEBUG_ASSERT(paramType.IsValid(), u8"");
@@ -748,6 +774,14 @@ void mcf::Evaluator::FunctionIRGenerator::AddLetStatement(_Notnull_ const mcf::I
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
@@ -832,6 +866,14 @@ void mcf::Evaluator::FunctionIRGenerator::AddExpressionObject(_Notnull_ const mc
 		break;
 
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -1007,6 +1049,14 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
@@ -1148,6 +1198,14 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(const mcf::Objec
 			MCF_DEBUG_TODO(u8"구현 필요");
 			return false;
 		}
+		break;
+
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
@@ -1437,7 +1495,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalMainStatement(_Notnull_ const mcf::
 		return mcf::IR::Invalid::Make();
 	}
 
-	// TODO : 메인 함수에서는 특정 인자들만 받을 수 있도록 개선
+	// TODO #35: 메인 함수에서는 특정 인자들만 받을 수 있도록 개선
 	const size_t paramCount = functionInfo.Params.Variables.size();
 	for (size_t i = 0; i < paramCount; ++i)
 	{
@@ -1470,15 +1528,73 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalMainStatement(_Notnull_ const mcf::
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
-	MCF_UNUSED(statement, scope);
-	MCF_DEBUG_TODO(u8"구현 필요");
-	return mcf::IR::Pointer();
+	mcf::IR::Expression::Pointer conditionObject = EvalExpression(statement->GetUnsafeConditionPointer(), scope);
+	if (conditionObject.get() == nullptr)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
+	switch (conditionObject->GetExpressionType())
+	{
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		break;
+
+	case IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::LOCAL_VARIABLE_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::INTEGER: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::CALL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case IR::Expression::Type::STRING: __COUNTER__; [[fallthrough]];
+	case IR::Expression::Type::INITIALIZER: __COUNTER__; [[fallthrough]];
+	case IR::Expression::Type::MAP_INITIALIZER: __COUNTER__; [[fallthrough]];
+	case IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
+	default:
+		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
+			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(conditionObject->GetExpressionType()), mcf::ENUM_INDEX(conditionObject->GetExpressionType()), conditionObject->Inspect().c_str());
+		return mcf::IR::Invalid::Make();
+	}
+	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "validate whether the expression is conditional expression.");
+
+	mcf::Object::Scope* blockScope = nullptr;
+	if (scope->MakeLocalScope(&blockScope, false) == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	mcf::IR::PointerVector blockObject = EvalBlockStatement(statement->GetUnsafeBlockPointer(), blockScope);
+	return mcf::IR::While::Make(std::move(conditionObject), std::move(blockObject), blockScope);
 }
 
 mcf::IR::Pointer mcf::Evaluator::Object::EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
-	MCF_DEBUG_TODO(u8"구현 필요");
-
 	mcf::IR::Expression::Pointer leftObject = EvalExpression(statement->GetUnsafeLeftExpression(), scope);
 	if (leftObject.get() == nullptr || leftObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
 	{
@@ -1494,6 +1610,23 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalAssignExpressionStatement(_Notnull_
 	}
 
 	return mcf::IR::Expression::Assign::Make(std::move(leftObject), std::move(rightObject));
+}
+
+mcf::IR::PointerVector mcf::Evaluator::Object::EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	mcf::IR::PointerVector objects;
+	const size_t statementCount = statement->GetStatementCount();
+	for (size_t i = 0; i < statementCount; i++)
+	{
+		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), scope);
+		if (object.get() == nullptr || object->GetType() == mcf::IR::Type::INVALID)
+		{
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return mcf::IR::PointerVector();
+		}
+		objects.emplace_back(std::move(object));
+	}
+	return objects;
 }
 
 mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept
@@ -1557,7 +1690,7 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(c
 			objects.clear();
 			MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. IRType=%s(%zu) ConvertedString=`%s`",
 				mcf::IR::CONVERT_TYPE_TO_STRING(object->GetType()), mcf::ENUM_INDEX(object->GetType()), object->Inspect().c_str());
-			break;
+			return mcf::IR::ASM::PointerVector();
 		}
 		constexpr const size_t IR_TYPE_COUNT = __COUNTER__ - IR_TYPE_COUNT_BEGIN;
 		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
@@ -1691,7 +1824,7 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalExpression(_Notnull_ co
 		break;
 
 	case AST::Expression::Type::INFIX: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+		object = EvalInfixExpression(static_cast<const mcf::AST::Expression::Infix*>(expression), scope);
 		break;
 
 	case AST::Expression::Type::CALL: __COUNTER__;
@@ -1828,6 +1961,14 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalCallExpression(_Notnull
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::STRING: __COUNTER__; [[fallthrough]];
@@ -1953,6 +2094,14 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalIndexExpression(_Notnul
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
@@ -1981,6 +2130,38 @@ mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalInitializerExpression(_
 		}
 	}
 	return mcf::IR::Expression::Initializer::Make(std::move(keyVector));
+}
+
+mcf::IR::Expression::Pointer mcf::Evaluator::Object::EvalInfixExpression(_Notnull_ const mcf::AST::Expression::Infix* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept
+{
+	mcf::IR::Expression::Pointer leftObject = EvalExpression(expression->GetUnsafeLeftExpressionPointer(), scope);
+	if (leftObject.get() == nullptr || leftObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Expression::Invalid::Make();
+	}
+
+	mcf::IR::Expression::Pointer rightObject = EvalExpression(expression->GetUnsafeRightExpressionPointer(), scope);
+	if (rightObject.get() == nullptr || rightObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Expression::Invalid::Make();
+	}
+
+	const mcf::Token::Data& token = expression->GetInfixOperator();
+	if (mcf::IR::Expression::Conditional::IsValidTokenType(token.Type))
+	{
+		return mcf::IR::Expression::Conditional::Make(std::move(leftObject), token, std::move(rightObject));
+	}
+
+	if (mcf::IR::Expression::Arithmetic::IsValidTokenType(token.Type))
+	{
+		return mcf::IR::Expression::Arithmetic::Make(std::move(leftObject), token, std::move(rightObject));
+	}
+
+	MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(token.Type), mcf::ENUM_INDEX(token.Type), token.Literal.c_str());
+	return mcf::IR::Expression::Invalid::Make();
 }
 
 mcf::Object::FunctionInfo mcf::Evaluator::Object::BuildFunctionInfo(const std::string& name, 
@@ -2060,6 +2241,14 @@ mcf::Object::TypeInfo mcf::Evaluator::Object::MakeArrayTypeInfo(_In_ mcf::Object
 		break;
 
 	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -2188,6 +2377,14 @@ const std::vector<size_t> mcf::Evaluator::Object::CalculateMaximumArrayIndex(_No
 		MCF_DEBUG_ASSERT(staticCast->GetCastedDatType().HasUnknownArrayIndex(), u8"unknown 배열이 있으면 안됩니다.");
 		return staticCast->GetCastedDatType().ArraySizeList;
 	}
+
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
 
 	case mcf::IR::Expression::Type::TYPE_IDENTIFIER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__; [[fallthrough]];

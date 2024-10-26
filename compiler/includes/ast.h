@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include <lexer.h>
 
 namespace mcf
@@ -286,6 +287,11 @@ namespace mcf
 			public:
 				explicit Infix(void) noexcept = default;
 				explicit Infix(mcf::AST::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::AST::Expression::Pointer&& right) noexcept;
+
+				inline mcf::Token::Data GetInfixOperator(void) noexcept { return _infixOperator; }
+				inline const mcf::Token::Data& GetInfixOperator(void) const noexcept { return _infixOperator; }
+				const mcf::AST::Expression::Interface* GetUnsafeLeftExpressionPointer(void) const noexcept { return _left.get(); }
+				const mcf::AST::Expression::Interface* GetUnsafeRightExpressionPointer(void) const noexcept { return _right.get(); }
 
 				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::INFIX; }
 				virtual const std::string ConvertToString(void) const noexcept override final;

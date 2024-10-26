@@ -6,6 +6,7 @@
 #include <unordered_set>
 
 #include <common.h>
+#include <lexer.h>
 
 namespace mcf
 {
@@ -143,7 +144,6 @@ namespace mcf
 			inline const ScopeTree* GetUnsafeScopeTreePointer(void) const noexcept { return _tree;}
 
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
-			const bool DefineTypeValue(const std::string& typeName, const std::string , const Data& data) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
 
 			const bool IsAllVariablesUsed(void) const noexcept;
@@ -283,6 +283,8 @@ namespace mcf
 				CALL,
 				STATIC_CAST,
 				ASSIGN,
+				CONDITIONAL,
+				ARITHMETIC,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -303,6 +305,8 @@ namespace mcf
 				"CALL",
 				"STATIC_CAST",
 				"ASSIGN",
+				"CONDITIONAL",
+				"ARITHMETIC",
 			};
 			constexpr const size_t EXPRESSION_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == EXPRESSION_IR_TYPE_SIZE, "expression ir type count not matching!");
@@ -872,6 +876,66 @@ namespace mcf
 				mcf::IR::Expression::Pointer _left;
 				mcf::IR::Expression::Pointer _right;
 			};
+
+			class Conditional final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Conditional>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Conditional>(std::move(args)...); }
+
+				static const bool IsValidTokenType(const mcf::Token::Type type) noexcept;
+
+			public:
+				explicit Conditional(void) noexcept = default;
+				explicit Conditional(mcf::IR::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::IR::Expression::Pointer&& right) noexcept;
+
+				inline mcf::Token::Data GetInfixOperator(void) noexcept { return _infixOperator; }
+				inline const mcf::Token::Data& GetInfixOperator(void) const noexcept { return _infixOperator; }
+				inline mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) noexcept { return _left.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) const noexcept { return _left.get(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) noexcept { return _right.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) const noexcept { return _right.get(); }
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::CONDITIONAL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _infixOperator;
+				mcf::IR::Expression::Pointer _left;
+				mcf::IR::Expression::Pointer _right;
+			};
+
+			class Arithmetic final : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Arithmetic>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Arithmetic>(std::move(args)...); }
+
+				static const bool IsValidTokenType(const mcf::Token::Type type) noexcept;
+
+			public:
+				explicit Arithmetic(void) noexcept = default;
+				explicit Arithmetic(mcf::IR::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::IR::Expression::Pointer&& right) noexcept;
+
+				inline mcf::Token::Data GetInfixOperator(void) noexcept { return _infixOperator; }
+				inline const mcf::Token::Data& GetInfixOperator(void) const noexcept { return _infixOperator; }
+				inline mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) noexcept { return _left.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeLeftExpression(void) const noexcept { return _left.get(); }
+				inline mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) noexcept { return _right.get(); }
+				inline const mcf::IR::Expression::Interface* GetUnsafeRightExpression(void) const noexcept { return _right.get(); }
+
+				inline virtual const Type GetExpressionType(void) const noexcept override final { return Type::ARITHMETIC; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			private:
+				mcf::Token::Data _infixOperator;
+				mcf::IR::Expression::Pointer _left;
+				mcf::IR::Expression::Pointer _right;
+			};
 		}
 
 		namespace ASM
@@ -1295,13 +1359,15 @@ namespace mcf
 
 		public:
 			explicit While(void) noexcept = default;
-			explicit While(mcf::IR::ASM::PointerVector&& defines) noexcept;
+			explicit While(mcf::IR::Expression::Pointer&& condition, mcf::IR::PointerVector&& block, _Notnull_ const mcf::Object::Scope* const blockScope) noexcept;
 
 			inline virtual const Type GetType(void) const noexcept override final { return Type::WHILE; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
 		private:
-			mcf::IR::ASM::PointerVector _defines;
+			mcf::IR::Expression::Pointer _condition;
+			mcf::IR::PointerVector _block;
+			const mcf::Object::Scope* const _blockScope;
 		};
 
 		class Program final : public Interface

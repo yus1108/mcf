@@ -114,6 +114,7 @@ namespace mcf
 			mcf::IR::Pointer EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
+			mcf::IR::PointerVector EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::ASM::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept;
@@ -129,6 +130,7 @@ namespace mcf
 			mcf::IR::Expression::Pointer EvalAsExpression(_Notnull_ const mcf::AST::Expression::As* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalInitializerExpression(_Notnull_ const mcf::AST::Expression::Initializer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+			mcf::IR::Expression::Pointer EvalInfixExpression(_Notnull_ const mcf::AST::Expression::Infix* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
 			mcf::Object::FunctionInfo BuildFunctionInfo(const std::string& name, _Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, const mcf::AST::Intermediate::TypeSignature* returnType, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 

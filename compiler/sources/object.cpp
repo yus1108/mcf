@@ -389,6 +389,14 @@ const mcf::Object::TypeInfo mcf::IR::Expression::Interface::GetDataTypeFromExpre
 	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
 		return static_cast<const mcf::IR::Expression::StaticCast*>(expression)->GetCastedDatType();
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
 	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
@@ -616,6 +624,160 @@ mcf::IR::Expression::Assign::Assign(mcf::IR::Expression::Pointer&& left, mcf::IR
 }
 
 const std::string mcf::IR::Expression::Assign::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
+}
+
+const bool mcf::IR::Expression::Conditional::IsValidTokenType(const mcf::Token::Type type) noexcept
+{
+	constexpr const size_t TOKENTYPE_COUNT_BEGIN = __COUNTER__;
+	switch (type)
+	{
+	case Token::Type::EQUAL: __COUNTER__; [[fallthrough]];
+	case Token::Type::NOT_EQUAL: __COUNTER__; [[fallthrough]];
+	case Token::Type::LT: __COUNTER__; [[fallthrough]];
+	case Token::Type::GT: __COUNTER__;
+		return true;
+
+	case Token::Type::PLUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::MINUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASTERISK: __COUNTER__; [[fallthrough]];
+	case Token::Type::SLASH: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_INCLUDE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
+	case Token::Type::IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::INTEGER: __COUNTER__; [[fallthrough]];
+	case Token::Type::STRING: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
+	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
+	case Token::Type::AMPERSAND: __COUNTER__; [[fallthrough]];
+	case Token::Type::LPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::DOUBLE_COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMA: __COUNTER__; [[fallthrough]];
+	case Token::Type::POINTING: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMENT: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	default:
+		break;
+	}
+	constexpr const size_t TOKENTYPE_COUNT = __COUNTER__ - TOKENTYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKENTYPE_COUNT, "evaluate whether token type is conditional for infix expression.");
+	return false;
+}
+
+mcf::IR::Expression::Conditional::Conditional(mcf::IR::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::IR::Expression::Pointer&& right) noexcept
+	: _left(std::move(left))
+	, _infixOperator(infixOperator)
+	, _right(std::move(right))
+{
+	MCF_DEBUG_ASSERT(_infixOperator.Type != mcf::Token::Type::INVALID, u8"_infixOperator가 유효하지 않습니다..");
+	MCF_DEBUG_ASSERT(_left.get() && _left->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"left 표현식이 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(_right.get() && _right->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"right 표현식이 유효하지 않습니다.");
+}
+
+const std::string mcf::IR::Expression::Conditional::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
+}
+
+const bool mcf::IR::Expression::Arithmetic::IsValidTokenType(const mcf::Token::Type type) noexcept
+{
+	constexpr const size_t TOKENTYPE_COUNT_BEGIN = __COUNTER__;
+	switch (type)
+	{
+	case Token::Type::PLUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::MINUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASTERISK: __COUNTER__; [[fallthrough]];
+	case Token::Type::SLASH: __COUNTER__;
+		return true;
+
+	case Token::Type::EQUAL: __COUNTER__; [[fallthrough]];
+	case Token::Type::NOT_EQUAL: __COUNTER__; [[fallthrough]];
+	case Token::Type::LT: __COUNTER__; [[fallthrough]];
+	case Token::Type::GT: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_INCLUDE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
+	case Token::Type::IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::INTEGER: __COUNTER__; [[fallthrough]];
+	case Token::Type::STRING: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
+	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
+	case Token::Type::AMPERSAND: __COUNTER__; [[fallthrough]];
+	case Token::Type::LPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::DOUBLE_COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMA: __COUNTER__; [[fallthrough]];
+	case Token::Type::POINTING: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMENT: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	default:
+		break;
+	}
+	constexpr const size_t TOKENTYPE_COUNT = __COUNTER__ - TOKENTYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKENTYPE_COUNT, "evaluate whether token type is arithemetic for infix expression.");
+	return false;
+}
+
+mcf::IR::Expression::Arithmetic::Arithmetic(mcf::IR::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::IR::Expression::Pointer&& right) noexcept
+	: _left(std::move(left))
+	, _infixOperator(infixOperator)
+	, _right(std::move(right))
+{
+	MCF_DEBUG_ASSERT(_infixOperator.Type != mcf::Token::Type::INVALID, u8"_infixOperator가 유효하지 않습니다..");
+	MCF_DEBUG_ASSERT(_left.get() && _left->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"left 표현식이 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(_right.get() && _right->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"right 표현식이 유효하지 않습니다.");
+}
+
+const std::string mcf::IR::Expression::Arithmetic::Inspect(void) const noexcept
 {
 	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
 	return std::string();
@@ -1030,7 +1192,7 @@ const std::string mcf::IR::Func::Inspect(void) const noexcept
 mcf::IR::Return::Return(mcf::IR::Expression::Pointer&& returnExpression) noexcept
 	: _returnExpression(std::move(returnExpression))
 {
-	MCF_DEBUG_ASSERT(_returnExpression.get() != nullptr, u8"_returnExpression가 nullptr 여선 안됩니다.");
+	MCF_DEBUG_ASSERT(_returnExpression.get() && _returnExpression->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"_returnExpression 표현식이 유효하지 않습니다.");
 }
 
 const std::string mcf::IR::Return::Inspect(void) const noexcept
@@ -1039,31 +1201,25 @@ const std::string mcf::IR::Return::Inspect(void) const noexcept
 	return std::string();
 }
 
-mcf::IR::While::While(mcf::IR::ASM::PointerVector&& defines) noexcept
-	: _defines(std::move(defines))
+mcf::IR::While::While(mcf::IR::Expression::Pointer&& condition, mcf::IR::PointerVector&& block, _Notnull_ const mcf::Object::Scope* const blockScope) noexcept
+	: _condition(std::move(condition))
+	, _block(std::move(block))
+	, _blockScope(blockScope)
 {
-	MCF_DEBUG_ASSERT(_defines.empty() == false, u8"_defines가 비어 있으면 안됩니다.");
+	MCF_DEBUG_ASSERT(_condition.get() && _condition->GetExpressionType() != mcf::IR::Expression::Type::INVALID, u8"_condition 표현식이 유효하지 않습니다.");
 #if defined(_DEBUG)
-	const size_t size = _defines.size();
+	const size_t size = _block.size();
 	for (size_t i = 0; i < size; i++)
 	{
-		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_defines[%zu]가 nullptr 여선 안됩니다.", i);
+		MCF_DEBUG_ASSERT(_block[i].get() && _block[i]->GetType() != mcf::IR::Type::INVALID, u8"_block[%zu] 표현식이 유효하지 않습니다.", i);
 	}
 #endif
 }
 
 const std::string mcf::IR::While::Inspect(void) const noexcept
 {
-	MCF_DEBUG_ASSERT(_defines.empty() == false, u8"_defines가 비어 있으면 안됩니다.");
-	std::string buffer;
-	const size_t size = _defines.size();
-	for (size_t i = 0; i < size; i++)
-	{
-		MCF_DEBUG_ASSERT(_defines[i].get() != nullptr, u8"_defines[%zu]가 nullptr 여선 안됩니다.", i);
-		MCF_DEBUG_ASSERT(_defines[i]->GetType() == Type::ASM, u8"_defines[%zu]가 유효하지 않습니다.", i);
-		buffer += _defines[i]->Inspect();
-	}
-	return buffer;
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
 }
 
 mcf::IR::Program::Program(PointerVector&& objects) noexcept
