@@ -107,6 +107,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];

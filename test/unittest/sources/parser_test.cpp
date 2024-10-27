@@ -441,7 +441,39 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 			return true;
 		}
 	);
-	_names.emplace_back( u8"파일 파싱 테스트" );
+	_names.emplace_back(u8"while 명령문 테스트");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			const struct TestCase
+			{
+				const std::string Input;
+				const std::string Expected;
+			} testCases[] =
+			{
+				{
+					"let i: dword = 0; while(i < 5) { i = i + 1; }",
+					"[Let: <VariableSignature: <Identifier: i> COLON <TypeSignature: <Identifier: dword>>> ASSIGN <Integer: 0> SEMICOLON]\n"
+					"[While: LPAREN <Infix: <Identifier: i> LT <Integer: 5>> RPAREN [Block: LBRACE [Expression: <Identifier: i> ASSIGN <Infix: <Identifier: i> PLUS <Integer: 1>> SEMICOLON] RBRACE]]",
+				},
+			};
+			constexpr const size_t testCaseCount = MCF_ARRAY_SIZE(testCases);
+
+			for (size_t i = 0; i < testCaseCount; i++)
+			{
+				mcf::Parser::Object parser(testCases[i].Input, false);
+				mcf::AST::Program program;
+				parser.ParseProgram(program);
+				FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+				const std::string actual = program.ConvertToString();
+				FATAL_ASSERT(actual == testCases[i].Expected, "\ninput(index: %zu):\n%s\nexpected:\n%s\nactual:\n%s", i, testCases[i].Input.c_str(), testCases[i].Expected.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"파일 파싱 테스트");
 	_tests.emplace_back
 	(
 		[&]() -> bool
@@ -456,33 +488,37 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 				"[Let: <VariableSignature: <Identifier: true> COLON <TypeSignature: <Identifier: bool>>> ASSIGN <Integer: 1> SEMICOLON]\n"
 				"[IncludeLibrary: LT KEYWORD_ASM COMMA \"libcmt.lib\" GT]\n"
 				"[Extern <FunctionSignature: <Identifier: printf> <FunctionParams: LPAREN "
-					"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "
-					"<Variadic: <Identifier: args>> "
+				"<VariableSignature: <Identifier: format> COLON <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA "
+				"<Variadic: <Identifier: args>> "
 				"RPAREN> POINTING <TypeSignature: <Identifier: int32>>> SEMICOLON]\n"
 				"[Let: <VariableSignature: <Identifier: foo> COLON <TypeSignature: <Identifier: byte>>> ASSIGN <Integer: 0> SEMICOLON]\n"
 				"[Func: "
-					"<FunctionSignature: <Identifier: boo> <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING <TypeSignature: <Identifier: byte>>> "
-					"[Block: LBRACE [Return: <Integer: 0> SEMICOLON] RBRACE]"
+				"<FunctionSignature: <Identifier: boo> <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING <TypeSignature: <Identifier: byte>>> "
+				"[Block: LBRACE [Return: <Integer: 0> SEMICOLON] RBRACE]"
 				"]\n"
 				"[Let: <VariableSignature: <Identifier: arr> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN "
-					"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> "
+				"<Initializer: LBRACE <Integer: 0> COMMA <Integer: 1> COMMA <Integer: 2> COMMA RBRACE> "
 				"SEMICOLON]\n"
 				"[Let: <VariableSignature: <Identifier: arr2> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET <Integer: 5> RBRACKET>>> ASSIGN "
-					"<Initializer: LBRACE <Integer: 0> COMMA RBRACE> "
+				"<Initializer: LBRACE <Integer: 0> COMMA RBRACE> "
 				"SEMICOLON]\n"
 				"[Let: <VariableSignature: <Identifier: intVal> COLON <TypeSignature: <Identifier: int32>>> ASSIGN <Integer: 10> SEMICOLON]\n"
 				"[Main: <FunctionParams: LPAREN KEYWORD_VOID RPAREN> POINTING KEYWORD_VOID "
 				"[Block: LBRACE "
-					"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON] "
-					"[Let: <VariableSignature: <Identifier: message> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN <String: \"Hello, World! Value=%d\\n\"> SEMICOLON] "
+				"[Unused: LPAREN <Identifier: foo> COMMA <Identifier: arr> COMMA <Identifier: arr2> COMMA RPAREN SEMICOLON] "
+				"[Let: <VariableSignature: <Identifier: message> COLON <TypeSignature: <Index: <Identifier: byte> LBRACKET RBRACKET>>> ASSIGN <String: \"Hello, World! Value=%d\\n\"> SEMICOLON] "
+				"[Let: <VariableSignature: <Identifier: i> COLON <TypeSignature: <Identifier: dword>>> ASSIGN <Integer: 0> SEMICOLON] "
+				"[While: LPAREN <Infix: <Identifier: i> LT <Integer: 5>> RPAREN [Block: LBRACE "
 					"[Expression: <Call: <Identifier: printf> LPAREN <As: <Identifier: message> KEYWORD_AS <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
+					"[Expression: <Identifier: i> ASSIGN <Infix: <Identifier: i> PLUS <Integer: 1>> SEMICOLON] "
+				"RBRACE]] "
 				"RBRACE]]"
 				;
 			const size_t expectedResultLength = expectedResult.size();
 			mcf::Parser::Object parser("./test/unittest/texts/test_file_read.txt", true);
 			mcf::AST::Program program;
 			parser.ParseProgram(program);
-			FATAL_ASSERT(CheckParserErrors( parser ), u8"파싱에 실패 하였습니다.");
+			FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
 
 			const std::string actual = program.ConvertToString();
 			const size_t actualLength = actual.size();

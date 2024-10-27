@@ -26,11 +26,24 @@ main proc
 	lea rcx, [?0]
 	call ?CopyMemory
 	add rsp, 32
+	mov dword ptr [rsp + 24], 0
+?main_L0:
+	mov eax, dword ptr [rsp + 24]
+	mov ebx, 5
+	cmp eax, ebx
+	jl ?main_L1
+	jmp ?main_L2
+?main_L1:
 	sub rsp, 32
 	mov edx, intVal
 	lea rcx, [rsp + 32]
 	call printf
 	add rsp, 32
+	mov eax, dword ptr [rsp + 24]
+	add eax, 1
+	mov dword ptr [rsp + 24], eax
+	jmp ?main_L0
+?main_L2:
 	add rsp, 32
 	pop rbp
 	ret

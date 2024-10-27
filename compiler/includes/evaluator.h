@@ -68,15 +68,52 @@ namespace mcf
 		{
 			friend FunctionCallIRGenerator;
 		public:
+			static bool ConvertStatements(
+				_Inout_ mcf::Evaluator::FunctionIRGenerator& inOutGenerator, 
+				_Notnull_ const mcf::IR::PointerVector* statementsPointer, 
+				_Notnull_ const mcf::Object::Scope* scope) noexcept;
+
 			explicit FunctionIRGenerator(void) noexcept = delete;
 			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
 
-			void AddLetStatement(_Notnull_ const mcf::IR::Let* object, _Notnull_ mcf::Object::Scope* scope) noexcept;
-			void AddExpressionObject(_Notnull_ const mcf::IR::Expression::Interface* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
-			void AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept;
+			const bool IsReturnTypeVoid(void) const noexcept { return _returnType.IsValid() == false; }
+
 			mcf::IR::ASM::PointerVector GenerateIRCode(void) noexcept;
 
 		private:
+			const mcf::IR::ASM::Register EvaluateExpressionAndGetRegisterForMoving(
+				const mcf::IR::ASM::Register availableRegisters[sizeof(__int64)], 
+				_Notnull_ const mcf::IR::Expression::Interface* expression) noexcept;
+			mcf::IR::ASM::Pointer MoveExpressionToRegister(const mcf::IR::ASM::Register targetRegister, _Notnull_ const mcf::IR::Expression::Interface* expression) noexcept;
+
+			void AddCondition(
+				_Notnull_ const mcf::IR::Expression::Interface* condition, 
+				const std::string& labelTrue,
+				const std::string& labelFalse) noexcept;
+			const bool AddConditionalExpression(
+				_Notnull_ const mcf::IR::Expression::Conditional * object, 
+				const std::string& labelTrue,
+				const std::string& labelFalse) noexcept;
+
+			const bool AddAssignExpressionWithLocalVariable(
+				const mcf::Object::Variable& leftOperand,
+				_Notnull_ const mcf::IR::Expression::Interface* rightExpression,
+				_Notnull_ const mcf::Object::Scope* scope) noexcept;
+			const bool AddAssignExpression(_Notnull_ const mcf::IR::Expression::Assign* expression, _Notnull_ const mcf::Object::Scope* scope) noexcept;
+
+			const mcf::IR::ASM::Register AddArithmeticExpressionWithLocalVariable(
+				const mcf::Object::Variable& leftOperand,
+				_Notnull_ const mcf::IR::Expression::Interface* rightExpression,
+				_Notnull_ const mcf::Object::Scope* scope) noexcept;
+			const mcf::IR::ASM::Register AddArithmeticExpression(_Notnull_ const mcf::IR::Expression::Arithmetic* expression, _Notnull_ const mcf::Object::Scope* scope) noexcept;
+
+			const bool AddLetStatement(_Notnull_ const mcf::IR::Let* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
+			const bool AddExpressionStatement(_Notnull_ const mcf::IR::Expression::Interface* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
+			void AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept;
+			void AddWhileStatement(_Notnull_ const mcf::IR::While *object) noexcept;
+
+			const std::string CreateLabelName(void) noexcept;
+
 			const size_t GetLocalVariableOffset(const std::string& variableName) const noexcept;
 
 		private:
@@ -90,6 +127,8 @@ namespace mcf
 			mcf::Object::TypeInfo _returnType;
 			std::unordered_map<std::string, size_t> _localVariableIndicesMap;
 			std::unordered_map<std::string, size_t> _paramOffsetMap;
+			std::string _name;
+			size_t _labelCount = 0;
 		};
 
 		class Object final
@@ -98,6 +137,7 @@ namespace mcf
 			explicit Object(void) noexcept = default;
 
 			static const bool ValidateVariableTypeAndValue(const mcf::Object::Variable& variable, _Notnull_ const mcf::IR::Expression::Interface* value) noexcept;
+			static const bool ValidateExpressionTypes(_Notnull_ const mcf::IR::Expression::Interface* left, _Notnull_ const mcf::IR::Expression::Interface* right) noexcept;
 
 			mcf::IR::Program::Pointer EvalProgram(_Notnull_ const mcf::AST::Program* program, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
@@ -111,7 +151,10 @@ namespace mcf
 			mcf::IR::Pointer EvalReturnStatement(_Notnull_ const mcf::AST::Statement::Return* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalMainStatement(_Notnull_ const mcf::AST::Statement::Main* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 
+			mcf::IR::PointerVector EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::ASM::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept;
@@ -127,6 +170,7 @@ namespace mcf
 			mcf::IR::Expression::Pointer EvalAsExpression(_Notnull_ const mcf::AST::Expression::As* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalIndexExpression(_Notnull_ const mcf::AST::Expression::Index* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 			mcf::IR::Expression::Pointer EvalInitializerExpression(_Notnull_ const mcf::AST::Expression::Initializer* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
+			mcf::IR::Expression::Pointer EvalInfixExpression(_Notnull_ const mcf::AST::Expression::Infix* expression, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 
 			mcf::Object::FunctionInfo BuildFunctionInfo(const std::string& name, _Notnull_ const mcf::AST::Intermediate::FunctionParams* functionParams, const mcf::AST::Intermediate::TypeSignature* returnType, _Notnull_ mcf::Object::Scope* scope) const noexcept;
 

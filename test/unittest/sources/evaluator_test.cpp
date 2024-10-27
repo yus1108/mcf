@@ -377,6 +377,32 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main endp",
 				},
 				{
+					"main(void) -> void { let i: dword = 0; while(i < 5) { i = i + 1; } }",
+					{},
+					{},
+					"main proc\n"
+						"\tpush rbp\n"
+						"\tsub rsp, 16\n"
+						"\tmov dword ptr [rsp + 0], 0\n" // i = 0;
+					"?main_L0:\n"
+						// conditional expression
+						"\tmov eax, dword ptr [rsp + 0]\n" // var1 = 15;
+						"\tmov ebx, 5\n" // var1 = 15;
+						"\tcmp eax, ebx\n"
+						"\tjl ?main_L1\n" // i < 5; goto block
+						"\tjmp ?main_L2\n" // i >= 5; goto end
+					"?main_L1:\n"
+						"\tmov eax, dword ptr [rsp + 0]\n"
+						"\tadd eax, 1\n"
+						"\tmov dword ptr [rsp + 0], eax\n"
+						"\tjmp ?main_L0\n" // goto begin
+					"?main_L2:\n"
+						"\tadd rsp, 16\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"main endp",
+				},
+				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
 					{"\"Hello, World!Value = %d\\n\""},
 					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}}},

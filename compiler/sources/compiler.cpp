@@ -175,7 +175,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 	const size_t programCount = program->GetObjectCount();
 	for (size_t i = 0; i < programCount; i++)
 	{
-		const mcf::IR::Interface* const irObject = program->GetUnsafeKeyObjectPointerAt(i);
+		const mcf::IR::Interface* const irObject = program->GetUnsafeObjectPointerAt(i);
 		MCF_DEBUG_ASSERT(irObject != nullptr, u8"irObject는 nullptr이 아니어야 합니다!");
 
 		constexpr const size_t IR_TYPE_COUNT_BEGIN = __COUNTER__;
@@ -229,6 +229,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 
 		case IR::Type::RETURN: __COUNTER__;
+			MCF_DEBUG_TODO(u8"구현 필요");
+			break;
+
+		case IR::Type::WHILE: __COUNTER__;
 			MCF_DEBUG_TODO(u8"구현 필요");
 			break;
 
@@ -414,6 +418,15 @@ const mcf::Object::Data mcf::ASM::MASM64::Compiler::Object::EvaluateExpressionIn
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
+	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ARITHMETIC: __COUNTER__;
+		MCF_DEBUG_TODO(u8"구현 필요");
+		break;
+
+	case mcf::IR::Expression::Type::ASSIGN: __COUNTER__; [[fallthrough]];
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 에러가 아닐 수도 있습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
 			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(expressionIR->GetExpressionType()), mcf::ENUM_INDEX(expressionIR->GetExpressionType()), expressionIR->Inspect().c_str());
