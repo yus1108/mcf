@@ -15,24 +15,6 @@ namespace mcf
 					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int64);
 				}
 
-				static const bool IsRegister32Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 32바이트 레지스터인지 검증
-					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int32);
-				}
-
-				static const bool IsRegister16Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 16바이트 레지스터인지 검증
-					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int16);
-				}
-
-				static const bool IsRegister8Bit(const mcf::IR::ASM::Register reg)
-				{
-					// 8바이트 레지스터인지 검증
-					return GET_REGISTER_SIZE_VALUE(reg) == sizeof(__int8);
-				}
-
 				static const bool IsSizeMatching(const mcf::IR::ASM::Register lhs, const mcf::IR::ASM::Register rhs)
 				{
 					return GET_REGISTER_SIZE_VALUE(lhs) == GET_REGISTER_SIZE_VALUE(rhs);
@@ -690,6 +672,73 @@ const bool mcf::IR::Expression::Conditional::IsValidTokenType(const mcf::Token::
 	return false;
 }
 
+mcf::IR::ASM::Pointer mcf::IR::Expression::Conditional::GenerateJumpIf(const mcf::Token::Type type, const std::string& labelTrue) noexcept
+{
+	constexpr const size_t TOKENTYPE_COUNT_BEGIN = __COUNTER__;
+	switch (type)
+	{
+	case Token::Type::EQUAL: __COUNTER__;
+		return mcf::IR::ASM::Invalid::Make();
+
+	case Token::Type::NOT_EQUAL: __COUNTER__;
+		return mcf::IR::ASM::Invalid::Make();
+
+	case Token::Type::LT: __COUNTER__;
+		return mcf::IR::ASM::Jl::Make(labelTrue);
+
+	case Token::Type::GT: __COUNTER__;
+		return mcf::IR::ASM::Invalid::Make();
+
+	case Token::Type::PLUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::MINUS: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASTERISK: __COUNTER__; [[fallthrough]];
+	case Token::Type::SLASH: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_INCLUDE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_TYPEDEF: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_EXTERN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_LET: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_FUNC: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_MAIN: __COUNTER__; [[fallthrough]];
+	case Token::Type::IDENTIFIER: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::SEMICOLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::INTEGER: __COUNTER__; [[fallthrough]];
+	case Token::Type::STRING: __COUNTER__; [[fallthrough]];
+	case Token::Type::ASSIGN: __COUNTER__; [[fallthrough]];
+	case Token::Type::BANG: __COUNTER__; [[fallthrough]];
+	case Token::Type::AMPERSAND: __COUNTER__; [[fallthrough]];
+	case Token::Type::LPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RPAREN: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACE: __COUNTER__; [[fallthrough]];
+	case Token::Type::LBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::RBRACKET: __COUNTER__; [[fallthrough]];
+	case Token::Type::COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::DOUBLE_COLON: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMA: __COUNTER__; [[fallthrough]];
+	case Token::Type::POINTING: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_ASM: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
+	case Token::Type::MACRO_END: __COUNTER__; [[fallthrough]];
+	case Token::Type::COMMENT: __COUNTER__; [[fallthrough]];			// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	case Token::Type::COMMENT_BLOCK: __COUNTER__; [[fallthrough]];	// 주석은 파서에서 토큰을 읽으면 안됩니다.
+	default:
+		break;
+	}
+	constexpr const size_t TOKENTYPE_COUNT = __COUNTER__ - TOKENTYPE_COUNT_BEGIN;
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKENTYPE_COUNT, "generate jump asm code with the given token condition.");
+	return mcf::IR::ASM::Invalid::Make();
+}
+
 mcf::IR::Expression::Conditional::Conditional(mcf::IR::Expression::Pointer&& left, const mcf::Token::Data& infixOperator, mcf::IR::Expression::Pointer&& right) noexcept
 	: _left(std::move(left))
 	, _infixOperator(infixOperator)
@@ -853,6 +902,7 @@ const std::string mcf::IR::ASM::ProcEnd::Inspect(void) const noexcept
 mcf::IR::ASM::Push::Push(const Register address) noexcept
 	: _value(CONVERT_REGISTER_TO_STRING(address))
 {
+	MCF_DEBUG_ASSERT(address != mcf::IR::ASM::Register::INVALID, u8"address가 유효하지 않습니다.");
 }
 
 const std::string mcf::IR::ASM::Push::Inspect(void) const noexcept
@@ -863,6 +913,7 @@ const std::string mcf::IR::ASM::Push::Inspect(void) const noexcept
 mcf::IR::ASM::Pop::Pop(const Register target) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 {
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
 }
 
 const std::string mcf::IR::ASM::Pop::Inspect(void) const noexcept
@@ -874,6 +925,7 @@ mcf::IR::ASM::Mov::Mov(const Address& target, const Register source) noexcept
 	: _target(target.Inspect())
 	, _source(mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(source))
 {
+	MCF_DEBUG_ASSERT(source != mcf::IR::ASM::Register::INVALID, u8"source가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(source, target.GetTypeInfo().GetSize()), u8"source와 target의 사이즈가 일치 하지 않습니다. Size=%zu", target.GetTypeInfo().GetSize());
 }
 
@@ -945,6 +997,7 @@ mcf::IR::ASM::Mov::Mov(const Register target, _In_ const mcf::IR::Expression::Gl
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(globalExpression->GetVariable().Name)
 {
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(target, globalExpression->GetVariable().GetTypeSize()), u8"레지스터가 source의 데이터 크기와 맞지 않는 레지스터 입니다.");
 }
 
@@ -952,6 +1005,7 @@ mcf::IR::ASM::Mov::Mov(const Register target, const Address& source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(source.Inspect())
 {
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(target, source.GetTypeInfo().GetSize()), u8"레지스터가 source의 데이터 크기와 맞지 않는 레지스터 입니다.");
 }
 
@@ -959,6 +1013,7 @@ mcf::IR::ASM::Mov::Mov(const Register target, const SizeOf& source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(source.Inspect())
 {
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
 }
 
@@ -966,56 +1021,64 @@ mcf::IR::ASM::Mov::Mov(const Register target, const __int64 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int64), u8"레지스터의 크기가 인자로 받은 64비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const __int32 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister32Bit(target), u8"32비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int32), u8"레지스터의 크기가 인자로 받은 32비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const __int16 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister16Bit(target), u8"16비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int16), u8"레지스터의 크기가 인자로 받은 16비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const __int8 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister8Bit(target), u8"8비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int8), u8"레지스터의 크기가 인자로 받은 8비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const unsigned __int64 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int64), u8"레지스터의 크기가 인자로 받은 64비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const unsigned __int32 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister32Bit(target), u8"32비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int32), u8"레지스터의 크기가 인자로 받은 32비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const unsigned __int16 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister16Bit(target), u8"16비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int16), u8"레지스터의 크기가 인자로 받은 16비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Mov::Mov(const Register target, const unsigned __int8 source) noexcept
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(std::to_string(source))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister8Bit(target), u8"8비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(target) >= sizeof(__int8), u8"레지스터의 크기가 인자로 받은 8비트 정수의 값을 수용할 수 없습니다.");
 }
 
 const std::string mcf::IR::ASM::Mov::Inspect(void) const noexcept
@@ -1027,6 +1090,7 @@ mcf::IR::ASM::Lea::Lea(const Register target, const mcf::IR::ASM::UnsafePointerA
 	: _target(CONVERT_REGISTER_TO_STRING(target))
 	, _source(source.Inspect())
 {
+	MCF_DEBUG_ASSERT(target != mcf::IR::ASM::Register::INVALID, u8"target가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(target), u8"64비트 레지스터가 아닙니다.");
 }
 
@@ -1039,14 +1103,144 @@ mcf::IR::ASM::Add::Add(const Register lhs, const __int64 rhs) noexcept
 	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
 	, _rhs(std::to_string(rhs))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(lhs), u8"64비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int64), u8"레지스터의 크기가 인자로 받은 64비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const __int32 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int32), u8"레지스터의 크기가 인자로 받은 32비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const __int16 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int16), u8"레지스터의 크기가 인자로 받은 16비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const __int8 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int8), u8"레지스터의 크기가 인자로 받은 8비트 정수의 값을 수용할 수 없습니다.");
 }
 
 mcf::IR::ASM::Add::Add(const Register lhs, const unsigned __int64 rhs) noexcept
 	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
 	, _rhs(std::to_string(rhs))
 {
-	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(lhs), u8"64비트 레지스터가 아닙니다.");
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int64), u8"레지스터의 크기가 인자로 받은 64비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const unsigned __int32 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int32), u8"레지스터의 크기가 인자로 받은 32비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const unsigned __int16 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int16), u8"레지스터의 크기가 인자로 받은 16비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const unsigned __int8 rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(mcf::IR::ASM::GET_REGISTER_SIZE_VALUE(lhs) >= sizeof(__int8), u8"레지스터의 크기가 인자로 받은 8비트 정수의 값을 수용할 수 없습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Register lhs, const Address& rhs) noexcept
+	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
+	, _rhs(rhs.Inspect())
+{
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(lhs, rhs.GetTypeInfo().GetSize()), u8"레지스터가 rhs의 데이터 크기와 맞지 않는 레지스터 입니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const Register rhs) noexcept
+	: _rhs(CONVERT_REGISTER_TO_STRING(rhs))
+	, _lhs(lhs.Inspect())
+{
+	MCF_DEBUG_ASSERT(rhs != mcf::IR::ASM::Register::INVALID, u8"rhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(rhs, lhs.GetTypeInfo().GetSize()), u8"레지스터가 lhs의 데이터 크기와 맞지 않는 레지스터 입니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const __int64 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(__int64), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == false, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const __int32 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(__int32), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == false, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const __int16 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(__int16), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == false, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const __int8 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(__int8), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == false, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const unsigned __int64 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(unsigned __int64), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == true, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const unsigned __int32 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(unsigned __int32), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == true, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const unsigned __int16 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(unsigned __int16), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == true, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
+}
+
+mcf::IR::ASM::Add::Add(const Address& lhs, const unsigned __int8 rhs) noexcept
+	: _lhs(lhs.Inspect())
+	, _rhs(std::to_string(rhs))
+{
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().GetSize() >= sizeof(unsigned __int8), u8"rhs와 lhs의 사이즈가 일치 하지 않습니다. Size=%zu", lhs.GetTypeInfo().GetSize());
+	MCF_DEBUG_ASSERT(lhs.GetTypeInfo().IsUnsigned == true, u8"rhs와 lhs의 사인 타입이 일치 하지 않습니다.");
 }
 
 const std::string mcf::IR::ASM::Add::Inspect(void) const noexcept
@@ -1058,6 +1252,7 @@ mcf::IR::ASM::Sub::Sub(const Register minuend, const __int64 subtrahend) noexcep
 	: _minuend(CONVERT_REGISTER_TO_STRING(minuend))
 	, _subtrahend(std::to_string(subtrahend))
 {
+	MCF_DEBUG_ASSERT(minuend != mcf::IR::ASM::Register::INVALID, u8"minuend가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(minuend), u8"64비트 레지스터가 아닙니다.");
 }
 
@@ -1065,6 +1260,7 @@ mcf::IR::ASM::Sub::Sub(const Register minuend, const unsigned __int64 subtrahend
 	: _minuend(CONVERT_REGISTER_TO_STRING(minuend))
 	, _subtrahend(std::to_string(subtrahend))
 {
+	MCF_DEBUG_ASSERT(minuend != mcf::IR::ASM::Register::INVALID, u8"minuend가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsRegister64Bit(minuend), u8"64비트 레지스터가 아닙니다.");
 }
 
@@ -1077,6 +1273,8 @@ mcf::IR::ASM::Xor::Xor(const Register& lhs, const Register rhs) noexcept
 	: _lhs(CONVERT_REGISTER_TO_STRING(lhs))
 	, _rhs(CONVERT_REGISTER_TO_STRING(rhs))
 {
+	MCF_DEBUG_ASSERT(lhs != mcf::IR::ASM::Register::INVALID, u8"lhs가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(rhs != mcf::IR::ASM::Register::INVALID, u8"rhs가 유효하지 않습니다.");
 	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(lhs, rhs), u8"64비트 레지스터가 아닙니다.");
 }
 
@@ -1092,6 +1290,47 @@ mcf::IR::ASM::Call::Call(const std::string& procName) noexcept
 const std::string mcf::IR::ASM::Call::Inspect(void) const noexcept
 {
 	return "\tcall " + _procName + "\n";
+}
+
+mcf::IR::ASM::Label::Label(const std::string& labelName) noexcept
+	: _labelName(labelName)
+{}
+
+const std::string mcf::IR::ASM::Label::Inspect(void) const noexcept
+{
+	return _labelName + ":\n";
+}
+
+mcf::IR::ASM::Cmp::Cmp(const mcf::IR::ASM::Register leftRegister, const mcf::IR::ASM::Register rightRegister) noexcept
+	: _lhs(mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(leftRegister))
+	, _rhs(mcf::IR::ASM::CONVERT_REGISTER_TO_STRING(rightRegister))
+{
+	MCF_DEBUG_ASSERT(leftRegister != mcf::IR::ASM::Register::INVALID, u8"leftRegister가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(rightRegister != mcf::IR::ASM::Register::INVALID, u8"rightRegister가 유효하지 않습니다.");
+	MCF_DEBUG_ASSERT(Internal::IsSizeMatching(leftRegister, rightRegister), u8"64비트 레지스터가 아닙니다.");
+}
+
+const std::string mcf::IR::ASM::Cmp::Inspect(void) const noexcept
+{
+	return "\tcmp " + _lhs + ", " + _rhs + "\n";
+}
+
+mcf::IR::ASM::Jmp::Jmp(const std::string& jumpTo) noexcept
+	: _jumpTo(jumpTo)
+{}
+
+const std::string mcf::IR::ASM::Jmp::Inspect(void) const noexcept
+{
+	return "\tjmp " + _jumpTo + "\n";
+}
+
+mcf::IR::ASM::Jl::Jl(const std::string& jumpTo) noexcept
+	: _jumpTo(jumpTo)
+{}
+
+const std::string mcf::IR::ASM::Jl::Inspect(void) const noexcept
+{
+	return "\tjl " + _jumpTo + "\n";
 }
 
 mcf::IR::IncludeLib::IncludeLib(const std::string& libPath) noexcept

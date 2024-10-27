@@ -142,6 +142,7 @@ namespace mcf
 
 			inline ScopeTree* GetUnsafeScopeTreePointer(void) noexcept { return _tree;}
 			inline const ScopeTree* GetUnsafeScopeTreePointer(void) const noexcept { return _tree;}
+			inline const Scope* GetUnsafeParentScopePointer(void) const noexcept { return _parent;}
 
 			const bool DefineType(const std::string& name, const mcf::Object::TypeInfo& info) noexcept;
 			const mcf::Object::TypeInfo FindTypeInfo(const std::string& name) const noexcept;
@@ -356,6 +357,10 @@ namespace mcf
 				SUB,
 				XOR,
 				CALL,
+				LABEL,
+				CMP,
+				JMP,
+				JL,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT
@@ -376,6 +381,10 @@ namespace mcf
 				"SUB",
 				"XOR",
 				"CALL",
+				"LABEL",
+				"CMP",
+				"JMP",
+				"JL",
 			};
 			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == ASM_IR_TYPE_SIZE, "asm ir type count not matching!");
@@ -394,6 +403,9 @@ namespace mcf
 				AL,
 
 				RBX,
+				EBX,
+				BX,
+				BL,
 
 				RCX,
 				ECX,
@@ -436,6 +448,9 @@ namespace mcf
 				"al",
 
 				"rbx",
+				"ebx",
+				"bx",
+				"bl",
 
 				"rcx",
 				"ecx",
@@ -500,6 +515,7 @@ namespace mcf
 					return mcf::IR::ASM::RegisterSize::QWORD;
 
 				case Register::EAX: __COUNTER__; [[fallthrough]];
+				case Register::EBX: __COUNTER__; [[fallthrough]];
 				case Register::ECX: __COUNTER__; [[fallthrough]];
 				case Register::EDX: __COUNTER__; [[fallthrough]];
 				case Register::R8D: __COUNTER__; [[fallthrough]];
@@ -508,6 +524,7 @@ namespace mcf
 					return mcf::IR::ASM::RegisterSize::DWORD;
 
 				case Register::AX: __COUNTER__; [[fallthrough]];
+				case Register::BX: __COUNTER__; [[fallthrough]];
 				case Register::CX: __COUNTER__; [[fallthrough]];
 				case Register::DX: __COUNTER__; [[fallthrough]];
 				case Register::R8W: __COUNTER__; [[fallthrough]];
@@ -516,6 +533,7 @@ namespace mcf
 					return mcf::IR::ASM::RegisterSize::WORD;
 
 				case Register::AL: __COUNTER__; [[fallthrough]];
+				case Register::BL: __COUNTER__; [[fallthrough]];
 				case Register::CL: __COUNTER__; [[fallthrough]];
 				case Register::DL: __COUNTER__; [[fallthrough]];
 				case Register::R8B: __COUNTER__; [[fallthrough]];
@@ -555,6 +573,237 @@ namespace mcf
 				default:
 					return mcf::IR::ASM::RegisterSize::INVALID;
 				}
+			}
+			constexpr const mcf::IR::ASM::Register CHANGE_REGISTER_BY_SIZE(const mcf::IR::ASM::Register targetRegister, const size_t size)
+			{
+				constexpr const size_t REGISTER_COUNT_BEGIN = __COUNTER__;
+				switch (size)
+				{
+					case sizeof(__int8) :
+					{
+						switch (targetRegister)
+						{
+						case Register::RAX: __COUNTER__; [[fallthrough]];
+						case Register::EAX: __COUNTER__; [[fallthrough]];
+						case Register::AX: __COUNTER__; [[fallthrough]];
+						case Register::AL: __COUNTER__;
+							return mcf::IR::ASM::Register::AL;
+
+						case Register::RBX: __COUNTER__; [[fallthrough]];
+						case Register::EBX: __COUNTER__; [[fallthrough]];
+						case Register::BX: __COUNTER__; [[fallthrough]];
+						case Register::BL: __COUNTER__;
+							return mcf::IR::ASM::Register::BL;
+
+						case Register::RCX: __COUNTER__; [[fallthrough]];
+						case Register::ECX: __COUNTER__; [[fallthrough]];
+						case Register::CX: __COUNTER__; [[fallthrough]];
+						case Register::CL: __COUNTER__;
+							return mcf::IR::ASM::Register::CL;
+
+						case Register::RDX: __COUNTER__; [[fallthrough]];
+						case Register::EDX: __COUNTER__; [[fallthrough]];
+						case Register::DX: __COUNTER__; [[fallthrough]];
+						case Register::DL: __COUNTER__;
+							return mcf::IR::ASM::Register::DL;
+
+						case Register::R8: __COUNTER__; [[fallthrough]];
+						case Register::R8D: __COUNTER__; [[fallthrough]];
+						case Register::R8W: __COUNTER__; [[fallthrough]];
+						case Register::R8B: __COUNTER__;
+							return mcf::IR::ASM::Register::R8B;
+
+						case Register::R9: __COUNTER__; [[fallthrough]];
+						case Register::R9D: __COUNTER__; [[fallthrough]];
+						case Register::R9W: __COUNTER__; [[fallthrough]];
+						case Register::R9B: __COUNTER__;
+							return mcf::IR::ASM::Register::R9B;
+
+						case Register::RSP: __COUNTER__; [[fallthrough]];
+						case Register::ESP: __COUNTER__; [[fallthrough]];
+						case Register::SP: __COUNTER__; [[fallthrough]];
+						case Register::SPL: __COUNTER__;
+							return mcf::IR::ASM::Register::SPL;
+
+						case Register::RBP: __COUNTER__;
+							return mcf::IR::ASM::Register::INVALID;
+
+						default:
+							break;
+						}
+						break;
+					}
+
+					case sizeof(__int16) :
+					{
+						switch (targetRegister)
+						{
+						case Register::RAX: __COUNTER__; [[fallthrough]];
+						case Register::EAX: __COUNTER__; [[fallthrough]];
+						case Register::AX: __COUNTER__; [[fallthrough]];
+						case Register::AL: __COUNTER__;
+							return mcf::IR::ASM::Register::AX;
+
+						case Register::RBX: __COUNTER__; [[fallthrough]];
+						case Register::EBX: __COUNTER__; [[fallthrough]];
+						case Register::BX: __COUNTER__; [[fallthrough]];
+						case Register::BL: __COUNTER__;
+							return mcf::IR::ASM::Register::BX;
+
+						case Register::RCX: __COUNTER__; [[fallthrough]];
+						case Register::ECX: __COUNTER__; [[fallthrough]];
+						case Register::CX: __COUNTER__; [[fallthrough]];
+						case Register::CL: __COUNTER__;
+							return mcf::IR::ASM::Register::CX;
+
+						case Register::RDX: __COUNTER__; [[fallthrough]];
+						case Register::EDX: __COUNTER__; [[fallthrough]];
+						case Register::DX: __COUNTER__; [[fallthrough]];
+						case Register::DL: __COUNTER__;
+							return mcf::IR::ASM::Register::DX;
+
+						case Register::R8: __COUNTER__; [[fallthrough]];
+						case Register::R8D: __COUNTER__; [[fallthrough]];
+						case Register::R8W: __COUNTER__; [[fallthrough]];
+						case Register::R8B: __COUNTER__;
+							return mcf::IR::ASM::Register::R8W;
+
+						case Register::R9: __COUNTER__; [[fallthrough]];
+						case Register::R9D: __COUNTER__; [[fallthrough]];
+						case Register::R9W: __COUNTER__; [[fallthrough]];
+						case Register::R9B: __COUNTER__;
+							return mcf::IR::ASM::Register::R9W;
+
+						case Register::RSP: __COUNTER__; [[fallthrough]];
+						case Register::ESP: __COUNTER__; [[fallthrough]];
+						case Register::SP: __COUNTER__; [[fallthrough]];
+						case Register::SPL: __COUNTER__;
+							return mcf::IR::ASM::Register::SP;
+
+						case Register::RBP: __COUNTER__;
+							return mcf::IR::ASM::Register::INVALID;
+
+						default:
+							break;
+						}
+						break;
+					}
+
+					case sizeof(__int32) :
+					{
+						switch (targetRegister)
+						{
+						case Register::RAX: __COUNTER__; [[fallthrough]];
+						case Register::EAX: __COUNTER__; [[fallthrough]];
+						case Register::AX: __COUNTER__; [[fallthrough]];
+						case Register::AL: __COUNTER__;
+							return mcf::IR::ASM::Register::EAX;
+
+						case Register::RBX: __COUNTER__; [[fallthrough]];
+						case Register::EBX: __COUNTER__; [[fallthrough]];
+						case Register::BX: __COUNTER__; [[fallthrough]];
+						case Register::BL: __COUNTER__;
+							return mcf::IR::ASM::Register::EBX;
+
+						case Register::RCX: __COUNTER__; [[fallthrough]];
+						case Register::ECX: __COUNTER__; [[fallthrough]];
+						case Register::CX: __COUNTER__; [[fallthrough]];
+						case Register::CL: __COUNTER__;
+							return mcf::IR::ASM::Register::ECX;
+
+						case Register::RDX: __COUNTER__; [[fallthrough]];
+						case Register::EDX: __COUNTER__; [[fallthrough]];
+						case Register::DX: __COUNTER__; [[fallthrough]];
+						case Register::DL: __COUNTER__;
+							return mcf::IR::ASM::Register::EDX;
+
+						case Register::R8: __COUNTER__; [[fallthrough]];
+						case Register::R8D: __COUNTER__; [[fallthrough]];
+						case Register::R8W: __COUNTER__; [[fallthrough]];
+						case Register::R8B: __COUNTER__;
+							return mcf::IR::ASM::Register::R8D;
+
+						case Register::R9: __COUNTER__; [[fallthrough]];
+						case Register::R9D: __COUNTER__; [[fallthrough]];
+						case Register::R9W: __COUNTER__; [[fallthrough]];
+						case Register::R9B: __COUNTER__;
+							return mcf::IR::ASM::Register::R9D;
+
+						case Register::RSP: __COUNTER__; [[fallthrough]];
+						case Register::ESP: __COUNTER__; [[fallthrough]];
+						case Register::SP: __COUNTER__; [[fallthrough]];
+						case Register::SPL: __COUNTER__;
+							return mcf::IR::ASM::Register::ESP;
+
+						case Register::RBP: __COUNTER__;
+							return mcf::IR::ASM::Register::INVALID;
+
+						default:
+							break;
+						}
+						break;
+					}
+
+					case sizeof(__int64) :
+					{
+						switch (targetRegister)
+						{
+						case Register::RAX: __COUNTER__; [[fallthrough]];
+						case Register::EAX: __COUNTER__; [[fallthrough]];
+						case Register::AX: __COUNTER__; [[fallthrough]];
+						case Register::AL: __COUNTER__;
+							return mcf::IR::ASM::Register::RAX;
+
+						case Register::RBX: __COUNTER__; [[fallthrough]];
+						case Register::EBX: __COUNTER__; [[fallthrough]];
+						case Register::BX: __COUNTER__; [[fallthrough]];
+						case Register::BL: __COUNTER__;
+							return mcf::IR::ASM::Register::RBX;
+
+						case Register::RCX: __COUNTER__; [[fallthrough]];
+						case Register::ECX: __COUNTER__; [[fallthrough]];
+						case Register::CX: __COUNTER__; [[fallthrough]];
+						case Register::CL: __COUNTER__;
+							return mcf::IR::ASM::Register::RCX;
+
+						case Register::RDX: __COUNTER__; [[fallthrough]];
+						case Register::EDX: __COUNTER__; [[fallthrough]];
+						case Register::DX: __COUNTER__; [[fallthrough]];
+						case Register::DL: __COUNTER__;
+							return mcf::IR::ASM::Register::RDX;
+
+						case Register::R8: __COUNTER__; [[fallthrough]];
+						case Register::R8D: __COUNTER__; [[fallthrough]];
+						case Register::R8W: __COUNTER__; [[fallthrough]];
+						case Register::R8B: __COUNTER__;
+							return mcf::IR::ASM::Register::R8;
+
+						case Register::R9: __COUNTER__; [[fallthrough]];
+						case Register::R9D: __COUNTER__; [[fallthrough]];
+						case Register::R9W: __COUNTER__; [[fallthrough]];
+						case Register::R9B: __COUNTER__;
+							return mcf::IR::ASM::Register::R9;
+
+						case Register::RSP: __COUNTER__; [[fallthrough]];
+						case Register::ESP: __COUNTER__; [[fallthrough]];
+						case Register::SP: __COUNTER__; [[fallthrough]];
+						case Register::SPL: __COUNTER__;
+							return mcf::IR::ASM::Register::RSP;
+
+						case Register::RBP: __COUNTER__;
+							return mcf::IR::ASM::Register::RBP;
+
+						default:
+							break;
+						}
+						break;
+					}
+					default:
+						break;
+				}
+				constexpr const size_t REGISTER_COUNT = __COUNTER__ - REGISTER_COUNT_BEGIN + 3;
+				static_assert(static_cast<size_t>(mcf::IR::ASM::Register::COUNT) * 4 == REGISTER_COUNT, "register count is changed. this SWITCH need to be changed as well.");
+				return mcf::IR::ASM::Register::INVALID;
 			}
 
 			class Interface : public mcf::IR::Interface
@@ -886,6 +1135,7 @@ namespace mcf
 				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Conditional>(std::move(args)...); }
 
 				static const bool IsValidTokenType(const mcf::Token::Type type) noexcept;
+				static mcf::IR::ASM::Pointer GenerateJumpIf(const mcf::Token::Type type, const std::string& labelTrue) noexcept;
 
 			public:
 				explicit Conditional(void) noexcept = default;
@@ -1142,7 +1392,23 @@ namespace mcf
 			public:
 				explicit Add(void) noexcept = default;
 				explicit Add(const Register lhs, const __int64 rhs) noexcept;
+				explicit Add(const Register lhs, const __int32 rhs) noexcept;
+				explicit Add(const Register lhs, const __int16 rhs) noexcept;
+				explicit Add(const Register lhs, const __int8 rhs) noexcept;
 				explicit Add(const Register lhs, const unsigned __int64 rhs) noexcept;
+				explicit Add(const Register lhs, const unsigned __int32 rhs) noexcept;
+				explicit Add(const Register lhs, const unsigned __int16 rhs) noexcept;
+				explicit Add(const Register lhs, const unsigned __int8 rhs) noexcept;
+				explicit Add(const Register lhs, const Address& rhs) noexcept;
+				explicit Add(const Address& lhs, const Register rhs) noexcept;
+				explicit Add(const Address& lhs, const __int64 rhs) noexcept;
+				explicit Add(const Address& lhs, const __int32 rhs) noexcept;
+				explicit Add(const Address& lhs, const __int16 rhs) noexcept;
+				explicit Add(const Address& lhs, const __int8 rhs) noexcept;
+				explicit Add(const Address& lhs, const unsigned __int64 rhs) noexcept;
+				explicit Add(const Address& lhs, const unsigned __int32 rhs) noexcept;
+				explicit Add(const Address& lhs, const unsigned __int16 rhs) noexcept;
+				explicit Add(const Address& lhs, const unsigned __int8 rhs) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::ADD; }
@@ -1213,6 +1479,87 @@ namespace mcf
 
 			protected:
 				std::string _procName;
+			};
+
+			class Label : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Label>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Label>(std::move(args)...); }
+
+			public:
+				explicit Label(void) noexcept = default;
+				explicit Label(const std::string& labelName) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::LABEL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _labelName;
+			};
+
+			class Cmp : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Cmp>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Cmp>(std::move(args)...); }
+
+			public:
+				explicit Cmp(void) noexcept = default;
+				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const mcf::IR::ASM::Register rightRegister) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::LABEL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _lhs;
+				std::string _rhs;
+			};
+
+			class Jmp : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Jmp>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Jmp>(std::move(args)...); }
+
+			public:
+				explicit Jmp(void) noexcept = default;
+				explicit Jmp(const std::string& jumpTo) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::JMP; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _jumpTo;
+			};
+
+			class Jl : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Jl>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Jl>(std::move(args)...); }
+
+			public:
+				explicit Jl(void) noexcept = default;
+				explicit Jl(const std::string& jumpTo) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::JL; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _jumpTo;
 			};
 		}
 
@@ -1361,6 +1708,10 @@ namespace mcf
 			explicit While(void) noexcept = default;
 			explicit While(mcf::IR::Expression::Pointer&& condition, mcf::IR::PointerVector&& block, _Notnull_ const mcf::Object::Scope* const blockScope) noexcept;
 
+			inline const mcf::IR::Expression::Interface* GetUnsafeConditionExpressionPointer(void) const noexcept { return _condition.get(); }
+			inline const mcf::IR::PointerVector* GetBlockPointer(void) const noexcept { return &_block; }
+			inline const mcf::Object::Scope* GetBlockScope(void) const noexcept { return _blockScope; }
+
 			inline virtual const Type GetType(void) const noexcept override final { return Type::WHILE; }
 			virtual const std::string Inspect(void) const noexcept override final;
 
@@ -1383,11 +1734,11 @@ namespace mcf
 			explicit Program(PointerVector&& objects) noexcept;
 
 			inline virtual const size_t GetObjectCount(void) const noexcept final { return _objects.size(); }
-			inline virtual mcf::IR::Interface* GetUnsafeKeyObjectPointerAt(const size_t index) noexcept final
+			inline virtual mcf::IR::Interface* GetUnsafeObjectPointerAt(const size_t index) noexcept final
 			{
 				return _objects[index].get();
 			}
-			inline virtual const mcf::IR::Interface* GetUnsafeKeyObjectPointerAt(const size_t index) const noexcept final
+			inline virtual const mcf::IR::Interface* GetUnsafeObjectPointerAt(const size_t index) const noexcept final
 			{
 				return _objects[index].get();
 			}

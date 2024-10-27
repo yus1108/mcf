@@ -384,13 +384,19 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 						"\tpush rbp\n"
 						"\tsub rsp, 16\n"
 						"\tmov dword ptr [rsp + 0], 0\n" // i = 0;
-					"?L0_Begin:\n"
+					"?main_L0:\n"
 						// conditional expression
-						"\tcmp dword ptr [rsp + 0], 5\n"
-						"\tjge ?L0_End\n"
-						// while block begin
-						"\tadd dword ptr [rsp + 0], 1\n"
-					"?L0_End:\n"
+						"\tmov eax, dword ptr [rsp + 0]\n" // var1 = 15;
+						"\tmov ebx, 5\n" // var1 = 15;
+						"\tcmp eax, ebx\n"
+						"\tjl ?main_L1\n" // i < 5; goto block
+						"\tjmp ?main_L2\n" // i >= 5; goto end
+					"?main_L1:\n"
+						"\tmov eax, dword ptr [rsp + 0]\n"
+						"\tadd eax, 1\n"
+						"\tmov dword ptr [rsp + 0], eax\n"
+						"\tjmp ?main_L0\n" // goto begin
+					"?main_L2:\n"
 						"\tadd rsp, 16\n"
 						"\tpop rbp\n"
 						"\tret\n"

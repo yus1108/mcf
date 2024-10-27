@@ -175,7 +175,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 	const size_t programCount = program->GetObjectCount();
 	for (size_t i = 0; i < programCount; i++)
 	{
-		const mcf::IR::Interface* const irObject = program->GetUnsafeKeyObjectPointerAt(i);
+		const mcf::IR::Interface* const irObject = program->GetUnsafeObjectPointerAt(i);
 		MCF_DEBUG_ASSERT(irObject != nullptr, u8"irObject는 nullptr이 아니어야 합니다!");
 
 		constexpr const size_t IR_TYPE_COUNT_BEGIN = __COUNTER__;
