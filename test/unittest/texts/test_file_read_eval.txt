@@ -44,6 +44,16 @@ main proc
 	mov dword ptr [rsp + 24], eax
 	jmp ?main_L0
 ?main_L2:
+?main_L3:
+?main_L4:
+	sub rsp, 32
+	mov edx, intVal
+	lea rcx, [rsp + 32]
+	call printf
+	add rsp, 32
+	jmp ?main_L5
+	jmp ?main_L3
+?main_L5:
 	add rsp, 32
 	pop rbp
 	ret

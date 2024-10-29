@@ -612,7 +612,8 @@ void mcf::Evaluator::MemoryAllocator::Realign(const size_t alignment) noexcept
 bool mcf::Evaluator::FunctionIRGenerator::ConvertStatements(
 	_Inout_ mcf::Evaluator::FunctionIRGenerator& inOutGenerator, 
 	_Notnull_ const mcf::IR::PointerVector* statementsPointer, 
-	_Notnull_ const mcf::Object::Scope* scope) noexcept
+	_Notnull_ const mcf::Object::Scope* scope,
+	const std::string& breakLabel /* = NOT_ALLOW_BREAK_LABEL() */) noexcept
 {
 	bool hasReturn = false;
 	const size_t statementCount = statementsPointer->size();
@@ -662,6 +663,15 @@ bool mcf::Evaluator::FunctionIRGenerator::ConvertStatements(
 
 		case IR::Type::WHILE: __COUNTER__;
 			inOutGenerator.AddWhileStatement(static_cast<const mcf::IR::While*>(object));
+			break;
+
+		case IR::Type::BREAK: __COUNTER__;
+			if (breakLabel == NOT_ALLOW_BREAK_LABEL())
+			{
+				MCF_DEBUG_TODO(u8"구현 필요");
+				return false;
+			}
+			inOutGenerator.AddBreakStatement(breakLabel);
 			break;
 
 		case IR::Type::ASM: __COUNTER__; [[fallthrough]];
@@ -1022,7 +1032,10 @@ void mcf::Evaluator::FunctionIRGenerator::AddCondition(
 		break;
 
 	case IR::Expression::Type::INTEGER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+		if (static_cast<const mcf::IR::Expression::Integer*>(condition)->IsZero())
+		{
+			_localCodes.emplace_back(mcf::IR::ASM::Jmp::Make(labelFalse));
+		}
 		break;
 
 	case IR::Expression::Type::CALL: __COUNTER__;
@@ -1918,7 +1931,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddWhileStatement(_Notnull_ const mcf:
 	AddCondition(static_cast<const mcf::IR::Expression::Conditional*>(condition), labelBlock, labelEnd);
 
 	_localCodes.emplace_back(mcf::IR::ASM::Label::Make(labelBlock));
-	if (ConvertStatements(*this, object->GetBlockPointer(), blockScope) == false)
+	if (ConvertStatements(*this, object->GetBlockPointer(), blockScope, labelEnd) == false)
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
 		return;
@@ -1926,6 +1939,11 @@ void mcf::Evaluator::FunctionIRGenerator::AddWhileStatement(_Notnull_ const mcf:
 
 	_localCodes.emplace_back(mcf::IR::ASM::Jmp::Make(labelBegin));
 	_localCodes.emplace_back(mcf::IR::ASM::Label::Make(labelEnd));
+}
+
+void mcf::Evaluator::FunctionIRGenerator::AddBreakStatement(const std::string& labelBreak) noexcept
+{
+	_localCodes.emplace_back(mcf::IR::ASM::Jmp::Make(labelBreak));
 }
 
 const std::string mcf::Evaluator::FunctionIRGenerator::CreateLabelName(void) noexcept
@@ -2127,12 +2145,12 @@ mcf::IR::Program::Pointer mcf::Evaluator::Object::EvalProgram(_Notnull_ const mc
 	const size_t statementCount = program->GetStatementCount();
 	for (size_t i = 0; i < statementCount; i++)
 	{
-		objects.emplace_back(EvalStatement(program->GetUnsafeStatementPointerAt(i), scope));
+		objects.emplace_back(EvalStatement(program->GetUnsafeStatementPointerAt(i), scope, false));
 	}
 	return mcf::IR::Program::Make(std::move(objects));
 }
 
-mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept
 {
 	mcf::IR::Pointer object = mcf::IR::Invalid::Make();
 	constexpr const size_t STATEMENT_TYPE_COUNT_BEGIN = __COUNTER__;
@@ -2143,10 +2161,8 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 		break;
 
 	case AST::Statement::Type::TYPEDEF: __COUNTER__;
-	{
 		object = EvalTypedefStatement(static_cast<const mcf::AST::Statement::Typedef*>(statement), scope);
 		break;
-	}
 
 	case AST::Statement::Type::EXTERN: __COUNTER__;
 		object = EvalExternStatement(static_cast<const mcf::AST::Statement::Extern*>(statement), scope);
@@ -2177,8 +2193,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 		mcf::IR::Expression::Pointer expressionObject = EvalExpression(static_cast<const mcf::AST::Statement::Expression*>(statement)->GetUnsafeExpression(), scope);
 		if (expressionObject.get() == nullptr || expressionObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
 		{
-			MCF_DEBUG_TODO(u8"구현 필요");
-			break;
+			return mcf::IR::Invalid::Make();
 		}
 		object = std::move(expressionObject);
 		break;
@@ -2194,6 +2209,14 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalStatement(_Notnull_ const mcf::AST:
 
 	case AST::Statement::Type::WHILE: __COUNTER__;
 		object = EvalWhileStatement(static_cast<const mcf::AST::Statement::While*>(statement), scope);
+		break;
+
+	case AST::Statement::Type::BREAK: __COUNTER__;
+		object = EvalBreakStatement(static_cast<const mcf::AST::Statement::Break*>(statement), scope, isBreakAllowed);
+		if (object.get() == nullptr || object->GetType() == mcf::IR::Type::INVALID)
+		{
+			return mcf::IR::Invalid::Make();
+		}
 		break;
 
 	default:
@@ -2426,6 +2449,25 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalMainStatement(_Notnull_ const mcf::
 	return mcf::IR::Func::Make(std::move(objects));
 }
 
+mcf::IR::Pointer mcf::Evaluator::Object::EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+{
+	mcf::IR::Expression::Pointer leftObject = EvalExpression(statement->GetUnsafeLeftExpression(), scope);
+	if (leftObject.get() == nullptr || leftObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	mcf::IR::Expression::Pointer rightObject = EvalExpression(statement->GetUnsafeRightExpression(), scope);
+	if (rightObject.get() == nullptr || rightObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return mcf::IR::Invalid::Make();
+	}
+
+	return mcf::IR::Expression::Assign::Make(std::move(leftObject), std::move(rightObject));
+}
+
 mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
 {
 	mcf::IR::Expression::Pointer conditionObject = EvalExpression(statement->GetUnsafeConditionPointer(), scope);
@@ -2438,6 +2480,7 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf:
 	constexpr const size_t EXPRESSION_TYPE_COUNT_BEGIN = __COUNTER__;
 	switch (conditionObject->GetExpressionType())
 	{
+	case IR::Expression::Type::INTEGER: __COUNTER__; [[fallthrough]];
 	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
 		break;
 
@@ -2450,10 +2493,6 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf:
 		break;
 
 	case IR::Expression::Type::FUNCTION_IDENTIFIER: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
-		break;
-
-	case IR::Expression::Type::INTEGER: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
 		break;
 
@@ -2489,36 +2528,30 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf:
 		return mcf::IR::Invalid::Make();
 	}
 
-	mcf::IR::PointerVector blockObject = EvalBlockStatement(statement->GetUnsafeBlockPointer(), blockScope);
+	mcf::IR::PointerVector blockObject = EvalBlockStatement(statement->GetUnsafeBlockPointer(), blockScope, true);
 	return mcf::IR::While::Make(std::move(conditionObject), std::move(blockObject), blockScope);
 }
 
-mcf::IR::Pointer mcf::Evaluator::Object::EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+mcf::IR::Pointer mcf::Evaluator::Object::EvalBreakStatement(_Notnull_ const mcf::AST::Statement::Break* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept
 {
-	mcf::IR::Expression::Pointer leftObject = EvalExpression(statement->GetUnsafeLeftExpression(), scope);
-	if (leftObject.get() == nullptr || leftObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
+	MCF_UNUSED(statement, scope);
+
+	if (isBreakAllowed == false)
 	{
-		MCF_DEBUG_TODO(u8"구현 필요");
+		MCF_DEBUG_TODO(u8"break문이 허용 되지 않는곳에 사용되었습니다.");
 		return mcf::IR::Invalid::Make();
 	}
 
-	mcf::IR::Expression::Pointer rightObject = EvalExpression(statement->GetUnsafeRightExpression(), scope);
-	if (rightObject.get() == nullptr || rightObject->GetExpressionType() == mcf::IR::Expression::Type::INVALID)
-	{
-		MCF_DEBUG_TODO(u8"구현 필요");
-		return mcf::IR::Invalid::Make();
-	}
-
-	return mcf::IR::Expression::Assign::Make(std::move(leftObject), std::move(rightObject));
+	return mcf::IR::Break::Make();
 }
 
-mcf::IR::PointerVector mcf::Evaluator::Object::EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept
+mcf::IR::PointerVector mcf::Evaluator::Object::EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept
 {
 	mcf::IR::PointerVector objects;
 	const size_t statementCount = statement->GetStatementCount();
 	for (size_t i = 0; i < statementCount; i++)
 	{
-		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), scope);
+		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), scope, isBreakAllowed);
 		if (object.get() == nullptr || object->GetType() == mcf::IR::Type::INVALID)
 		{
 			MCF_DEBUG_TODO(u8"구현 필요");
@@ -2535,7 +2568,7 @@ mcf::IR::ASM::PointerVector mcf::Evaluator::Object::EvalFunctionBlockStatement(c
 	const size_t statementCount = statement->GetStatementCount();
 	for (size_t i = 0; i < statementCount; i++)
 	{
-		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), info.LocalScope);
+		mcf::IR::Pointer object = EvalStatement(statement->GetUnsafeStatementPointerAt(i), info.LocalScope, false);
 		if (object.get() == nullptr)
 		{
 			MCF_DEBUG_TODO(u8"구현 필요");

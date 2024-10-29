@@ -236,6 +236,10 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			MCF_DEBUG_TODO(u8"구현 필요");
 			break;
 
+		case IR::Type::BREAK: __COUNTER__;
+			MCF_DEBUG_TODO(u8"구현 필요");
+			break;
+
 		case IR::Type::PROGRAM: __COUNTER__;
 			MCF_DEBUG_TODO(u8"구현 필요");
 			break;
@@ -246,7 +250,7 @@ mcf::ASM::PointerVector mcf::ASM::MASM64::Compiler::Object::GenerateCodes(_In_ c
 			break;
 		}
 		constexpr const size_t IR_TYPE_COUNT = __COUNTER__ - IR_TYPE_COUNT_BEGIN;
-		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "IR type count is changed. this SWITCH need to be changed as well.");
+		static_assert(static_cast<size_t>(mcf::IR::Type::COUNT) == IR_TYPE_COUNT, "Generate ASM codes by IR statements.");
 	}
 
 	codes.emplace_back(mcf::ASM::MASM64::Predefined::Make("END"));

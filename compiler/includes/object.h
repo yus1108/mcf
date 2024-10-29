@@ -215,6 +215,7 @@ namespace mcf
 			UNUSEDIR,
 			RETURN,
 			WHILE,
+			BREAK,
 
 			PROGRAM,
 
@@ -237,6 +238,7 @@ namespace mcf
 			"UNUSEDIR",
 			"RETURN",
 			"WHILE",
+			"BREAK",
 
 			"PROGRAM",
 		};
@@ -1719,6 +1721,21 @@ namespace mcf
 			mcf::IR::Expression::Pointer _condition;
 			mcf::IR::PointerVector _block;
 			const mcf::Object::Scope* const _blockScope;
+		};
+
+		class Break final : public Interface
+		{
+		public:
+			using Pointer = std::unique_ptr<Break>;
+
+			template <class... Variadic>
+			inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Break>(std::move(args)...); }
+
+		public:
+			explicit Break(void) noexcept = default;
+
+			inline virtual const Type GetType(void) const noexcept override final { return Type::BREAK; }
+			virtual const std::string Inspect(void) const noexcept override final;
 		};
 
 		class Program final : public Interface

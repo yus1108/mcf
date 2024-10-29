@@ -29,4 +29,9 @@ main(void) -> void
 		printf(message as unsigned qword, intVal);
 		i = i + 1;
 	}
+	while(1)
+	{
+		printf(message as unsigned qword, intVal);
+		break;
+	}
 }
