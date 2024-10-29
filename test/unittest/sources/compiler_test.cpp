@@ -599,8 +599,8 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 			std::string expectedResultFileName = "./test/unittest/texts/test_file_read_compile.txt";
 			std::string exepctedResult = mcf::Lexer::ReadFile(expectedResultFileName);
 
-			std::string fileToEvaluate = "./test/unittest/texts/test_file_read.txt";
-			mcf::Parser::Object parser(fileToEvaluate, true);
+			std::string fileToCompile = "./test/unittest/texts/test_file_read.txt";
+			mcf::Parser::Object parser(fileToCompile, true);
 			mcf::AST::Program program;
 			parser.ParseProgram(program);
 			FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
@@ -634,9 +634,59 @@ UnitTest::CompilerTest::CompilerTest(void) noexcept
 			const size_t maxCount = actualCount > exepctedResultCount ? actualCount : exepctedResultCount;
 			for (size_t i = 0; i < maxCount; i++)
 			{
-				FATAL_ASSERT(i < actualCount, "(index: %zu)\nexpected:%c, no actual character\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
-				FATAL_ASSERT(i < exepctedResultCount, "(index: %zu)\nno expected character, actual=%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, actual[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
-				FATAL_ASSERT(actual[i] == exepctedResult[i], "(index: %zu)\nexpected:%c, actual:%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], actual[i], fileToEvaluate.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(i < actualCount, "(index: %zu)\nexpected:%c, no actual character\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(i < exepctedResultCount, "(index: %zu)\nno expected character, actual=%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, actual[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(actual[i] == exepctedResult[i], "(index: %zu)\nexpected:%c, actual:%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], actual[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
+			}
+			return true;
+		}
+	);
+	_names.emplace_back(u8"심플 게임 파싱 코드 출력");
+	_tests.emplace_back
+	(
+		[&]() -> bool
+		{
+			std::string expectedResultFileName = "./test/unittest/texts/compiled_simple_game_project.asm";
+			std::string exepctedResult = mcf::Lexer::ReadFile(expectedResultFileName);
+
+			std::string fileToCompile = "./test/unittest/texts/simple_game_project.mcf";
+			mcf::Parser::Object parser(fileToCompile, true);
+			mcf::AST::Program program;
+			parser.ParseProgram(program);
+			FATAL_ASSERT(CheckParserErrors(parser), u8"파싱에 실패 하였습니다.");
+
+			mcf::Object::TypeInfo byteType = mcf::Object::TypeInfo::MakePrimitive(false, "byte", 1);
+			mcf::Object::TypeInfo wordType = mcf::Object::TypeInfo::MakePrimitive(false, "word", 2);
+			mcf::Object::TypeInfo dwordType = mcf::Object::TypeInfo::MakePrimitive(false, "dword", 4);
+			mcf::Object::TypeInfo qwordType = mcf::Object::TypeInfo::MakePrimitive(false, "qword", 8);
+
+			mcf::Object::ScopeTree scopeTree;
+			scopeTree.Global.DefineType(byteType.Name, byteType);
+			scopeTree.Global.DefineType(wordType.Name, wordType);
+			scopeTree.Global.DefineType(dwordType.Name, dwordType);
+			scopeTree.Global.DefineType(qwordType.Name, qwordType);
+
+			mcf::Evaluator::Object evaluator;
+			mcf::IR::Program::Pointer irProgram = evaluator.EvalProgram(&program, &scopeTree.Global);
+			FATAL_ASSERT(irProgram.get() != nullptr, u8"irProgram이 nullptr이면 안됩니다.");
+			FATAL_ASSERT(irProgram->GetType() == mcf::IR::Type::PROGRAM, u8"irProgram이 IR::Type::PROGRAM이 아닙니다.");
+
+			mcf::ASM::MASM64::Compiler::Object compiler;
+			mcf::ASM::PointerVector generatedCodes = compiler.GenerateCodes(irProgram.get(), &scopeTree);
+			std::string actual;
+			const size_t codeCount = generatedCodes.size();
+			for (size_t j = 0; j < codeCount; j++)
+			{
+				actual += (j == 0 ? "" : "\n") + generatedCodes[j]->ConvertToString();
+			}
+			const size_t actualCount = actual.length();
+			const size_t exepctedResultCount = exepctedResult.length();
+			const size_t maxCount = actualCount > exepctedResultCount ? actualCount : exepctedResultCount;
+			for (size_t i = 0; i < maxCount; i++)
+			{
+				FATAL_ASSERT(i < actualCount, "(index: %zu)\nexpected:%c, no actual character\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(i < exepctedResultCount, "(index: %zu)\nno expected character, actual=%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, actual[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
+				FATAL_ASSERT(actual[i] == exepctedResult[i], "(index: %zu)\nexpected:%c, actual:%c\nFileName: %s\nexpected:\n%s\nactual:\n%s", i, exepctedResult[i], actual[i], fileToCompile.c_str(), exepctedResult.c_str(), actual.c_str());
 			}
 			return true;
 		}

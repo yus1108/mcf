@@ -25,11 +25,11 @@ namespace mcf
 			bool IsVariadic = false;
 
 			static const mcf::Object::TypeInfo GetVoidTypeInfo(void) { return mcf::Object::TypeInfo(); }
-			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size) 
+			static const mcf::Object::TypeInfo MakePrimitive(const bool isUnsigned, const std::string& name, const size_t size, const std::vector<size_t> arraySizeList = std::vector<size_t>())
 			{ 
 				return 
 				{ 
-					std::vector<size_t>(),	// ArraySizeList
+					arraySizeList,			// ArraySizeList
 					name,					// Name
 					size, 					// IntrinsicSize
 					false, 					// IsStruct
@@ -362,6 +362,7 @@ namespace mcf
 				LABEL,
 				CMP,
 				JMP,
+				JE,
 				JL,
 
 				// 이 밑으로는 수정하면 안됩니다.
@@ -386,6 +387,7 @@ namespace mcf
 				"LABEL",
 				"CMP",
 				"JMP",
+				"JE",
 				"JL",
 			};
 			constexpr const size_t ASM_IR_TYPE_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
@@ -1137,7 +1139,7 @@ namespace mcf
 				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Conditional>(std::move(args)...); }
 
 				static const bool IsValidTokenType(const mcf::Token::Type type) noexcept;
-				static mcf::IR::ASM::Pointer GenerateJumpIf(const mcf::Token::Type type, const std::string& labelTrue) noexcept;
+				static mcf::IR::ASM::Pointer GenerateJumpIf(const mcf::Token::Type type, const std::string& label) noexcept;
 
 			public:
 				explicit Conditional(void) noexcept = default;
@@ -1514,6 +1516,10 @@ namespace mcf
 			public:
 				explicit Cmp(void) noexcept = default;
 				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const mcf::IR::ASM::Register rightRegister) noexcept;
+				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const __int8 rightValue) noexcept;
+				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const __int16 rightValue) noexcept;
+				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const __int32 rightValue) noexcept;
+				explicit Cmp(const mcf::IR::ASM::Register leftRegister, const __int64 rightValue) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::LABEL; }
@@ -1534,14 +1540,34 @@ namespace mcf
 
 			public:
 				explicit Jmp(void) noexcept = default;
-				explicit Jmp(const std::string& jumpTo) noexcept;
+				explicit Jmp(const std::string& label) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::JMP; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
-				std::string _jumpTo;
+				std::string _label;
+			};
+
+			class Je : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Je>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Je>(std::move(args)...); }
+
+			public:
+				explicit Je(void) noexcept = default;
+				explicit Je(const std::string& label) noexcept;
+
+
+				inline virtual const Type GetASMType(void) const noexcept override { return Type::JE; }
+				virtual const std::string Inspect(void) const noexcept override final;
+
+			protected:
+				std::string _label;
 			};
 
 			class Jl : public Interface
@@ -1554,14 +1580,14 @@ namespace mcf
 
 			public:
 				explicit Jl(void) noexcept = default;
-				explicit Jl(const std::string& jumpTo) noexcept;
+				explicit Jl(const std::string& label) noexcept;
 
 
 				inline virtual const Type GetASMType(void) const noexcept override { return Type::JL; }
 				virtual const std::string Inspect(void) const noexcept override final;
 
 			protected:
-				std::string _jumpTo;
+				std::string _label;
 			};
 		}
 

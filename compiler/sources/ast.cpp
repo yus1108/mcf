@@ -345,7 +345,6 @@ mcf::AST::Statement::Block::Block(Statement::PointerVector&& statements) noexcep
 const std::string mcf::AST::Statement::Block::ConvertToString(void) const noexcept
 {
 	const size_t size = _statements.size();
-	MCF_DEBUG_ASSERT(size != 0, u8"_statements에 값이 최소 한개 이상 있어야 합니다.");
 	std::string buffer = "[Block: LBRACE ";
 
 	for (size_t i = 0; i < size; i++)

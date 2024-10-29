@@ -1,0 +1,33 @@
+﻿#include <asm, "kernel32.lib">
+
+typedef int32: dword;
+typedef uint32: unsigned dword;
+typedef address: unsigned qword;
+
+typedef bool: byte;
+let false: bool = 0;
+let true: bool = 1;
+
+#include <asm, "libcmt.lib">
+extern func printf(format: address, ...args) -> int32;
+
+#include <asm, "SimpleApplication.lib">
+extern func SimpleApplication_InitializeWithUTF8(className: address, windowName: address) -> uint32;
+extern func SimpleApplication_InitializeWithAnsi(className: address, windowName: address) -> uint32;
+extern func SimpleApplication_DeInitializeAll(void) -> void;
+extern func SimpleApplication_Update(void) -> uint32;
+
+main(void) -> void
+{
+	let className1: byte[] = "ClassNameTest테스트";
+	let className2: byte[] = "ClassNameTest";
+	let windowName1: byte[] = "WindowNameTest테스트";
+	let windowName2: byte[] = "WindowNameTest";
+
+	SimpleApplication_InitializeWithUTF8( className1 as address, windowName1 as address );
+	SimpleApplication_InitializeWithAnsi( className2 as address, windowName2 as address );
+
+	printf("Hello World!\n" as address);
+	while ( SimpleApplication_Update() ) {}
+	SimpleApplication_DeInitializeAll();
+}

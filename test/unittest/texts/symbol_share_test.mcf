@@ -1,6 +1,0 @@
-﻿#include "./test/unittest/texts/enum_header.hmcf" // include vector, string, print
-
-void main(unused const int32 argc, unused const utf8 argv[][]) 
-{
-    const TEST_ENUM testVal = TEST_ENUM::TEST_VALUE1;
-}

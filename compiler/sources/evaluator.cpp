@@ -662,7 +662,10 @@ bool mcf::Evaluator::FunctionIRGenerator::ConvertStatements(
 			break;
 
 		case IR::Type::WHILE: __COUNTER__;
-			inOutGenerator.AddWhileStatement(static_cast<const mcf::IR::While*>(object));
+			if (inOutGenerator.AddWhileStatement(static_cast<const mcf::IR::While*>(object)) == false)
+			{
+				return false;
+			}
 			break;
 
 		case IR::Type::BREAK: __COUNTER__;
@@ -1007,8 +1010,9 @@ mcf::IR::ASM::Pointer mcf::Evaluator::FunctionIRGenerator::MoveExpressionToRegis
 	return mcf::IR::ASM::Invalid::Make();
 }
 
-void mcf::Evaluator::FunctionIRGenerator::AddCondition(
+const bool mcf::Evaluator::FunctionIRGenerator::AddCondition(
 	_Notnull_ const mcf::IR::Expression::Interface* condition,
+	_Notnull_ const mcf::Object::Scope* scope,
 	const std::string& labelTrue,
 	const std::string& labelFalse) noexcept
 {
@@ -1016,7 +1020,10 @@ void mcf::Evaluator::FunctionIRGenerator::AddCondition(
 	switch (condition->GetExpressionType())
 	{
 	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
-		AddConditionalExpression(static_cast<const mcf::IR::Expression::Conditional*>(condition), labelTrue, labelFalse);
+		if (AddConditionalExpression(static_cast<const mcf::IR::Expression::Conditional*>(condition), labelTrue, labelFalse) == false)
+		{
+			return false;
+		}
 		break;
 
 	case IR::Expression::Type::GLOBAL_VARIABLE_IDENTIFIER: __COUNTER__;
@@ -1039,8 +1046,67 @@ void mcf::Evaluator::FunctionIRGenerator::AddCondition(
 		break;
 
 	case IR::Expression::Type::CALL: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+	{
+		constexpr mcf::IR::ASM::Register leftRegisters[] =
+		{
+			mcf::IR::ASM::Register::INVALID,
+			mcf::IR::ASM::Register::AL,
+			mcf::IR::ASM::Register::AX,
+			mcf::IR::ASM::Register::INVALID,
+			mcf::IR::ASM::Register::EAX,
+			mcf::IR::ASM::Register::INVALID,
+			mcf::IR::ASM::Register::INVALID,
+			mcf::IR::ASM::Register::INVALID,
+			mcf::IR::ASM::Register::RAX
+		};
+
+		const mcf::IR::Expression::Call* callObject = static_cast<const mcf::IR::Expression::Call*>(condition);
+		MCF_DEBUG_ASSERT(callObject->GetInfo().IsValid(), u8"call 표현식이 유효하지 않습니다.");
+		MCF_DEBUG_ASSERT(callObject->GetInfo().ReturnType.IsValid(), u8"call 표현식의 반환값 타입이 유효하지 않습니다.");
+		const size_t returnTypeSize = callObject->GetInfo().ReturnType.GetSize();
+		if (returnTypeSize > MCF_ARRAY_SIZE(leftRegisters) || leftRegisters[returnTypeSize] == mcf::IR::ASM::Register::INVALID)
+		{
+			MCF_DEBUG_TODO(u8"call 표현식의 반환값 타입의 크기가 기본 데이터 크기여야 합니다.");
+			return false;
+		}
+
+		if (AddExpressionStatement(condition, scope) == false)
+		{
+			return false;
+		}
+
+		mcf::IR::ASM::Pointer jumpIfFalse = mcf::IR::Expression::Conditional::GenerateJumpIf(Token::Type::EQUAL, labelFalse);
+		if (jumpIfFalse.get() == nullptr || jumpIfFalse->GetASMType() == mcf::IR::ASM::Type::INVALID)
+		{
+			MCF_DEBUG_TODO(u8"구현 필요.");
+			return false;
+		}
+
+		switch (leftRegisters[returnTypeSize])
+		{
+		case mcf::IR::ASM::Register::AL:
+			_localCodes.emplace_back(mcf::IR::ASM::Cmp::Make(leftRegisters[returnTypeSize], static_cast<__int8>(0)));
+			break;
+
+		case mcf::IR::ASM::Register::AX:
+			_localCodes.emplace_back(mcf::IR::ASM::Cmp::Make(leftRegisters[returnTypeSize], static_cast<__int16>(0)));
+			break;
+
+		case mcf::IR::ASM::Register::EAX:
+			_localCodes.emplace_back(mcf::IR::ASM::Cmp::Make(leftRegisters[returnTypeSize], static_cast<__int32>(0)));
+			break;
+
+		case mcf::IR::ASM::Register::RAX:
+			_localCodes.emplace_back(mcf::IR::ASM::Cmp::Make(leftRegisters[returnTypeSize], static_cast<__int64>(0)));
+			break;
+
+		default:
+			MCF_DEBUG_TODO(u8"구현 필요");
+			return false;
+		}
+		_localCodes.emplace_back(std::move(jumpIfFalse));
 		break;
+	}
 
 	case IR::Expression::Type::STATIC_CAST: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
@@ -1058,10 +1124,11 @@ void mcf::Evaluator::FunctionIRGenerator::AddCondition(
 	default:
 		MCF_DEBUG_TODO(u8"예상치 못한 값이 들어왔습니다. 확인 해 주세요. ExpressionType=%s(%zu) ConvertedString=`%s`",
 			mcf::IR::Expression::CONVERT_TYPE_TO_STRING(condition->GetExpressionType()), mcf::ENUM_INDEX(condition->GetExpressionType()), condition->Inspect().c_str());
-		return;
+		return false;
 	}
 	constexpr const size_t EXPRESSION_TYPE_COUNT = __COUNTER__ - EXPRESSION_TYPE_COUNT_BEGIN;
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "implement condition codes using expression.");
+	return true;
 }
 
 const bool mcf::Evaluator::FunctionIRGenerator::AddConditionalExpression(
@@ -1916,7 +1983,7 @@ void mcf::Evaluator::FunctionIRGenerator::AddReturnStatement(_Notnull_ const mcf
 	static_assert(static_cast<size_t>(mcf::IR::Expression::Type::COUNT) == EXPRESSION_TYPE_COUNT, "Implement assembly code for return statement in function definition here");
 }
 
-void mcf::Evaluator::FunctionIRGenerator::AddWhileStatement(_Notnull_ const mcf::IR::While* object) noexcept
+const bool mcf::Evaluator::FunctionIRGenerator::AddWhileStatement(_Notnull_ const mcf::IR::While* object) noexcept
 {
 	const mcf::IR::Expression::Interface* condition = object->GetUnsafeConditionExpressionPointer();
 	MCF_DEBUG_ASSERT(condition != nullptr, u8"condition이 nullptr면 안됩니다.");
@@ -1928,17 +1995,22 @@ void mcf::Evaluator::FunctionIRGenerator::AddWhileStatement(_Notnull_ const mcf:
 	const std::string labelBlock = CreateLabelName();
 	const std::string labelEnd = CreateLabelName();
 	_localCodes.emplace_back(mcf::IR::ASM::Label::Make(labelBegin));
-	AddCondition(static_cast<const mcf::IR::Expression::Conditional*>(condition), labelBlock, labelEnd);
+	if (AddCondition(static_cast<const mcf::IR::Expression::Conditional*>(condition), blockScope->GetUnsafeParentScopePointer(), labelBlock, labelEnd) == false)
+	{
+		MCF_DEBUG_TODO(u8"구현 필요");
+		return false;
+	}
 
 	_localCodes.emplace_back(mcf::IR::ASM::Label::Make(labelBlock));
 	if (ConvertStatements(*this, object->GetBlockPointer(), blockScope, labelEnd) == false)
 	{
 		MCF_DEBUG_TODO(u8"구현 필요");
-		return;
+		return false;
 	}
 
 	_localCodes.emplace_back(mcf::IR::ASM::Jmp::Make(labelBegin));
 	_localCodes.emplace_back(mcf::IR::ASM::Label::Make(labelEnd));
+	return true;
 }
 
 void mcf::Evaluator::FunctionIRGenerator::AddBreakStatement(const std::string& labelBreak) noexcept
@@ -2039,12 +2111,16 @@ const bool mcf::Evaluator::Object::ValidateVariableTypeAndValue(const mcf::Objec
 		break;
 
 	case mcf::IR::Expression::Type::STATIC_CAST: __COUNTER__;
-		if (variable.DataType != static_cast<const mcf::IR::Expression::StaticCast*>(value)->GetCastedDatType())
+	{
+		const mcf::Object::TypeInfo castedDataType = static_cast<const mcf::IR::Expression::StaticCast*>(value)->GetCastedDatType();
+		if (variable.DataType != castedDataType)
 		{
-			MCF_DEBUG_TODO(u8"구현 필요");
+			MCF_DEBUG_TODO(u8"캐스팅된 값의 타입과 변수의 타입이 일치하지 않습니다.");
 			return false;
 		}
 		break;
+	}
+		
 
 	case mcf::IR::Expression::Type::CONDITIONAL: __COUNTER__;
 		MCF_DEBUG_TODO(u8"구현 필요");
@@ -2497,7 +2573,11 @@ mcf::IR::Pointer mcf::Evaluator::Object::EvalWhileStatement(_Notnull_ const mcf:
 		break;
 
 	case IR::Expression::Type::CALL: __COUNTER__;
-		MCF_DEBUG_TODO(u8"구현 필요");
+		if (static_cast<const mcf::IR::Expression::Call*>(conditionObject.get())->GetInfo().IsReturnTypeVoid())
+		{
+			MCF_DEBUG_TODO(u8"리턴 타입이 없는 함수는 while문의 조건 표현식에서 호출될수 없습니다.");
+			return mcf::IR::Invalid::Make();
+		}
 		break;
 
 	case IR::Expression::Type::STATIC_CAST: __COUNTER__;

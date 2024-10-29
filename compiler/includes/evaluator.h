@@ -88,8 +88,9 @@ namespace mcf
 				_Notnull_ const mcf::IR::Expression::Interface* expression) noexcept;
 			mcf::IR::ASM::Pointer MoveExpressionToRegister(const mcf::IR::ASM::Register targetRegister, _Notnull_ const mcf::IR::Expression::Interface* expression) noexcept;
 
-			void AddCondition(
+			const bool AddCondition(
 				_Notnull_ const mcf::IR::Expression::Interface* condition, 
+				_Notnull_ const mcf::Object::Scope* scope,
 				const std::string& labelTrue,
 				const std::string& labelFalse) noexcept;
 			const bool AddConditionalExpression(
@@ -112,7 +113,7 @@ namespace mcf
 			const bool AddLetStatement(_Notnull_ const mcf::IR::Let* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
 			const bool AddExpressionStatement(_Notnull_ const mcf::IR::Expression::Interface* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
 			void AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept;
-			void AddWhileStatement(_Notnull_ const mcf::IR::While *object) noexcept;
+			const bool AddWhileStatement(_Notnull_ const mcf::IR::While *object) noexcept;
 			void AddBreakStatement(const std::string& labelBreak) noexcept;
 
 			const std::string CreateLabelName(void) noexcept;

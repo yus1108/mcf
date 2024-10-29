@@ -218,8 +218,9 @@
     <Text Include="unittest\texts\test_file_read_eval.txt" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="unittest\texts\compiled_simple_game_project.asm" />
     <None Include="unittest\texts\enum_header.hmcf" />
-    <None Include="unittest\texts\symbol_share_test.mcf" />
+    <None Include="unittest\texts\simple_game_project.mcf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

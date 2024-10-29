@@ -46,6 +46,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="unittest\texts\enum_header.hmcf" />
-    <None Include="unittest\texts\symbol_share_test.mcf" />
+    <None Include="unittest\texts\simple_game_project.mcf" />
+    <None Include="unittest\texts\compiled_simple_game_project.asm">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>
