@@ -108,6 +108,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 	case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -121,7 +122,7 @@ inline const mcf::Parser::Precedence mcf::Parser::Object::GetTokenPrecedence(con
 		break;
 	}
 	constexpr const size_t PRECEDENCE_COUNT = __COUNTER__ - PRECEDENCE_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == PRECEDENCE_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == PRECEDENCE_COUNT, "get token precedence for infix.");
 
 	return Precedence::LOWEST;
 }

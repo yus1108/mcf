@@ -68,10 +68,12 @@ namespace mcf
 		{
 			friend FunctionCallIRGenerator;
 		public:
+			using NOT_ALLOW_BREAK_LABEL = std::string;
 			static bool ConvertStatements(
 				_Inout_ mcf::Evaluator::FunctionIRGenerator& inOutGenerator, 
 				_Notnull_ const mcf::IR::PointerVector* statementsPointer, 
-				_Notnull_ const mcf::Object::Scope* scope) noexcept;
+				_Notnull_ const mcf::Object::Scope* scope,
+				const std::string& breakLabel = NOT_ALLOW_BREAK_LABEL()) noexcept;
 
 			explicit FunctionIRGenerator(void) noexcept = delete;
 			explicit FunctionIRGenerator(const mcf::Object::FunctionInfo& info) noexcept;
@@ -91,7 +93,7 @@ namespace mcf
 				const std::string& labelTrue,
 				const std::string& labelFalse) noexcept;
 			const bool AddConditionalExpression(
-				_Notnull_ const mcf::IR::Expression::Conditional * object, 
+				_Notnull_ const mcf::IR::Expression::Conditional* object, 
 				const std::string& labelTrue,
 				const std::string& labelFalse) noexcept;
 
@@ -111,6 +113,7 @@ namespace mcf
 			const bool AddExpressionStatement(_Notnull_ const mcf::IR::Expression::Interface* object, _Notnull_ const mcf::Object::Scope* scope) noexcept;
 			void AddReturnStatement(_Notnull_ const mcf::IR::Return* object) noexcept;
 			void AddWhileStatement(_Notnull_ const mcf::IR::While *object) noexcept;
+			void AddBreakStatement(const std::string& labelBreak) noexcept;
 
 			const std::string CreateLabelName(void) noexcept;
 
@@ -143,7 +146,7 @@ namespace mcf
 
 		private:
 
-			mcf::IR::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalStatement(_Notnull_ const mcf::AST::Statement::Interface* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept;
 			mcf::IR::Pointer EvalTypedefStatement(_Notnull_ const mcf::AST::Statement::Typedef* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalExternStatement(_Notnull_ const mcf::AST::Statement::Extern* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalLetStatement(_Notnull_ const mcf::AST::Statement::Let* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
@@ -151,10 +154,11 @@ namespace mcf
 			mcf::IR::Pointer EvalReturnStatement(_Notnull_ const mcf::AST::Statement::Return* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalFuncStatement(_Notnull_ const mcf::AST::Statement::Func* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalMainStatement(_Notnull_ const mcf::AST::Statement::Main* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
-			mcf::IR::Pointer EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
 			mcf::IR::Pointer EvalAssignExpressionStatement(_Notnull_ const mcf::AST::Statement::AssignExpression* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalWhileStatement(_Notnull_ const mcf::AST::Statement::While* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::Pointer EvalBreakStatement(_Notnull_ const mcf::AST::Statement::Break* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept;
 
-			mcf::IR::PointerVector EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope) noexcept;
+			mcf::IR::PointerVector EvalBlockStatement(_Notnull_ const mcf::AST::Statement::Block* statement, _Notnull_ mcf::Object::Scope* scope, const bool isBreakAllowed) noexcept;
 			mcf::IR::ASM::PointerVector EvalFunctionBlockStatement(const mcf::Object::FunctionInfo& info, _Notnull_ const mcf::AST::Statement::Block* statement) noexcept;
 
 			mcf::Object::FunctionInfo EvalFunctionSignatureIntermediate(_Notnull_ const mcf::AST::Intermediate::FunctionSignature* intermediate, _Notnull_ mcf::Object::Scope* scope) const noexcept;

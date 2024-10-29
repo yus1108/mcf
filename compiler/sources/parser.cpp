@@ -93,6 +93,10 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 		statement = ParseWhileStatement();
 		break;
 
+	case Token::Type::KEYWORD_BREAK: __COUNTER__;
+		statement = ParseBreakStatement();
+		break;
+
 	case Token::Type::END_OF_FILE: __COUNTER__; [[fallthrough]];
 	case Token::Type::SEMICOLON: __COUNTER__;
 		break;
@@ -139,7 +143,7 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseStatement(void) noexcept
 	}
 	}
 	constexpr const size_t TOKENTYPE_COUNT = __COUNTER__ - TOKENTYPE_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKENTYPE_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == TOKENTYPE_COUNT, "parsing statement by token type.");
 	return statement;
 }
 
@@ -620,6 +624,23 @@ mcf::AST::Statement::Pointer mcf::Parser::Object::ParseWhileStatement(void) noex
 	return mcf::AST::Statement::While::Make(std::move(conditionExpression), std::move(mcf::AST::Statement::Block::Pointer(static_cast<mcf::AST::Statement::Block*>(statementBlock.release()))));
 }
 
+mcf::AST::Statement::Pointer mcf::Parser::Object::ParseBreakStatement(void) noexcept
+{
+	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::KEYWORD_BREAK, u8"이 함수가 호출될때 현재 토큰이 `KEYWORD_BREAK`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
+		mcf::Token::CONVERT_TYPE_TO_STRING(_currentToken.Type), mcf::ENUM_INDEX(_currentToken.Type), _currentToken.Literal.c_str());
+
+	const mcf::Token::Data token = _currentToken;
+
+	if (ReadNextTokenIf(mcf::Token::Type::SEMICOLON) == false)
+	{
+		const std::string message = mcf::Internal::ErrorMessage(u8"다음 토큰은 `SEMICOLON`타입여야만 합니다. 실제 값으로 %s를 받았습니다.",
+			mcf::Token::CONVERT_TYPE_TO_STRING(_nextToken.Type));
+		_errors.push(ErrorInfo{ ErrorID::UNEXPECTED_NEXT_TOKEN, _lexer.GetName(), message, _nextToken.Line, _nextToken.Index });
+		return nullptr;
+	}
+	return mcf::AST::Statement::Break::Make(_currentToken);
+}
+
 mcf::AST::Intermediate::Variadic::Pointer mcf::Parser::Object::ParseVariadicIntermediate(void) noexcept
 {
 	MCF_DEBUG_ASSERT(_currentToken.Type == mcf::Token::Type::VARIADIC, u8"이 함수가 호출될때 현재 토큰이 `VARIADIC`여야만 합니다! 현재 TokenType=%s(%zu) TokenLiteral=`%s`",
@@ -924,6 +945,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -940,7 +962,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 	}
 	}
 	constexpr const size_t EXPRESSION_TOKEN_COUNT = __COUNTER__ - EXPRESSION_TOKEN_COUNT_BEGIN;
-	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == EXPRESSION_TOKEN_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
+	static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == EXPRESSION_TOKEN_COUNT, "parsing expression by token type.");
 
 	while (expression.get() != nullptr && _nextToken.Type != mcf::Token::Type::SEMICOLON && precedence < GetNextTokenPrecedence())
 	{
@@ -1002,6 +1024,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		case Token::Type::KEYWORD_RETURN: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_UNUSED: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_WHILE: __COUNTER__; [[fallthrough]];
+		case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 		case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 		case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 		case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -1018,7 +1041,7 @@ mcf::AST::Expression::Pointer mcf::Parser::Object::ParseExpression(const Precede
 		}
 		}
 		constexpr const size_t INFIX_COUNT = __COUNTER__ - INFIX_COUNT_BEGIN;
-		static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == INFIX_COUNT, "TokenType count is changed. this SWITCH need to be changed as well.");
+		static_assert(static_cast<size_t>(mcf::Token::Type::COUNT) == INFIX_COUNT, "parsing infix expression by token type.");
 	}
 	return expression.get() == nullptr ? mcf::AST::Expression::Invalid::Make() : std::move(expression);
 }

@@ -658,6 +658,7 @@ const bool mcf::IR::Expression::Conditional::IsValidTokenType(const mcf::Token::
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -725,6 +726,7 @@ mcf::IR::ASM::Pointer mcf::IR::Expression::Conditional::GenerateJumpIf(const mcf
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -802,6 +804,7 @@ const bool mcf::IR::Expression::Arithmetic::IsValidTokenType(const mcf::Token::T
 	case Token::Type::KEYWORD_VOID: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_UNSIGNED: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_AS: __COUNTER__; [[fallthrough]];
+	case Token::Type::KEYWORD_BREAK: __COUNTER__; [[fallthrough]];
 	case Token::Type::KEYWORD_IDENTIFIER_END: __COUNTER__; [[fallthrough]];
 	case Token::Type::VARIADIC: __COUNTER__; [[fallthrough]];
 	case Token::Type::MACRO_START: __COUNTER__; [[fallthrough]];
@@ -1456,6 +1459,12 @@ mcf::IR::While::While(mcf::IR::Expression::Pointer&& condition, mcf::IR::Pointer
 }
 
 const std::string mcf::IR::While::Inspect(void) const noexcept
+{
+	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
+	return std::string();
+}
+
+const std::string mcf::IR::Break::Inspect(void) const noexcept
 {
 	MCF_DEBUG_BREAK(u8"중간 단계 오브젝트입니다. FunctionIRGenerator 제너레이터에 의해 변환되어야 합니다.");
 	return std::string();

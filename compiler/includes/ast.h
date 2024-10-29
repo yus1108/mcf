@@ -559,6 +559,7 @@ namespace mcf
 				ASSIGN_EXPRESSION,
 				UNUSED,
 				WHILE,
+				BREAK,
 
 				// 이 밑으로는 수정하면 안됩니다.
 				COUNT,
@@ -580,6 +581,7 @@ namespace mcf
 				"ASSIGN_EXPRESSION",
 				"UNUSED",
 				"WHILE",
+				"BREAK",
 			};
 			constexpr const size_t STATEMENT_TYPES_SIZE = MCF_ARRAY_SIZE(TYPE_STRING_ARRAY);
 			static_assert(static_cast<size_t>(Type::COUNT) == STATEMENT_TYPES_SIZE, "statement type count not matching!");
@@ -895,6 +897,27 @@ namespace mcf
 			private:
 				mcf::AST::Expression::Pointer _condition;
 				mcf::AST::Statement::Block::Pointer _block;
+			};
+
+			class Break : public Interface
+			{
+			public:
+				using Pointer = std::unique_ptr<Break>;
+
+				template <class... Variadic>
+				inline static Pointer Make(Variadic&& ...args) noexcept { return std::make_unique<Break>(std::move(args)...); }
+
+			public:
+				explicit Break(void) noexcept = default;
+				explicit Break(const mcf::Token::Data token) noexcept : _token(token) {}
+
+				inline const std::string GetLibPath(void) const noexcept { return _token.Literal; }
+
+				inline virtual const Type GetStatementType(void) const noexcept override final { return Type::BREAK; }
+				inline virtual const std::string ConvertToString(void) const noexcept override final { return "[Break: SEMICOLON]"; }
+
+			private:
+				mcf::Token::Data _token;
 			};
 		}
 

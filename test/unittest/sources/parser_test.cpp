@@ -512,6 +512,10 @@ UnitTest::ParserTest::ParserTest(void) noexcept
 					"[Expression: <Call: <Identifier: printf> LPAREN <As: <Identifier: message> KEYWORD_AS <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
 					"[Expression: <Identifier: i> ASSIGN <Infix: <Identifier: i> PLUS <Integer: 1>> SEMICOLON] "
 				"RBRACE]] "
+				"[While: LPAREN <Integer: 1> RPAREN [Block: LBRACE "
+					"[Expression: <Call: <Identifier: printf> LPAREN <As: <Identifier: message> KEYWORD_AS <TypeSignature: KEYWORD_UNSIGNED <Identifier: qword>>> COMMA <Identifier: intVal> COMMA RPAREN> SEMICOLON] "
+					"[Break: SEMICOLON] "
+				"RBRACE]] "
 				"RBRACE]]"
 				;
 			const size_t expectedResultLength = expectedResult.size();

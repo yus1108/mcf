@@ -403,6 +403,22 @@ UnitTest::EvaluatorTest::EvaluatorTest(void) noexcept
 					"main endp",
 				},
 				{
+					"main(void) -> void { while(1) { break; } }",
+					{},
+					{},
+					"main proc\n"
+						"\tpush rbp\n"
+					"?main_L0:\n"
+						// always true
+					"?main_L1:\n"
+						"\tjmp ?main_L2\n" // goto end
+						"\tjmp ?main_L0\n" // goto begin
+					"?main_L2:\n"
+						"\tpop rbp\n"
+						"\tret\n"
+					"main endp",
+				},
+				{
 					"main(void) -> void { let message: byte[] = \"Hello, World!Value = %d\\n\"; unused(message); }",
 					{"\"Hello, World!Value = %d\\n\""},
 					{mcf::Object::Data{1, {'H', 'e', 'l', 'l', 'o', ',', ' ', 'W', 'o', 'r', 'l', 'd', '!', 'V', 'a', 'l', 'u', 'e', ' ', '=', ' ', '%', 'd', '\n', '\0'}}},

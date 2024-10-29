@@ -29,6 +29,7 @@ const mcf::Token::Data mcf::Token::FindPredefinedKeyword(const std::string& toke
 		"unused",
 		"as",
 		"while",
+		"break",
 	};
 	constexpr const size_t KEYWORDS_SIZE = MCF_ARRAY_SIZE(IDENTIFIER_KEYWORDS);
 	static_assert(ENUM_INDEX(Type::KEYWORD_IDENTIFIER_END) - ENUM_INDEX(Type::KEYWORD_IDENTIFIER_START) - 1 == KEYWORDS_SIZE,
@@ -308,6 +309,7 @@ const mcf::Token::Data mcf::Lexer::Object::ReadNextToken(void) noexcept
 			__COUNTER__; // count for KEYWORD_UNUSED
 			__COUNTER__; // count for KEYWORD_AS
 			__COUNTER__; // count for KEYWORD_WHILE
+			__COUNTER__; // count for KEYWORD_BREAK
 			token.Literal = ReadKeywordOrIdentifier(); 
 			token.Type = DetermineKeywordOrIdentifier(token.Literal);
 			token.Line = _currentLine;
